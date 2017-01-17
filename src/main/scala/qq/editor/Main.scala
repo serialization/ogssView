@@ -11,22 +11,25 @@ object Main extends SimpleSwingApplication {
   /** event which is fired whenever file is changes (parameter is new value of file) */
   val onFileChange: qq.util.binding.Event[File] = new qq.util.binding.Event()
 
+  val tabs = new qq.util.TabbedPane()
+
   def closeFile: Unit = {
     if (file != null) {
       if (file.isModified) {
         val x = Dialog.showConfirmation(null,
-            "Discard unsaved changes in " + file.fileNameOnly,
-            "Discard Unsaved Changes",
-            Dialog.Options.YesNo,
-            Dialog.Message.Question, null)
-            
-       if (x != Dialog.Result.Yes) throw new Exception() 
+          "Discard unsaved changes in " + file.fileNameOnly,
+          "Discard Unsaved Changes",
+          Dialog.Options.YesNo,
+          Dialog.Message.Question, null)
+
+        if (x != Dialog.Result.Yes) throw new Exception()
       }
+      while (tabs.pages.length > 0) tabs.removePage(0)
       file = null
       onFileChange.fire(file)
     }
   }
-  
+
   val actOpen = new Action("Open") {
     accelerator = Some(javax.swing.KeyStroke.getKeyStroke("ctrl O"))
     mnemonic = swing.event.Key.O.id
@@ -51,14 +54,14 @@ object Main extends SimpleSwingApplication {
     onFileChange.strong += (_ ⇒ setEnabled)
     onFileChange.strong += (file ⇒ if (file != null) file.onEdit.strong += (_ ⇒ setEnabled))
     override def apply() {
-      /* TODO save file */ 
+      /* TODO save file */
     }
   }
   val actSaveAs = new Action("Save As …") {
     mnemonic = swing.event.Key.A.id
     onFileChange.strong += (file ⇒ enabled = file != null)
     override def apply() {
-      /* TODO save file */ 
+      /* TODO save file */
     }
   }
   val actClose = new Action("Close") {
@@ -72,11 +75,11 @@ object Main extends SimpleSwingApplication {
   val actUndoDummy = new Action("nothing to undo") {
     enabled = false
     override def apply() {}
-    }
+  }
   val actRedoDummy = new Action("nothing to redo") {
     enabled = false
     override def apply() {}
-    }
+  }
   val undoMenuItem = new MenuItem("") {
     onFileChange.strong += (file ⇒
       action = if (file != null)
@@ -88,6 +91,70 @@ object Main extends SimpleSwingApplication {
       action = if (file != null)
         file.undoManager.redoAction
       else actRedoDummy)
+  }
+  val viewMenu = new Menu("View") {
+    mnemonic = swing.event.Key.V
+    onFileChange.strong += (_ ⇒ enabled = false) // enable when something is shown
+    tabs.onPageChanged.strong += { page ⇒
+      contents.clear()
+      if (page != null && page.isInstanceOf[qq.editor.Page]) {
+        enabled = true
+        contents ++= page.asInstanceOf[qq.editor.Page].viewMenuItems
+      } else {
+        enabled = false
+      }
+    }
+  }
+  val newObjectPageAction = new Action("New Object Page") {
+    mnemonic = swing.event.Key.N.id
+    override def apply() = {
+    }
+  }
+  val newObjectPageMenuItem = new qq.util.TodoMenuItem("New Object Page") //newObjectPageAction)
+  val objectMenu = new Menu("Object") {
+    mnemonic = swing.event.Key.O
+    onFileChange.strong += { file ⇒
+      contents.clear()
+      enabled = file != null
+      if (enabled) contents += newObjectPageMenuItem
+    }
+    tabs.onPageChanged.strong += { page ⇒
+      contents.clear()
+      contents += newObjectPageMenuItem
+      if (page != null && page.isInstanceOf[qq.editor.Page]) {
+        val pageItems = page.asInstanceOf[qq.editor.Page].objectMenuItems
+        if (pageItems.length > 0) {
+          contents += new swing.Separator
+          contents ++= pageItems
+        }
+      }
+    }
+  }
+  val newTypePageAction = new Action("New Type Page") {
+    mnemonic = swing.event.Key.N.id
+    override def apply() = {
+      tabs.addPage(new qq.editor.types.TypePage(file))
+    }
+  }
+  val newTypePageMenuItem = new MenuItem(newTypePageAction)
+  val typeMenu = new Menu("Type") {
+    mnemonic = swing.event.Key.T
+    onFileChange.strong += { file ⇒
+      contents.clear()
+      enabled = file != null
+      if (enabled) contents += newTypePageMenuItem
+    }
+    tabs.onPageChanged.strong += { page ⇒
+      contents.clear()
+      contents += newTypePageMenuItem
+      if (page != null && page.isInstanceOf[qq.editor.Page]) {
+        val pageItems = page.asInstanceOf[qq.editor.Page].typeMenuItems
+        if (pageItems.length > 0) {
+          contents += new swing.Separator
+          contents ++= pageItems
+        }
+      }
+    }
   }
   val menu = new MenuBar {
     contents ++= Seq(
@@ -102,11 +169,12 @@ object Main extends SimpleSwingApplication {
       new Menu("Edit") {
         mnemonic = swing.event.Key.E
         contents ++= Seq(undoMenuItem, redoMenuItem)
-      })
+      },
+      viewMenu, objectMenu, typeMenu)
   }
-
   def top = new MainFrame {
     menuBar = menu
+    contents = tabs
 
     onFileChange.strong += (file ⇒
       title = if (file != null)
@@ -116,4 +184,11 @@ object Main extends SimpleSwingApplication {
 
     onFileChange.fire(file)
   }
+
+  // TODO delete
+  file = new File("C:\\Users\\m\\stud\\dt\\testinp\\time.iml.sf")
+  undoMenuItem.action = file.undoManager.undoAction
+  redoMenuItem.action = file.undoManager.redoAction
+  onFileChange.fire(file)
+
 }
