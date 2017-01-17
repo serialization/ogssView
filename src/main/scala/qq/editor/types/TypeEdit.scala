@@ -29,10 +29,14 @@ class TypeEdit(val page: qq.editor.types.TypePage,
           contents += swing.Swing.RigidBox(new java.awt.Dimension(15, 0))
           contents += new swing.BoxPanel(swing.Orientation.Vertical) {
             contents ++= τ.fields.map(x =>
+              qq.util.Swing.VBox(
               qq.util.Swing.HBox(
                   new FieldTypeControl(page, x.t),
                   new swing.Label(" " + x.name),
-                  swing.Swing.HGlue))
+                  swing.Swing.HGlue),
+                  new FieldSettingsEdit(page.file, skillType, x))
+                  
+            )
           }
           contents += swing.Swing.HGlue
         }

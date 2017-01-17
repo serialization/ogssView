@@ -5,25 +5,26 @@ import de.ust.skill.common.scala.internal;
 import de.ust.skill.common.scala.internal.fieldTypes;
 import scala.collection.mutable;
 import com.github.jpbetz.subspace._;
+import qq.util.binding._;
 
 class FieldSettings[T, U <: api.SkillObject](
     /** The field this is about */
     val field: api.FieldDeclaration[T],
     /** The type this belongs to */
-    val containingType: TypeSettings[U]) {
+    val containingType: TypeSettings[U]) extends PropertyOwner {
 
   /** User preference: hide this field */
-  var prefHide: Boolean = false
+  var prefHide: Property[Boolean] = new Property(this, "Always hide", false)
   /** User preference: show this field */
-  var prefShow: Boolean = false
+  var prefShow: Property[Boolean] = new Property(this, "Always show", false)
   /** User preference: show also if null/zero (requires prefShow )*/
-  var prefShowNull: Boolean = false
+  var prefShowNull: Property[Boolean] = new Property(this, "Even show empty/null values", false)
   /** User preference: show inside parent node */
-  var prefShowInParent: Boolean = false
+  var prefShowInParent: Property[Boolean] = new Property(this, "Show inside parent", false)
   /** User preference: keep edge direction stable */
-  var prefFixedEdgeDirection: Boolean = false
+  var prefFixedEdgeDirection: Property[Boolean] = new Property(this, "Keep edge direction stable", false)
   /** User preference: edge direction (is changed by programme unless prefFixedEdgeDirection)*/
-  var prefEdgeDirection: Vector2 = Vector2(0.0f, 0.0f)
+  var prefEdgeDirection: Property[Vector2] = new Property(this, "Edge direction", Vector2(0.0f, 0.0f))
 
   /** true if the value of this field in object o is null, empty collection, zero, or empty string */
   private def hasNullValueIn(o: api.SkillObject): Boolean = {
@@ -51,11 +52,11 @@ class FieldSettings[T, U <: api.SkillObject](
 
   /** returns true whether and how this field should be shown in object o*/
   def visibilityIn(o: api.SkillObject): FieldVisibility = {
-    if (prefHide /* user says hide */
-      || (hasNullValueIn(o) && !prefShowNull)) { /* or it;s null/empty…*/
+    if (prefHide() /* user says hide */
+      || (hasNullValueIn(o) && !prefShowNull())) { /* or it;s null/empty…*/
       HideVisibility
-    } else if (prefShow) { /* user says show */
-      if (prefShowInParent) {
+    } else if (prefShow()) { /* user says show */
+      if (prefShowInParent()) {
         ShowInParentVisibility
       } else {
         ShowAsNodeVisibility

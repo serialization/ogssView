@@ -77,8 +77,8 @@ class TypePage(val file: qq.editor.File) extends qq.editor.Page {
     }
   }
   val toggleGraphVisible = new swing.Action("Show Graph") {
-    accelerator = Some(javax.swing.KeyStroke.getKeyStroke("ctrl T"))
-    mnemonic = swing.event.Key.T.id
+    accelerator = Some(javax.swing.KeyStroke.getKeyStroke("ctrl G"))
+    mnemonic = swing.event.Key.G.id
     override def apply() = {
       updateVisibility
     }

@@ -147,6 +147,7 @@ object Main extends SimpleSwingApplication {
     tabs.onPageChanged.strong += { page ⇒
       contents.clear()
       contents += newTypePageMenuItem
+      contents += new qq.util.TodoMenuItem("Profiles")
       if (page != null && page.isInstanceOf[qq.editor.Page]) {
         val pageItems = page.asInstanceOf[qq.editor.Page].typeMenuItems
         if (pageItems.length > 0) {
