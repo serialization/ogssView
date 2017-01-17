@@ -2,11 +2,18 @@ package qq.editor.types
 
 import de.ust.skill.common.scala.api;
 import de.ust.skill.common.scala.internal;
+import scala.collection.mutable;
 
 class TypeTree(val page: qq.editor.types.TypePage)
     extends swing.BoxPanel(swing.Orientation.Vertical) {
+  
+  val nodes: mutable.Map[api.Access[_], TypeTreeNode] = new mutable.HashMap()
+  
   class TypeTreeNode(τ: api.Access[_])
       extends swing.BoxPanel(swing.Orientation.Vertical) {
+    
+    nodes(τ) = this
+    
     val erbtn = new qq.util.PlainButton(swing.Action("") {}) {
       this.preferredSize = new java.awt.Dimension(15, 15)
       this.focusable = false
@@ -48,6 +55,19 @@ class TypeTree(val page: qq.editor.types.TypePage)
       erbtn.focusable = true
     }
   }
-  contents ++= page.file.rootTypes.map(new TypeTreeNode(_))
-  contents += swing.Swing.VGlue
+  val typeTree = new swing.BoxPanel(swing.Orientation.Vertical) {
+    contents ++= page.file.rootTypes.map(new TypeTreeNode(_))
+    contents += swing.Swing.VGlue
+  }
+  val scrollContainer = new qq.util.VScrollPane() {
+    contents = typeTree
+  }
+  
+  def select(τ: api.Access[_]): Unit = {
+    val node = nodes(τ).peer
+    val nodePos = javax.swing.SwingUtilities.convertRectangle( node.getParent, node.getBounds, typeTree.peer)
+    typeTree.peer.scrollRectToVisible(nodePos)
+  }
+  
+  contents += scrollContainer
 }

@@ -39,10 +39,10 @@ class AddListItemIcon(val rollover: Boolean = false)
   }
 }
 
-class ForwardIcon(val enabled: Boolean = false)
+class ForwardIcon(val enabled: Boolean = false, val small: Boolean = false)
     extends Icon {
-  def getIconWidth = 20
-  def getIconHeight = 20
+  def getIconWidth = if (small) 9 else 20
+  def getIconHeight = if (small) 9 else 20
   def paintIcon(c: java.awt.Component, g: Graphics, x: Int, y: Int): Unit = {
     val gg = g.asInstanceOf[Graphics2D]
     val prevs = gg.getStroke
@@ -66,10 +66,10 @@ class ForwardIcon(val enabled: Boolean = false)
   }
 }
 
-class BackIcon(val enabled: Boolean = false)
+class BackIcon(val enabled: Boolean = false, val small: Boolean = false)
     extends Icon {
-  def getIconWidth = 20
-  def getIconHeight = 20
+  def getIconWidth = if (small) 9 else 20
+  def getIconHeight = if (small) 9 else 20
   def paintIcon(c: java.awt.Component, g: Graphics, x: Int, y: Int): Unit = {
     val gg = g.asInstanceOf[Graphics2D]
     val prevs = gg.getStroke

@@ -34,6 +34,9 @@ class TypePage(val file: qq.editor.File) extends qq.editor.Page {
     title = t.name
     typeEdit.contents.clear()
     typeEdit.contents += new TypeEdit(this, t)
+    typeTree.select(t)
+    goBack.enabled = previousType.length > 0
+    goForward.enabled = nextType.length > 0
   }
 
   /** show a type and update navigation */
@@ -47,6 +50,8 @@ class TypePage(val file: qq.editor.File) extends qq.editor.Page {
     accelerator = Some(javax.swing.KeyStroke.getKeyStroke("ctrl B"))
     mnemonic = swing.event.Key.B.id
     icon = new qq.icons.BackIcon(true)
+    smallIcon = new qq.icons.BackIcon(true, true)
+    enabled = false
     override def apply() = {
       if (previousType.length > 0) {
         val t = previousType.pop()
@@ -60,6 +65,8 @@ class TypePage(val file: qq.editor.File) extends qq.editor.Page {
     accelerator = Some(javax.swing.KeyStroke.getKeyStroke("ctrl F"))
     mnemonic = swing.event.Key.F.id
     icon = new qq.icons.ForwardIcon(true)
+    smallIcon = new qq.icons.ForwardIcon(true, true)
+    enabled = false
     override def apply() = {
       if (nextType.length > 0) {
         val t = nextType.pop()
@@ -96,15 +103,21 @@ class TypePage(val file: qq.editor.File) extends qq.editor.Page {
       peer.setModel(graphVisibleModel)
     })
   override def typeMenuItems = Seq(
-    new qq.util.TodoMenuItem("Go to Parent")    
-)
+    new qq.util.TodoMenuItem("Go to Parent"))
   override def objectMenuItems = Seq(
-    new qq.util.TodoMenuItem("Show Objects of Current Type")    
-  )
+    new qq.util.TodoMenuItem("Show Objects of Current Type"))
   /* the layout */
   val toolBar = qq.util.Swing.HBox(
-    new swing.Button(goBack) { text = "" },
-    new swing.Button(goForward) { text = "" },
+    new swing.Button(goBack) {
+      text = ""
+      icon = new qq.icons.BackIcon(true)
+      disabledIcon = new qq.icons.BackIcon(false)
+    },
+    new swing.Button(goForward) {
+      text = ""
+      icon = new qq.icons.ForwardIcon(true)
+      disabledIcon = new qq.icons.ForwardIcon(false)
+    },
     new swing.ToggleButton("") {
       action = toggleTreeVisible
       peer.setModel(treeVisibleModel)
@@ -114,8 +127,7 @@ class TypePage(val file: qq.editor.File) extends qq.editor.Page {
       peer.setModel(graphVisibleModel)
     },
     scala.swing.Swing.HGlue)
-  val typeTree_ = new TypeTree(this)
-  val typeTree = new qq.util.VScrollPane() {contents = typeTree_}
+  val typeTree = new TypeTree(this)
   val typeEdit = qq.util.Swing.HBox()
   val typeGraph = new swing.Label("Todo graph")
 

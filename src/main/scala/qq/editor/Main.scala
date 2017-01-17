@@ -3,6 +3,8 @@ package qq.editor
 import swing._;
 import event._;
 
+import de.ust.skill.common.scala.api;
+
 object Main extends SimpleSwingApplication {
 
   /** the current file */
@@ -11,9 +13,17 @@ object Main extends SimpleSwingApplication {
   /** event which is fired whenever file is changes (parameter is new value of file) */
   val onFileChange: qq.util.binding.Event[File] = new qq.util.binding.Event()
 
-  val tabs = new qq.util.TabbedPane()
+  /** tabs which show the actual content */
+  private val tabs = new qq.util.TabbedPane()
 
-  def closeFile: Unit = {
+  /** add a new tab showing type τ. τ == null allowed*/
+  def newTypeTab(τ: api.Access[_]): Unit = {
+    val page = new qq.editor.types.TypePage(file)
+    tabs.addPage(page)
+    if (τ != null) page.goTo(τ)
+  }
+  
+  private def closeFile: Unit = {
     if (file != null) {
       if (file.isModified) {
         val x = Dialog.showConfirmation(null,
@@ -30,7 +40,7 @@ object Main extends SimpleSwingApplication {
     }
   }
 
-  val actOpen = new Action("Open") {
+  private val actOpen = new Action("Open") {
     accelerator = Some(javax.swing.KeyStroke.getKeyStroke("ctrl O"))
     mnemonic = swing.event.Key.O.id
     override def apply() {
@@ -45,7 +55,7 @@ object Main extends SimpleSwingApplication {
       }
     }
   }
-  val actSave = new Action("Save") {
+  private val actSave = new Action("Save") {
     accelerator = Some(javax.swing.KeyStroke.getKeyStroke("ctrl S"))
     mnemonic = swing.event.Key.S.id
     def setEnabled: Unit = {
@@ -57,14 +67,14 @@ object Main extends SimpleSwingApplication {
       /* TODO save file */
     }
   }
-  val actSaveAs = new Action("Save As …") {
+  private val actSaveAs = new Action("Save As …") {
     mnemonic = swing.event.Key.A.id
     onFileChange.strong += (file ⇒ enabled = file != null)
     override def apply() {
       /* TODO save file */
     }
   }
-  val actClose = new Action("Close") {
+  private val actClose = new Action("Close") {
     accelerator = Some(javax.swing.KeyStroke.getKeyStroke("ctrl C"))
     mnemonic = swing.event.Key.C.id
     onFileChange.strong += (file ⇒ enabled = file != null)
@@ -72,27 +82,27 @@ object Main extends SimpleSwingApplication {
       closeFile
     }
   }
-  val actUndoDummy = new Action("nothing to undo") {
+  private val actUndoDummy = new Action("nothing to undo") {
     enabled = false
     override def apply() {}
   }
-  val actRedoDummy = new Action("nothing to redo") {
+  private val actRedoDummy = new Action("nothing to redo") {
     enabled = false
     override def apply() {}
   }
-  val undoMenuItem = new MenuItem("") {
+  private val undoMenuItem = new MenuItem("") {
     onFileChange.strong += (file ⇒
       action = if (file != null)
         file.undoManager.undoAction
       else actUndoDummy)
   }
-  val redoMenuItem = new MenuItem("") {
+  private val redoMenuItem = new MenuItem("") {
     onFileChange.strong += (file ⇒
       action = if (file != null)
         file.undoManager.redoAction
       else actRedoDummy)
   }
-  val viewMenu = new Menu("View") {
+  private val viewMenu = new Menu("View") {
     mnemonic = swing.event.Key.V
     onFileChange.strong += (_ ⇒ enabled = false) // enable when something is shown
     tabs.onPageChanged.strong += { page ⇒
@@ -105,13 +115,13 @@ object Main extends SimpleSwingApplication {
       }
     }
   }
-  val newObjectPageAction = new Action("New Object Page") {
+  private val newObjectPageAction = new Action("New Object Page") {
     mnemonic = swing.event.Key.N.id
     override def apply() = {
     }
   }
-  val newObjectPageMenuItem = new qq.util.TodoMenuItem("New Object Page") //newObjectPageAction)
-  val objectMenu = new Menu("Object") {
+  private val newObjectPageMenuItem = new qq.util.TodoMenuItem("New Object Page") //newObjectPageAction)
+  private val objectMenu = new Menu("Object") {
     mnemonic = swing.event.Key.O
     onFileChange.strong += { file ⇒
       contents.clear()
@@ -130,14 +140,14 @@ object Main extends SimpleSwingApplication {
       }
     }
   }
-  val newTypePageAction = new Action("New Type Page") {
+  private val newTypePageAction = new Action("New Type Page") {
     mnemonic = swing.event.Key.N.id
     override def apply() = {
-      tabs.addPage(new qq.editor.types.TypePage(file))
+      newTypeTab(null)
     }
   }
-  val newTypePageMenuItem = new MenuItem(newTypePageAction)
-  val typeMenu = new Menu("Type") {
+  private val newTypePageMenuItem = new MenuItem(newTypePageAction)
+  private val typeMenu = new Menu("Type") {
     mnemonic = swing.event.Key.T
     onFileChange.strong += { file ⇒
       contents.clear()
@@ -157,7 +167,7 @@ object Main extends SimpleSwingApplication {
       }
     }
   }
-  val menu = new MenuBar {
+  private val menu = new MenuBar {
     contents ++= Seq(
       new Menu("File") {
         mnemonic = swing.event.Key.F
