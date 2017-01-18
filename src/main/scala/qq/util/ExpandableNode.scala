@@ -17,14 +17,14 @@ class ExpandableNode(val node: swing.Component)
   def subPart: swing.Component = subPart_
   def subPart_=(x: swing.Component): Unit = {
     subPart_ = x
-    subBox.contents.clear     
+    subBox.contents.clear
     subBox.contents += spacer
     if (x != null) {
       subBox.contents += subPart
     } else {
-      collapse
       erbtn.action = nullAction
     }
+    collapse
   }
 
   def expand(): Unit = {
@@ -47,7 +47,7 @@ class ExpandableNode(val node: swing.Component)
   val collapseAction: swing.Action = new swing.Action("collapse") {
     icon = javax.swing.UIManager.getIcon("Tree.expandedIcon")
     override def apply(): Unit = {
-      expand
+      collapse
     }
   }
   private val nullAction = swing.Action("") {}
@@ -57,8 +57,11 @@ class ExpandableNode(val node: swing.Component)
     this.focusable = false
   }
 
-  contents += Swing.HBox(erbtn, node)
   val spacer = swing.Swing.RigidBox(new java.awt.Dimension(15, 0))
   val subBox = Swing.HBox(spacer)
+
+  contents ++= Seq(
+    Swing.HBox(erbtn, node),
+    subBox)
 
 }
