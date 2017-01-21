@@ -22,6 +22,14 @@ object Main extends SimpleSwingApplication {
     tabs.addPage(page)
     if (τ != null) page.goTo(τ)
   }
+
+  /** add a new tab showing object o. o == null allowed*/
+  def newObjectTab(o: api.SkillObject): Unit = {
+    val page = new qq.editor.objects.ObjectPage(file)
+    tabs.addPage(page)
+    if (o != null) page.goTo(new page.View(o))
+  }
+   
   
   private def closeFile: Unit = {
     if (file != null) {
@@ -118,9 +126,10 @@ object Main extends SimpleSwingApplication {
   private val newObjectPageAction = new Action("New Object Page") {
     mnemonic = swing.event.Key.N.id
     override def apply() = {
+      newObjectTab(null)
     }
   }
-  private val newObjectPageMenuItem = new qq.util.TodoMenuItem("New Object Page") //newObjectPageAction)
+  private val newObjectPageMenuItem = new MenuItem(newObjectPageAction)
   private val objectMenu = new Menu("Object") {
     mnemonic = swing.event.Key.O
     onFileChange.strong += { file ⇒
@@ -147,17 +156,21 @@ object Main extends SimpleSwingApplication {
     }
   }
   private val newTypePageMenuItem = new MenuItem(newTypePageAction)
+  private val defaultTypeMenuItems = Seq(
+      newTypePageMenuItem,
+      new qq.util.TodoMenuItem("Profiles")
+      )
   private val typeMenu = new Menu("Type") {
     mnemonic = swing.event.Key.T
     onFileChange.strong += { file ⇒
       contents.clear()
       enabled = file != null
-      if (enabled) contents += newTypePageMenuItem
+      if (enabled) contents ++= defaultTypeMenuItems 
+
     }
     tabs.onPageChanged.strong += { page ⇒
       contents.clear()
-      contents += newTypePageMenuItem
-      contents += new qq.util.TodoMenuItem("Profiles")
+      contents ++= defaultTypeMenuItems
       if (page != null && page.isInstanceOf[qq.editor.Page]) {
         val pageItems = page.asInstanceOf[qq.editor.Page].typeMenuItems
         if (pageItems.length > 0) {
