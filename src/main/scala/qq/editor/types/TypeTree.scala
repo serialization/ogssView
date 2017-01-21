@@ -27,7 +27,9 @@ class TypeTree(val page: qq.editor.types.TypePage)
     }
   }
   val typeTree = new swing.BoxPanel(swing.Orientation.Vertical) {
-    contents ++= page.file.rootTypes.map(new TypeTreeNode(_))
+    /* toSeq keeps the order stable; there's probably some concurrency going on in the
+     * map of sets */
+    contents ++= page.file.rootTypes.toSeq.map(new TypeTreeNode(_))
     contents += swing.Swing.VGlue
   }
   val scrollContainer = new qq.util.VScrollPane() {

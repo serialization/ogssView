@@ -47,7 +47,7 @@ class File(fn0: String) {
   val childTypes: Map[api.Access[_], Seq[api.Access[_]]] =
     s.groupBy(parentType.getOrElse(_, null))
   /** a ∈ rootTypes if ~(∃x)(x = parentType(a)) */
-  val rootTypes: Seq[api.Access[_]] = (for (t ← s if !(parentType contains t)) yield t)
+  val rootTypes: Set[api.Access[_]] = (for (t ← s if !(parentType contains t)) yield t).toSet
   /** baseType(a) = b if b ∈ parentType*(a) ∩ rootTypes */
   def baseType(a: api.Access[_]) = a.asInstanceOf[internal.StoragePool[_, _]].basePool.asInstanceOf[api.Access[_]]
   /** parentType+ */
