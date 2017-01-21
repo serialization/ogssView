@@ -23,19 +23,22 @@ class FieldSettingsEdit(
   /**
    * Enable and disable controls according to their value
    */
-  def endis(x: Any): Unit = {
+  private def endis: Unit = {
     if (fs.prefHide()) fs.prefShow := false
     if (fs.prefShow()) fs.prefHide := false
     showNullEd.enabled = fs.prefShow()
     showInParentEd.enabled = fs.prefShow()
     fixDirEd.enabled = fs.prefShow() && !fs.prefShowInParent()
   }
+  /* variants of endis that take the right parameters (needs to be
+   * referenced from this to stay alive long enough) */
+  private val endisb = (_: Boolean) => endis
 
-  fs.prefHide.onChange.weak += endis
-  fs.prefShow.onChange.weak += endis
-  fs.prefShowNull.onChange.weak += endis
-  fs.prefShowInParent.onChange.weak += endis
-  fs.prefFixedEdgeDirection.onChange.weak += endis
+  fs.prefHide.onChange.weak += endisb
+  fs.prefShow.onChange.weak += endisb
+  fs.prefShowNull.onChange.weak += endisb
+  fs.prefShowInParent.onChange.weak += endisb
+  fs.prefFixedEdgeDirection.onChange.weak += endisb
 
   contents ++= Seq(
       hideEd,
@@ -48,5 +51,5 @@ class FieldSettingsEdit(
         fixDirEd
         )
       ))
-   endis(null)
+   endis
 }
