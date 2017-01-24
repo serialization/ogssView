@@ -54,6 +54,7 @@ object Main extends SimpleSwingApplication {
     override def apply() {
       closeFile
       val fc = new FileChooser()
+      fc.fileFilter = new javax.swing.filechooser.FileNameExtensionFilter("SKilL Files","sf")
       val result = fc.showOpenDialog(null)
       if (result == FileChooser.Result.Approve) {
         file = new File(fc.selectedFile.toString())
@@ -62,6 +63,13 @@ object Main extends SimpleSwingApplication {
         onFileChange.fire(file)
       }
     }
+  }
+  private def save_() {
+    file.deletedObjects.foreach(file.s.delete(_)) 
+    file.s.changePath(java.nio.file.Paths.get(file.fileName + "~"))
+    file.s.flush()
+    file.deletedObjects.clear()
+    file.undoManager.discardAllEdits()
   }
   private val actSave = new Action("Save") {
     accelerator = Some(javax.swing.KeyStroke.getKeyStroke("ctrl S"))
@@ -72,7 +80,7 @@ object Main extends SimpleSwingApplication {
     onFileChange.strong += (_ ⇒ setEnabled)
     onFileChange.strong += (file ⇒ if (file != null) file.onEdit.strong += (_ ⇒ setEnabled))
     override def apply() {
-      /* TODO save file */
+      save_
     }
   }
   private val actSaveAs = new Action("Save As …") {
@@ -207,8 +215,10 @@ object Main extends SimpleSwingApplication {
         "SKilL Editor")
 
     onFileChange.fire(file)
+    size = new java.awt.Dimension(640, 480)
   }
 
+  
   // TODO delete
   file = new File("C:\\Users\\m\\stud\\dt\\testinp\\time.iml.sf")
   undoMenuItem.action = file.undoManager.undoAction

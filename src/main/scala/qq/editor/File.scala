@@ -21,7 +21,7 @@ class File(fn0: String) {
     n + (if (isModified) " + " else "") + " (" + d + ") – SKilL edit"
   }
   /** the skill from fileName */
-  val s: empty.api.SkillFile = empty.api.SkillFile.open(fn0)
+  val s: empty.api.SkillFile = empty.api.SkillFile.open(fn0, api.Read, api.Write)
 
   /** Undo/redo queue of the changes that were applied to the file after it was opened */
   val undoManager = new qq.util.UndoManager()
@@ -34,10 +34,35 @@ class File(fn0: String) {
 
   /**
    * event that fires whenever the file is edited
-   *  TODO parameters of on edit event
    */
-  val onEdit: qq.util.binding.Event[Unit] = new qq.util.binding.Event;
+  val onEdit: qq.util.binding.Event[qq.editor.Edit[_]] = new qq.util.binding.Event;
 
+  /**
+   * Perform an edit and notify the rest of the programme about it
+   */
+  def modify_(e: qq.editor.Edit[_]): Unit = {
+    e.doIt()
+    onEdit.fire(e)
+  }
+  
+  /**
+   * Perform an edit and add it to the undo-queue
+   */
+  def modify(e: qq.editor.UserEdit[_]): Unit = {
+    modify_(e.toEdit)
+    undoManager.addEdit(e)
+    Main.onFileChange.fire(this)
+  }
+  
+  /**
+   * we mark objects as deleted by adding them to a deleted object queue. This
+   * allows us to undelete them in a way such that all other edits in the undo/redo
+   * queue stay valid.
+   * 
+   * The objects are deleted from the skill state before it is saved to file
+   */
+  val deletedObjects: mutable.HashSet[api.SkillObject] = new mutable.HashSet()
+  
   /* some auxiliary functions about types */
 
   /** parentType(a) = b if a is directly derived from b, a ∉ Dom(parentType) if a is a root type */

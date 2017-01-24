@@ -23,12 +23,19 @@ case class Dot() extends Token with Positional
 case class Comma() extends Token with Positional
 case class Semi() extends Token with Positional
 case class Equals() extends Token with Positional
+case class NEquals() extends Token with Positional
+case class LT() extends Token with Positional
+case class LTE() extends Token with Positional
+case class GT() extends Token with Positional
+case class GTE() extends Token with Positional
 case class Pound() extends Token with Positional
 /* keywords */
 case class TypeKwd() extends Token with Positional
 case class DirectTypeKwd() extends Token with Positional
 case class FilterKwd() extends Token with Positional
 case class UnionKwd() extends Token with Positional
+case class TrueKwd() extends Token with Positional
+case class FalseKwd() extends Token with Positional
 
 object Lexer extends RegexParsers {
   override def skipWhitespace = true
@@ -41,18 +48,31 @@ object Lexer extends RegexParsers {
   def ggle: Parser[Ggle] = "\\}".r ^^ { _ ⇒ new Ggle() }
   def paren: Parser[Paren] = "\\(".r ^^ { _ ⇒ new Paren() }
   def thesis: Parser[Thesis] = "\\)".r ^^ { _ ⇒ new Thesis() }
-  def underscore: Parser[Underscore] = "_".r ^^ { _ ⇒ new Underscore() }
+  def underscore: Parser[Underscore] = "_(?![a-zA-Z_\\\\\\P{InBasic_Latin}])".r ^^ { _ ⇒ new Underscore() }
   def dot: Parser[Dot] = "\\.".r ^^ { _ ⇒ new Dot() }
   def comma: Parser[Comma] = ",".r ^^ { _ ⇒ new Comma() }
   def semi: Parser[Semi] = ";".r ^^ { _ ⇒ new Semi() }
   def equals: Parser[Equals] = "=".r ^^ { _ ⇒ new Equals() }
+  def nequals: Parser[NEquals] = "/=".r ^^ { _ ⇒ new NEquals() }
+  def lt: Parser[LT] = "<".r ^^ { _ ⇒ new LT() }
+  def lte: Parser[LTE] = "<=".r ^^ { _ ⇒ new LTE() }
+  def gt: Parser[GT] = ">".r ^^ { _ ⇒ new GT() }
+  def gte: Parser[GTE] = ">=".r ^^ { _ ⇒ new GTE() }
   def pound: Parser[Pound] = "#".r ^^ { _ ⇒ new Pound() }
   def typeKwd: Parser[TypeKwd] = "type".r ^^ { _ ⇒ new TypeKwd() }
   def directTypeKwd: Parser[DirectTypeKwd] = "(?i)directtype".r ^^ { _ ⇒ new DirectTypeKwd() }
   def filterKwd: Parser[FilterKwd] = "(?i)filter".r ^^ { _ ⇒ new FilterKwd() }
   def unionKwd: Parser[UnionKwd] = "(?i)union".r ^^ { _ ⇒ new UnionKwd() }
+  def trueKwd: Parser[TrueKwd] = "(?i)true".r ^^ { _ ⇒ new TrueKwd() }
+  def falseKwd: Parser[FalseKwd] = "(?i)false".r ^^ { _ ⇒ new FalseKwd() }
 
-  def ident: Parser[Ident] = ("\\w+".r ^^ { x ⇒ new Ident(x) }) | ("'[^']+'".r ^^ { x ⇒ new Ident(x.substring(1, x.length - 1)) })
+  private def ucnre = "\\\\u[0-9a-fA-F]{4}|\\\\U[0-9a-fA-F]{8}"
+  def ident: Parser[Ident] = (
+    ("([\\w\\P{InBasic_Latin}&&[\\D]]|" + ucnre + ")(\\w|\\P{InBasic_Latin}|" + ucnre + ")*").r ^^ { x ⇒
+      new Ident(ucnre.r.replaceAllIn(x,
+        { m ⇒ Integer.parseInt(m.matched.substring(2), 16).toChar.toString() }))
+    }) |
+    ("'[^']+'".r ^^ { x ⇒ new Ident(x.substring(1, x.length - 1)) })
   def strLit: Parser[StrLit] = "\"[^\"]*(\"\"[^\"]*)*\"".r ^^ { x ⇒ new StrLit(x.substring(1, x.length - 1).replace("\"\"", "\"")) }
   def intLit: Parser[IntLit] = "[-+]?[0-9]+".r ^^ { x ⇒ new IntLit(x.toInt) }
   def fltLit: Parser[FltLit] = "[-+]?[0-9]+\\.[0-9]+((?i)E[-+]?[0-9]+)?".r ^^ { x ⇒ new FltLit(x.toDouble) }
@@ -62,8 +82,9 @@ object Lexer extends RegexParsers {
   def tokens: Parser[List[Token]] = {
     phrase(rep1(
       braket | bra | ket | squi | ggle | paren | thesis | underscore | dot | comma | semi
-        | equals | typeKwd | directTypeKwd | filterKwd | unionKwd | strLit | fltLit | intLit
-        | variable | objLit | ident)) ^^ (x ⇒ x)
+        | equals | nequals | lte | lt | gte | gt | typeKwd | directTypeKwd | filterKwd
+        | unionKwd | trueKwd | falseKwd | strLit | fltLit | intLit | variable | objLit
+        | ident)) ^^ (x ⇒ x)
   }
 
   def apply(s: String): List[Token] = {

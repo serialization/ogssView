@@ -23,6 +23,8 @@ class ObjectPage(val file: qq.editor.File) extends qq.editor.Page {
       val obj: api.SkillObject,
       /** objects that are explicitly requested to be shown */
       val showAlso: mutable.HashSet[api.SkillObject] = new mutable.HashSet()) {
+    def this(obj0: api.SkillObject, showAlso0: Iterable[api.SkillObject]) =
+      this(obj0, new mutable.HashSet[api.SkillObject]() { this ++= showAlso0})
   }
 
   /** the object that is currently shown */
@@ -49,6 +51,7 @@ class ObjectPage(val file: qq.editor.File) extends qq.editor.Page {
     title = v.obj.toString()
 
     objEdit.contents.clear()
+    objEdit.contents += new ObjectEdit(this, v.obj)
 
     goBack.enabled = previousView.length > 0
     goForward.enabled = nextView.length > 0
@@ -142,7 +145,7 @@ class ObjectPage(val file: qq.editor.File) extends qq.editor.Page {
       peer.setModel(graphVisibleModel)
     },
     scala.swing.Swing.HGlue)
-  val objSearch = new swing.Label("Todo search")
+  val objSearch = new SearchResults(this)
   val objEdit = qq.util.Swing.HBox()
   val objGraph = new swing.Label("Todo graph")
 

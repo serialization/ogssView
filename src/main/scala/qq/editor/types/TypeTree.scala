@@ -7,6 +7,7 @@ import scala.collection.mutable;
 class TypeTree(val page: qq.editor.types.TypePage)
     extends swing.BoxPanel(swing.Orientation.Vertical) {
 
+  /** node control by type for unfold/highlight */
   val nodes: mutable.Map[api.Access[_], TypeTreeNode] = new mutable.HashMap()
 
   class TypeTreeNode(τ: api.Access[_])

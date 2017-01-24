@@ -24,8 +24,8 @@ class FieldSettingsEdit(
    * Enable and disable controls according to their value
    */
   private def endis: Unit = {
-    if (fs.prefHide()) fs.prefShow := false
-    if (fs.prefShow()) fs.prefHide := false
+   // if (fs.prefHide()) fs.prefShow := false
+   // if (fs.prefShow()) fs.prefHide := false
     showNullEd.enabled = fs.prefShow()
     showInParentEd.enabled = fs.prefShow()
     fixDirEd.enabled = fs.prefShow() && !fs.prefShowInParent()

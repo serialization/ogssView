@@ -13,9 +13,11 @@ class ExpandableNode(val node: swing.Component)
   }
 
   private var subPart_ : swing.Component = null
+  private var lazySubPart_ : Unit => swing.Component = null
 
   def subPart: swing.Component = subPart_
   def subPart_=(x: swing.Component): Unit = {
+    lazySubPart_ = null
     subPart_ = x
     subBox.contents.clear
     subBox.contents += spacer
@@ -26,17 +28,39 @@ class ExpandableNode(val node: swing.Component)
     }
     collapse
   }
+  def lazySubPart : Unit => swing.Component = lazySubPart_
+  def lazySubPart_=(x: Unit => swing.Component): Unit = {
+    subPart_ = null
+    lazySubPart_ = x
+    subBox.contents.clear
+    subBox.contents += spacer
+    if (x != null) {
+    } else {
+      erbtn.action = nullAction
+    }
+    collapse
+  }
 
-  def expand(): Unit = {
+
+  
+  
+  final def expand(): Unit = {
+    if (lazySubPart != null) {
+      subPart_ = lazySubPart(())
+      subBox.contents.clear
+      subBox.contents += spacer
+      subBox.contents += subPart 
+    }
     erbtn.action = if (subPart != null) collapseAction else nullAction
     erbtn.text = ""
     subBox.visible = subPart != null
 
   }
-  def collapse(): Unit = {
-    erbtn.action = if (subPart != null) expandAction else nullAction
+  final def collapse(): Unit = {
+    erbtn.action = if (subPart != null || lazySubPart != null) expandAction else nullAction
     erbtn.text = ""
     subBox.visible = false
+    if (lazySubPart != null) subPart_ = null // forget sub pane, recreate later
   }
   val expandAction: swing.Action = new swing.Action("expand") {
     icon = javax.swing.UIManager.getIcon("Tree.collapsedIcon")

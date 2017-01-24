@@ -21,12 +21,27 @@ abstract class Query(
   /** return all variable bindings that satisfy this query */
   def find(): Iterator[Map[String, Any]]
   /** return all variable bindings that extend bound and satisfy this query */
-  def find(bound: Iterator[Map[String, Any]]):  Iterator[Map[String, Any]]
+  def find(bound: Iterator[Map[String, Any]]): Iterator[Map[String, Any]]
 }
 
 object Query {
-  // def parse(x: String): Query = {
+  /* preliminary */
+  def parse(file: qq.editor.File, x: String): Query = {
+    import qq.editor.queries.parser._;
+    val tokens = Lexer(x)
+    if (tokens.size != 1) throw new Exception("ObjId or type name")
+    tokens.head match {
+      case ObjLit(poolName, id) ⇒
+        var pool = file.s(poolName)
+        new IdQuery(file, "'1", pool(id))
+      case Ident(poolName) ⇒
+        var pool = file.s(poolName)
+        new TypeQuery(file, "'1", pool)
+      case _ ⇒
+        throw new Exception("ObjId or type name ")
 
-  //}
+    }
+
+  }
 
 }

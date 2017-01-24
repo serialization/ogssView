@@ -28,16 +28,18 @@ abstract class EditControl[T](val property: Property[T]) extends swing.Component
    * set property to the value of the editor (i.e. ::editValue). Nop unless ::isModified, exception unless ::isValid.
    */
   def componentToProperty(): Unit = {
-    editValue() match {
-      case Right(x) ⇒
-        val old = property()
-        if (x != old) {
-          property := x
-          if (property.owner.undoManager != null) {
-            property.owner.undoManager.addEdit(new PropertyModifyEdit(property, old, x))
+    property.synchronized {
+      editValue() match {
+        case Right(x) ⇒
+          val old = property()
+          if (x != old) {
+            property := x
+            if (property.owner.undoManager != null) {
+              property.owner.undoManager.addEdit(new PropertyModifyEdit(property, old, x))
+            }
           }
-        }
-      case Left(es) ⇒ throw new IllegalStateException("can not update " + property.name + " because: " + es.mkString(", "))
+        case Left(es) ⇒ throw new IllegalStateException("can not update " + property.name + " because: " + es.mkString(", "))
+      }
     }
   }
 
