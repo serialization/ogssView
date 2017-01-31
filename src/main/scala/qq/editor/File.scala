@@ -20,7 +20,7 @@ class File(fn0: String) {
     val (d, n) = pathAndName
     n + (if (isModified) " + " else "") + " (" + d + ") – SKilL edit"
   }
-  /** the skill from fileName */
+  /** the SKilL state from fileName */
   val s: empty.api.SkillFile = empty.api.SkillFile.open(fn0, api.Read, api.Write)
 
   /** Undo/redo queue of the changes that were applied to the file after it was opened */
@@ -46,12 +46,13 @@ class File(fn0: String) {
   }
   
   /**
-   * Perform an edit and add it to the undo-queue
+   * Perform an edit, add it to the undo-queue, and notify the rest of the programme about it
    */
   def modify(e: qq.editor.UserEdit[_]): Unit = {
-    modify_(e.toEdit)
+    val e2 =  e.toEdit
+    e2.doIt()
     undoManager.addEdit(e)
-    Main.onFileChange.fire(this)
+    onEdit.fire(e2)
   }
   
   /**
@@ -84,6 +85,28 @@ class File(fn0: String) {
       Nil
     }
   }
+  
+  def objOfId[T <: B, B <: api.SkillObject](pool: api.Access[T], id: Int): api.SkillObject = {
+    val bp = pool.asInstanceOf[internal.StoragePool[T,B]].basePool
+    var o = bp(id - 1)
+    if (s(o.getTypeName) == pool || superTypes(s(o.getTypeName)).contains(pool)) {
+      o
+    } else {
+      throw new Exception("invalid object ID: $pool#$id")
+    }
+  }
+  
+  def objOfId(x: String): api.SkillObject = {
+    import qq.editor.queries.parser._;
+    val tokens = Lexer(x)    
+    if (tokens.size != 1) throw new Exception("format error, expected format type#number")
+    tokens.head match {
+      case ObjLit(pn,id) =>
+        objOfId(s(pn), id)
+      case _ => throw new Exception("format error, expected format type#number")
+    }
+  }
+  
   /* type and field settings */
   val typeSettings: Map[api.Access[_], TypeSettings[_]] =
     (for (t ← s) yield (t, new TypeSettings(t, this))).toMap

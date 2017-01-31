@@ -33,7 +33,7 @@ object Query {
     tokens.head match {
       case ObjLit(poolName, id) ⇒
         var pool = file.s(poolName)
-        new IdQuery(file, "'1", pool(id))
+        new IdQuery(file, "'1", file.objOfId(pool, id))
       case Ident(poolName) ⇒
         var pool = file.s(poolName)
         new TypeQuery(file, "'1", pool)

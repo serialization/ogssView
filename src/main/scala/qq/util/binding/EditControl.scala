@@ -34,7 +34,7 @@ abstract class EditControl[T](val property: Property[T]) extends swing.Component
           val old = property()
           if (x != old) {
             property := x
-            if (property.owner.undoManager != null) {
+            if (property.owner != null && property.owner.undoManager != null) {
               property.owner.undoManager.addEdit(new PropertyModifyEdit(property, old, x))
             }
           }

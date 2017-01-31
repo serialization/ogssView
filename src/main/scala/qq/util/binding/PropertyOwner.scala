@@ -2,6 +2,9 @@ package qq.util.binding
 
 import scala.collection.mutable;
 
+/**
+ * May be used for settings pages, I think. Mostly useless for skill field editors
+ */
 trait PropertyOwner {
   private def propertyOwner = this
   

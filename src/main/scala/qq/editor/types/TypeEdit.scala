@@ -12,26 +12,38 @@ class TypeEdit(val page: qq.editor.types.TypePage,
               val skillType: api.Access[_],
               val field: api.FieldDeclaration[_])
       extends qq.util.ExpandableNode({
-        var typename = qq.util.Swing.HBox(
+        /* constants need a = value part */
+        val constantValuePart = field.t match {
+          case internal.fieldTypes.ConstantI8(i)  ⇒ " = " + i
+          case internal.fieldTypes.ConstantI16(i) ⇒ " = " + i
+          case internal.fieldTypes.ConstantI32(i) ⇒ " = " + i
+          case internal.fieldTypes.ConstantI64(i) ⇒ " = " + i
+          case _                                  ⇒ "" /* non-constants don't */
+        }
+        /* main part is type and name; FieldTypeControl makes user types in the type clickable */
+        var typeAndName = qq.util.Swing.HBox(
           new FieldTypeControl(page, field.t),
-          new swing.Label(" " + field.name),
+          new swing.Label(" " + field.name + constantValuePart),
           swing.Swing.HGlue)
+        /* when there are field restrictions, make a vbox with restrictions followed by type and name */
         var f2 = field.asInstanceOf[internal.FieldDeclaration[_, _]]
         if (f2.restrictions.size == 0) {
-          typename
+          typeAndName
         } else {
-          qq.util.Swing.VBox(
-            qq.util.Swing.HBox(
-              new swing.Label(f2.restrictions.map { x ⇒
-                /* non-null has no nice toString */
-                if (x.isInstanceOf[internal.restrictions.NonNull[_]]) {
-                  "@NonNull"
-                } else {
-                  "@" + x.toString
-                }
-              }.mkString(", ")),
-              swing.Swing.HGlue),
-            typename)
+          new swing.BoxPanel(swing.Orientation.Vertical) {
+            contents ++= f2.restrictions.map { x ⇒
+              qq.util.Swing.HBox(
+                new swing.Label(
+                  /* non-null has no nice toString */
+                  if (x.isInstanceOf[internal.restrictions.NonNull[_]]) {
+                    "@NonNull"
+                  } else {
+                    "@" + x.toString
+                  }),
+                swing.Swing.HGlue)
+            }
+            contents += typeAndName
+          }
         }
       },
         new FieldSettingsEdit(page.file, skillType, field)) {
@@ -56,7 +68,28 @@ class TypeEdit(val page: qq.editor.types.TypePage,
         }
       }
     }
+    contents += qq.util.Swing.HBox(
+      new swing.Label("@TODO type restrictions") { foreground = java.awt.Color.red },
+      swing.Swing.HGlue)
+    page.file.parentType.get(skillType) match {
+      case Some(parentType) ⇒
+        contents += qq.util.Swing.HBox(
+          new TypeNameControl(page, skillType),
+          new swing.Label(" : "),
+          new TypeNameControl(page, parentType),
+          new swing.Label(" {"),
+          swing.Swing.HGlue)
+      case None ⇒
+        contents += qq.util.Swing.HBox(
+          new TypeNameControl(page, skillType),
+          new swing.Label(" {"),
+          swing.Swing.HGlue)
+    }
     addFieldsOfType(skillType)
+    contents += qq.util.Swing.HBox(
+      new swing.Label("}"),
+      swing.Swing.HGlue)
+
   }
 
   contents = inner

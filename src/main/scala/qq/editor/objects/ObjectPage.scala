@@ -57,6 +57,11 @@ class ObjectPage(val file: qq.editor.File) extends qq.editor.Page {
     goForward.enabled = nextView.length > 0
   }
 
+  /** run a query (will open first object found) */
+  def find(q: String): Unit = {
+    objSearch.queryText := q
+    objSearch.searchAction()
+  }
   /** show a type and update navigation */
   def goTo(v: View): Unit = {
     nextView.clear()
@@ -65,7 +70,7 @@ class ObjectPage(val file: qq.editor.File) extends qq.editor.Page {
   }
   /** show previously shown type */
   val goBack = new swing.Action("Back") {
-    accelerator = Some(javax.swing.KeyStroke.getKeyStroke("ctrl B"))
+    accelerator = Some(javax.swing.KeyStroke.getKeyStroke("alt LEFT"))
     mnemonic = swing.event.Key.B.id
     icon = new qq.icons.BackIcon(true)
     smallIcon = new qq.icons.BackIcon(true, true)
@@ -80,7 +85,7 @@ class ObjectPage(val file: qq.editor.File) extends qq.editor.Page {
   }
   /** show next type */
   val goForward = new swing.Action("Forward") {
-    accelerator = Some(javax.swing.KeyStroke.getKeyStroke("ctrl F"))
+    accelerator = Some(javax.swing.KeyStroke.getKeyStroke("alt RIGHT"))
     mnemonic = swing.event.Key.F.id
     icon = new qq.icons.ForwardIcon(true)
     smallIcon = new qq.icons.ForwardIcon(true, true)
@@ -108,6 +113,15 @@ class ObjectPage(val file: qq.editor.File) extends qq.editor.Page {
       updateVisibility
     }
   }
+  
+val showTypeOfThisObject = new swing.Action("Show Type of Current Object") {
+    accelerator = Some(javax.swing.KeyStroke.getKeyStroke("ctrl T"))
+    mnemonic = swing.event.Key.T.id
+    override def apply() = {
+      qq.editor.Main.newTypeTab(file.s(currentView.obj.getTypeName))
+    }  
+  }  
+  
   /* menu entries for the main window */
   override def viewMenuItems = Seq(
     new swing.MenuItem(goBack),
@@ -121,9 +135,9 @@ class ObjectPage(val file: qq.editor.File) extends qq.editor.Page {
       peer.setModel(graphVisibleModel)
     })
   override def typeMenuItems = Seq(
-    new qq.util.TodoMenuItem("Go to Parent"))
+    new swing.MenuItem(showTypeOfThisObject))
   override def objectMenuItems = Seq(
-    new qq.util.TodoMenuItem("Show Objects of Current Type"))
+    new qq.util.TodoMenuItem("…"))
   /* the layout */
   val toolBar = qq.util.Swing.HBox(
     new swing.Button(goBack) {

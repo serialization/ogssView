@@ -12,7 +12,6 @@ class FieldTypeControl(val page: TypePage, val fieldType: api.FieldType[_])
   contents ++=
     (fieldType.asInstanceOf[fieldTypes.FieldType[_]] match {
       case u: fieldTypes.UserType[_] ⇒ Seq(new TypeNameControl(page, u))
-      // case c: fieldTypes.SingleBaseTypeContainer[_, T] ⇒ o.get(field).asInstanceOf[Iterable[T]].size == 0
       case c: fieldTypes.ListType[_] ⇒ Seq(
         new swing.Label("list<"),
         new FieldTypeControl(page, c.groundType),
@@ -33,12 +32,6 @@ class FieldTypeControl(val page: TypePage, val fieldType: api.FieldType[_])
         new swing.Label(", "),
         new FieldTypeControl(page, m.valueType),
         new swing.Label(">"))
-      //    case fieldTypes.ConstantI8(_)                    ⇒ true
-      //    case fieldTypes.ConstantI16(_)                   ⇒ true
-      //    case fieldTypes.ConstantI32(_)                   ⇒ true
-      //    case fieldTypes.ConstantI64(_)                   ⇒ true
-      //     case fieldTypes.ConstantV64(_)                   ⇒ true
-      //      case _: fieldTypes.AnnotationType                ⇒ 
       case _ ⇒ Seq(new swing.Label(fieldType.toString()))
     })
     peer.setMaximumSize(peer.getMinimumSize)

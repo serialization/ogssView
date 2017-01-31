@@ -2,8 +2,12 @@ package qq.util.binding
 /**
  * Unlabled edit control for everything that can be converted to text and back.
  */
-class TextEdit[T](p: Property[T], val fromString: String => T)
+class TextEdit[T](p: Property[T], val fromString: String => T, val ntoString: T => String)
     extends EditControl[T](p) with swing.Container.Wrapper with swing.SequentialContainer.Wrapper {
+  
+  def this(p: Property[T], fromString0: String => T) =
+    this(p, fromString0, _.toString())
+  
   override lazy val peer = {
     val p = new javax.swing.JPanel with SuperMixin
     val l = new javax.swing.BoxLayout(p, swing.Orientation.Vertical.id)
@@ -11,7 +15,7 @@ class TextEdit[T](p: Property[T], val fromString: String => T)
     p
   }
 
-  val tf = new swing.TextField(property().toString()) {
+  val tf = new swing.TextField(ntoString(property())) {
      peer.setMaximumSize(new java.awt.Dimension(Integer.MAX_VALUE, peer.getPreferredSize().height));    
   }
   tf.action = swing.Action("") { editValue.doOnChange(editValue()) }
@@ -19,7 +23,7 @@ class TextEdit[T](p: Property[T], val fromString: String => T)
   contents += tf
 
   def propertyToComponent(x: T): Unit = {
-    val asString = x.toString()
+    val asString = ntoString(x)
     if (tf.text != asString) {
       tf.text = asString
       editValue.doOnChange(Right(x))

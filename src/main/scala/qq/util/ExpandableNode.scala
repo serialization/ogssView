@@ -11,6 +11,11 @@ class ExpandableNode(val node: swing.Component)
     subPart = subPart0
     if (expanded) expand
   }
+  
+  /** sub class may override in order to react when the thing is collapsed */
+  def onCollapse(): Unit = {}
+  /** sub class may override in order to react when the thing is expanded */
+  def onExpand(): Unit = {}
 
   private var subPart_ : swing.Component = null
   private var lazySubPart_ : Unit => swing.Component = null
@@ -54,21 +59,22 @@ class ExpandableNode(val node: swing.Component)
     erbtn.action = if (subPart != null) collapseAction else nullAction
     erbtn.text = ""
     subBox.visible = subPart != null
-
+    onExpand
   }
   final def collapse(): Unit = {
     erbtn.action = if (subPart != null || lazySubPart != null) expandAction else nullAction
     erbtn.text = ""
     subBox.visible = false
     if (lazySubPart != null) subPart_ = null // forget sub pane, recreate later
+    onCollapse
   }
-  val expandAction: swing.Action = new swing.Action("expand") {
+  private val expandAction: swing.Action = new swing.Action("expand") {
     icon = javax.swing.UIManager.getIcon("Tree.collapsedIcon")
     override def apply(): Unit = {
       expand
     }
   }
-  val collapseAction: swing.Action = new swing.Action("collapse") {
+  private val collapseAction: swing.Action = new swing.Action("collapse") {
     icon = javax.swing.UIManager.getIcon("Tree.expandedIcon")
     override def apply(): Unit = {
       collapse
@@ -81,8 +87,8 @@ class ExpandableNode(val node: swing.Component)
     this.focusable = false
   }
 
-  val spacer = swing.Swing.RigidBox(new java.awt.Dimension(15, 0))
-  val subBox = Swing.HBox(spacer)
+  private val spacer = swing.Swing.RigidBox(new java.awt.Dimension(15, 0))
+  private val subBox = Swing.HBox(spacer)
 
   contents ++= Seq(
     Swing.HBox(erbtn, node),

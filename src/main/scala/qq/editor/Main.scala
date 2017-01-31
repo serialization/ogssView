@@ -23,6 +23,12 @@ object Main extends SimpleSwingApplication {
     if (τ != null) page.goTo(τ)
   }
 
+  /** add a new tab for showing objects*/
+  def newObjectTab(): Unit = {
+    val page = new qq.editor.objects.ObjectPage(file)
+    tabs.addPage(page)
+  }
+
   /** add a new tab showing object o. o == null allowed*/
   def newObjectTab(o: api.SkillObject): Unit = {
     val page = new qq.editor.objects.ObjectPage(file)
@@ -30,6 +36,13 @@ object Main extends SimpleSwingApplication {
     if (o != null) page.goTo(new page.View(o))
   }
    
+  /** add a new tab showing all objects of type τ */
+  def newObjectTab(τ: api.Access[_]): Unit = {
+    val page = new qq.editor.objects.ObjectPage(file)
+    tabs.addPage(page)
+    if (τ != null) page.find(s"'${τ.name}'")
+  }
+ 
   
   private def closeFile: Unit = {
     if (file != null) {
@@ -134,7 +147,7 @@ object Main extends SimpleSwingApplication {
   private val newObjectPageAction = new Action("New Object Page") {
     mnemonic = swing.event.Key.N.id
     override def apply() = {
-      newObjectTab(null)
+      newObjectTab()
     }
   }
   private val newObjectPageMenuItem = new MenuItem(newObjectPageAction)
@@ -208,11 +221,13 @@ object Main extends SimpleSwingApplication {
     menuBar = menu
     contents = tabs
 
-    onFileChange.strong += (file ⇒
+    private def updateTitle(file: File) = {
       title = if (file != null)
         file.windowTitle
       else
-        "SKilL Editor")
+        "SKilL Editor"} 
+    onFileChange.strong += updateTitle
+    onFileChange.strong += (file => if (file != null) file.onEdit.strong +=  (_ => updateTitle(file)))
 
     onFileChange.fire(file)
     size = new java.awt.Dimension(640, 480)

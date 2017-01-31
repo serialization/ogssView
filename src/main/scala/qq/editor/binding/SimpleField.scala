@@ -1,6 +1,7 @@
 package qq.editor.binding
 
 import de.ust.skill.common.scala.api;
+import de.ust.skill.common.scala.internal;
 
 class SimpleField[O <: api.SkillObject, F](
     owner0: qq.util.binding.PropertyOwner,
@@ -8,27 +9,29 @@ class SimpleField[O <: api.SkillObject, F](
     val pool: api.Access[O],
     val obj: O,
     val field: api.FieldDeclaration[F])
-    extends qq.util.binding.Property[F](owner0, field.name + " of " + obj, obj.get(field))  {
+    extends qq.util.binding.Property[F](owner0, field.name, obj.get(field))  {
 
   
   /* TODO restrictions */
-
-  def onEdit(x: qq.editor.Edit[_]): Unit = {
+  
+  if (field.t.isInstanceOf[internal.fieldTypes.UserType[_]]) {  
+    restrictions += qq.util.binding.Restriction(
+        {(x: F) => val t = file.s(x.asInstanceOf[api.SkillObject].getTypeName)
+          t == field.t || file.superTypes(t).contains(field.t)}, "object must have type "+field.t+" or sub-type" )
+  }
+  private val fileEditHandler : (qq.editor.Edit[_] => Unit) = {x =>
     if (x.obj == obj && x.isInstanceOf[qq.editor.SimpleFieldEdit[_, _]]) {
       val y = x.asInstanceOf[qq.editor.SimpleFieldEdit[O, F]]
       if (y.field == field) {
-    println("onEdit" + y.newValue + " ("+ y.oldValue + ")")
-    
-        this := y.newValue
+        this.assignUnchecked(y.newValue)
       }
     }
   }
-  file.onEdit.weak += onEdit
+  file.onEdit.weak += fileEditHandler
   
-  def onSelfChange(x: F): Unit = {
-    println("onSelfChange" + x)
+  private def selfChangeHandler(x: F): Unit = {
     new qq.editor.UserSimpleFieldEdit(file, pool, obj, field, x)
   }
-  onChange.strong += onSelfChange
+  onChange.strong += selfChangeHandler
   
 }

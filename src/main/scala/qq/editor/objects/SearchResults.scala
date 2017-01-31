@@ -42,6 +42,14 @@ class SearchResults(val page: ObjectPage)
         resultsRetrieved = new mutable.ArrayBuffer()
         displayOffset = 0
         showPage
+        if (resultsRetrieved.size > 0) {
+          // open first result automatically
+          resultsTable.peer.setRowSelectionInterval(0, 0)
+        }
+        if (resultsRetrieved.size == 1) {
+          page.searchVisibleModel.setSelected(false)
+          page.updateVisibility
+        }
       } catch {
         case e: Exception ⇒
           val text = e.getMessage

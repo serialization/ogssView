@@ -18,6 +18,10 @@ class Event[T] {
      * register @c handler as handler for this event via a weak pointer. Use when the event
      * will outlive the consumer. Make sure to keep strong reference to the handler somewhere;
      * this precludes use of anonymous functions.
+     * 
+     * A def seems not to qualify as strong reference, unfortunately. Probably there's
+     * something going on with patching in the this parameter or whatever, so it's best
+     * do declare weak event handlers as val with function type.
      */
     def +=(handler: T ⇒ Unit) = weakHandlers += handler -> (())
     /**
