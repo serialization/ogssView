@@ -83,6 +83,10 @@ object Main extends SimpleSwingApplication {
     file.s.flush()
     file.deletedObjects.clear()
     file.undoManager.discardAllEdits()
+    /* there's no undo/redo after discardAllEdits, but the buttons are somehow not updated*/
+    file.undoManager.undoAction.enabled = false
+    file.undoManager.redoAction.enabled = false
+    file.onModifiednessChange.fire(file.isModified)
   }
   private val actSave = new Action("Save") {
     accelerator = Some(javax.swing.KeyStroke.getKeyStroke("ctrl S"))
@@ -227,7 +231,7 @@ object Main extends SimpleSwingApplication {
       else
         "SKilL Editor"} 
     onFileChange.strong += updateTitle
-    onFileChange.strong += (file => if (file != null) file.onEdit.strong +=  (_ => updateTitle(file)))
+    onFileChange.strong += (file => if (file != null) file.onModifiednessChange.strong +=  (_ => updateTitle(file)))
 
     onFileChange.fire(file)
     size = new java.awt.Dimension(640, 480)

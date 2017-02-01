@@ -11,7 +11,9 @@ class Event[T] {
    */
   def fire(value: T) = {
     strongHandlers.foreach(_(value))
-    weakHandlers.keys.foreach(_(value))
+    /* make a copy of the current handlers; they may want to add other handlers :)*/
+    val wh = weakHandlers.keys.toSeq
+    wh.foreach(_(value))
   }
   object weak {
     /**

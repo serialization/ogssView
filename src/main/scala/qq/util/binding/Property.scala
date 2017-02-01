@@ -12,7 +12,7 @@ class Property[T](val owner: PropertyOwner, val name: String, var value: T)
     onChange.strong += (_ ⇒ owner.doOnAnyPropertyChange)
   }
 
-  val description: String = name
+  var description: String = name
   def apply(): T = this.synchronized { value }
   /**
    * Set the value of the property to \c newValue. \throws RestrictionException when

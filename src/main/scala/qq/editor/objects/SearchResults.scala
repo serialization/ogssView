@@ -67,16 +67,23 @@ class SearchResults(val page: ObjectPage)
       resultsRetrieved
         .drop(displayOffset)
         .take(pageLength)
-        .map { x ⇒ x.values.toArray }.toArray,
+        .map { x ⇒
+          x.values.map { x ⇒
+            if (x.isInstanceOf[api.SkillObject])
+              x.asInstanceOf[api.SkillObject].prettyString
+            else
+              x
+          }.toArray
+        }.toArray,
       query.variables) {
-    //  model = new javax.swing.table.DefaultTableModel() {
-    //    override def isCellEditable(row: Int, col: Int) = false
-    //  }
+      //  model = new javax.swing.table.DefaultTableModel() {
+      //    override def isCellEditable(row: Int, col: Int) = false
+      //  }
     }
     listenTo(resultsTable.selection)
 
     resultsPart.contents.clear()
-    resultsPart.contents += resultsTable
+    resultsPart.contents += new swing.ScrollPane(resultsTable)
 
   }
 
@@ -85,9 +92,9 @@ class SearchResults(val page: ObjectPage)
       val i = source.selection.rows.leadIndex
       if (i >= 0) {
         val row = resultsRetrieved(displayOffset + i)
-        .values
-        .filter(_.isInstanceOf[api.SkillObject])
-        .map(_.asInstanceOf[api.SkillObject])
+          .values
+          .filter(_.isInstanceOf[api.SkillObject])
+          .map(_.asInstanceOf[api.SkillObject])
         page.goTo(new page.View(row.head, row.drop(1)))
       }
   }

@@ -31,6 +31,8 @@ class File(fn0: String) {
     /* TODO either we clear the undo queue when saving, or we need to add a dummy save event */
     undoManager.canUndo()
   }
+  /** event that fires when the value of modified changes, proabably a lot more often */
+  val onModifiednessChange: qq.util.binding.Event[Boolean] = new qq.util.binding.Event()
 
   /**
    * event that fires whenever the file is edited
@@ -43,6 +45,7 @@ class File(fn0: String) {
   def modify_(e: qq.editor.Edit[_]): Unit = {
     e.doIt()
     onEdit.fire(e)
+    onModifiednessChange.fire(isModified)
   }
   
   /**
@@ -53,6 +56,7 @@ class File(fn0: String) {
     e2.doIt()
     undoManager.addEdit(e)
     onEdit.fire(e2)
+    onModifiednessChange.fire(isModified)
   }
   
   /**

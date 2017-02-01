@@ -11,6 +11,7 @@ class SimpleField[O <: api.SkillObject, F](
     val field: api.FieldDeclaration[F])
     extends qq.util.binding.Property[F](owner0, field.name, obj.get(field))  {
 
+  description = s"${field.name} in ${obj.prettyString}"
   
   /* TODO restrictions */
   

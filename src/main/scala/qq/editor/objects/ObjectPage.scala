@@ -51,7 +51,7 @@ class ObjectPage(val file: qq.editor.File) extends qq.editor.Page {
     title = v.obj.toString()
 
     objEdit.contents.clear()
-    objEdit.contents += new ObjectEdit(this, v.obj)
+    objEdit.contents += new TopObjectEdit(this, v.obj)
 
     goBack.enabled = previousView.length > 0
     goForward.enabled = nextView.length > 0

@@ -5,8 +5,8 @@ import java.awt._
 
 class RemoveListItemIcon(val rollover: Boolean = false)
     extends Icon {
-  def getIconWidth = 16
-  def getIconHeight = 16
+  def getIconWidth = 9
+  def getIconHeight = 9
   def paintIcon(c: java.awt.Component, g: Graphics, x: Int, y: Int): Unit = {
     val gg = g.asInstanceOf[Graphics2D]
     val prevs = gg.getStroke
@@ -22,8 +22,8 @@ class RemoveListItemIcon(val rollover: Boolean = false)
 }
 class AddListItemIcon(val rollover: Boolean = false)
     extends Icon {
-  def getIconWidth = 16
-  def getIconHeight = 16
+  def getIconWidth = 9
+  def getIconHeight = 9
   def paintIcon(c: java.awt.Component, g: Graphics, x: Int, y: Int): Unit = {
     val gg = g.asInstanceOf[Graphics2D]
     val prevs = gg.getStroke

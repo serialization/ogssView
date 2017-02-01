@@ -1,19 +1,21 @@
 package qq.editor.objects
 
 import de.ust.skill.common.scala.api;
+import scala.collection.mutable.Buffer;
 
-class IndexedContainerEdit[C <: scala.collection.mutable.ArrayBuffer[_], O <: api.SkillObject](
+class IndexedContainerEdit[E, C[E] <: Buffer[E], O <: api.SkillObject](
   val page: ObjectPage,
   val pool: api.Access[O],
   val obj: O,
-  val field: api.FieldDeclaration[C])
+  val field: api.FieldDeclaration[C[E]],
+  val getNewElement: (() ⇒ E) = null,
+  val canResize: Boolean = true)
     extends swing.BoxPanel(swing.Orientation.Vertical) {
 
   private var firstIndex = 0
   private val pageSize = 10 // TODO preferences
 
-
-    /** label showing field name */
+  /** label showing field name */
   private val nameLbl = new swing.Label(field.name)
 
   /** label showing number of elements when collapsed*/
@@ -27,41 +29,69 @@ class IndexedContainerEdit[C <: scala.collection.mutable.ArrayBuffer[_], O <: ap
       val n = obj.get(field).size
       if (firstIndex + pageSize < n) {
         firstIndex += pageSize
-        updateHeadValues(null)
+        updateHeadValues
+        refillLower
       }
     }
   }
   private val pgUpAct = new swing.Action("Previous Page") {
     icon = new qq.icons.BackIcon(true, true)
-     override def apply() {
+    override def apply() {
       val n = obj.get(field).size
       if (firstIndex > 0) {
         firstIndex -= pageSize min firstIndex
-        updateHeadValues(null)
+        updateHeadValues
+        refillLower
       }
     }
   }
-  
+
   private val pgUpBtn = new qq.util.PlainButton(pgUpAct) {
     text = ""
+    this.disabledIcon = new qq.icons.BackIcon(false, true)
   }
   private val pgDnBtn = new qq.util.PlainButton(pgDnAct) {
     text = ""
+    this.disabledIcon = new qq.icons.ForwardIcon(false, true)
   }
 
-
-  private val updateHeadValues: (qq.editor.Edit[_] ⇒ Unit) = { _ ⇒
+  /** update number of elements and current position in header */
+  private def updateHeadValues(): Unit = {
     val n = obj.get(field).size
     countLbl.text = "" + n + " elements"
     shownLbl.text = "" + firstIndex + " to " + ((firstIndex + pageSize - 1) min (n - 1)) + " of " + n
     pgUpAct.enabled = firstIndex > 0
-    pgDnAct.enabled = firstIndex + pageSize < n
+    pgDnAct.enabled = firstIndex + pageSize < n /* when length is variable there is also a last line for appending, but we will make the page too long when necessary instead of moving it to a separate page */
   }
 
-  page.file.onEdit.weak += updateHeadValues
+  private val fileEditHandler: (qq.editor.Edit[_] ⇒ Unit) = { e ⇒
+    if (e.obj == obj) {
+      e match {
+        case e: qq.editor.IndexedContainerEdit[E, C[E], O] ⇒
+          if (e.field == field) {
+            e match {
+              case e: qq.editor.IndexedContainerInsert[E, C[E], O] ⇒
+                updateHeadValues
+                if (e.index < firstIndex + pageSize) {
+                  refillLower
+                }
+              case e: qq.editor.IndexedContainerRemove[E, C[E], O] ⇒
+                updateHeadValues
+                if (e.index < firstIndex + pageSize) {
+                  refillLower
+                }
+              case _ ⇒ ()
+            }
+          }
+        case _ ⇒ ()
+      }
+    }
+  }
+
+  page.file.onEdit.weak += fileEditHandler
 
   private val head = qq.util.Swing.HBox()
-  
+
   private def switchHeadStyle(expanded: Boolean) = {
     head.contents.clear()
     head.contents ++= Seq(nameLbl, swing.Swing.HGlue)
@@ -72,14 +102,58 @@ class IndexedContainerEdit[C <: scala.collection.mutable.ArrayBuffer[_], O <: ap
     }
   }
   private val en = new qq.util.ExpandableNode(head) {
-    override def onCollapse() = {switchHeadStyle(false)}
-    override def onExpand() = {switchHeadStyle(true)}
+    override def onCollapse() = { switchHeadStyle(false) }
+    override def onExpand() = { switchHeadStyle(true) }
   }
- 
-  en.subPart = new swing.Label("dummy")
+
+  private val lowerPart = new swing.BoxPanel(swing.Orientation.Vertical)
+  private def refillLower(): Unit = {
+    lowerPart.contents.clear()
+    lowerPart.contents ++= firstIndex.until((firstIndex + pageSize) min obj.get(field).size).map { i ⇒
+      val fed = new IndexedFieldEdit(page, pool, obj, field, i)
+      if (canResize) {
+        val aa = new swing.Action("add") {
+          icon = new qq.icons.AddListItemIcon(true)
+          override def apply() {
+            new qq.editor.UserIndexedContainerInsert(page.file, pool, obj, field, i, getNewElement())
+          }
+        }
+        val ra = new swing.Action("remove") {
+          icon = new qq.icons.RemoveListItemIcon(true)
+          override def apply() {
+            new qq.editor.UserIndexedContainerRemove[O, C[E], E](page.file, pool, obj, field, i)
+          }
+        }
+        qq.util.Swing.HBox(0.0f,
+          fed,
+          new qq.util.PlainButton(ra) { text = "" },
+          new qq.util.PlainButton(aa) { text = "" })
+      } else {
+        fed
+      }
+    }
+    if (canResize && firstIndex + pageSize >= obj.get(field).size) {
+      /* add a row for inserting at the end; if the fields end at a page break,
+       * the last page will be too long (due to this append line), but that's,
+       * I think, less bad then having the append-line on its own page */
+      val aa = new swing.Action("add") {
+        icon = new qq.icons.AddListItemIcon(true)
+        override def apply() {
+          new qq.editor.UserIndexedContainerInsert(page.file, pool, obj, field, obj.get(field).size, getNewElement())
+        }
+      }
+      lowerPart.contents += qq.util.Swing.HBox(0.0f,
+        new swing.Label(s"end of ${field.name}"),
+        swing.Swing.HGlue,
+        new qq.util.PlainButton(aa) { text = "" })
+    }
+
+  }
+  en.subPart = lowerPart
   contents += en
-  
-  updateHeadValues(null)
-  en.collapse()  
-  
+
+  updateHeadValues
+  refillLower
+  en.collapse
+
 }
