@@ -110,7 +110,11 @@ class File(fn0: String) {
       case _ => throw new Exception("format error, expected format type#number")
     }
   }
-  
+
+  /** field definition and type that it belongs to for each field name */
+  val fieldsByName: Map[String, Seq[Tuple2[api.Access[_], api.FieldDeclaration[_]]]] =
+    (for (t <- s; f <- t.fields) yield (f.name, (t, f))).groupBy(_._1).mapValues(_.map(_._2))
+    
   /* type and field settings */
   val typeSettings: Map[api.Access[_], TypeSettings[_]] =
     (for (t ← s) yield (t, new TypeSettings(t, this))).toMap

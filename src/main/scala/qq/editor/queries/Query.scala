@@ -21,7 +21,13 @@ abstract class Query(
   /** return all variable bindings that satisfy this query */
   def find(): Iterator[Map[String, Any]]
   /** return all variable bindings that extend bound and satisfy this query */
-  def find(bound: Iterator[Map[String, Any]]): Iterator[Map[String, Any]]
+  def find(assignment: Map[String, Any]): Iterator[Map[String, Any]]
+  /** return a tuple (a,b) where a is an estimate of the run-time and b of the size of the results of find */
+  def costSizeEstimate(): Tuple2[Double, Double]
+  /** return a tuple (a,b) where a is an estimate of the run-time and b of the size of the results of find which extend a binding that binds the given variables */
+  def costSizeEstimate(assigned: Seq[String]): Tuple2[Double, Double]
+  /** prepare for find(a), i.e. do things you don't want to do for ecery element */
+  def prepare(assigned: Seq[String]): Unit
 }
 
 object Query {
