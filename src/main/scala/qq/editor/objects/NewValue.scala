@@ -9,9 +9,10 @@ import de.ust.skill.common.scala.internal.fieldTypes._;
 object NewValue {
   def default[T](τ: api.FieldType[T]): T = {
     τ.asInstanceOf[FieldType[T]] match {
-      case BoolType                   ⇒ false.asInstanceOf[T]
-      case I8 | I16 | I32 | I64 | V64 ⇒ 0.asInstanceOf[T]
-      case F32 | F64                  ⇒ 0.0.asInstanceOf[T]
+      case BoolType       ⇒ false.asInstanceOf[T]
+      case I64 | V64      ⇒ 0L.asInstanceOf[T]
+      case I8 | I16 | I32 ⇒ 0.asInstanceOf[T]
+      case F32 | F64      ⇒ 0.0.asInstanceOf[T]
       case _: AnnotationType | _: UserType[_] ⇒
         null.asInstanceOf[T]
       case _: StringType ⇒ "".asInstanceOf[T]
