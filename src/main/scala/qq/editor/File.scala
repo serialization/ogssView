@@ -68,20 +68,35 @@ class File(fn0: String) {
    */
   val deletedObjects: mutable.HashSet[api.SkillObject] = new mutable.HashSet()
   
+  /**
+   * created objects do not have a SkillId; we give them temporary negative ones;
+   * item 0 hast ID -1 and so on
+   */
+  val createdObjects: mutable.ListBuffer[api.SkillObject] = new mutable.ListBuffer()
+  val createdObjectId: mutable.HashMap[api.SkillObject, Int] = new mutable.HashMap()
+  def registerCreatedObject(o: api.SkillObject): Unit = {
+    createdObjects.synchronized {
+      val id = -1 - createdObjects.size
+      createdObjects += o
+      createdObjectId(o) = id
+    }
+  }
+  
+  
   /* some auxiliary functions about types */
 
   /** parentType(a) = b if a is directly derived from b, a ∉ Dom(parentType) if a is a root type */
-  val parentType: Map[api.Access[_], api.Access[_]] =
+  val parentType: Map[api.Access[_ <: api.SkillObject], api.Access[_ <: api.SkillObject]] =
     (for (t ← s; sn ← t.superName) yield (t, s(sn).asInstanceOf[api.Access[_ <: api.SkillObject]])).toMap
   /** a ∈ childTypes(b) if a is directly derived from b */
-  val childTypes: Map[api.Access[_], Seq[api.Access[_]]] =
+  val childTypes: Map[api.Access[_ <: api.SkillObject], Seq[api.Access[_ <: api.SkillObject]]] =
     s.groupBy(parentType.getOrElse(_, null))
   /** a ∈ rootTypes if ~(∃x)(x = parentType(a)) */
-  val rootTypes: Set[api.Access[_]] = (for (t ← s if !(parentType contains t)) yield t).toSet
+  val rootTypes: Set[api.Access[_ <: api.SkillObject]] = (for (t ← s if !(parentType contains t)) yield t).toSet
   /** baseType(a) = b if b ∈ parentType*(a) ∩ rootTypes */
-  def baseType(a: api.Access[_]) = a.asInstanceOf[internal.StoragePool[_, _]].basePool.asInstanceOf[api.Access[_]]
+  def baseType(a: api.Access[_ <: api.SkillObject]) = a.asInstanceOf[internal.StoragePool[_, _]].basePool.asInstanceOf[api.Access[_]]
   /** parentType+ */
-  def superTypes(a: api.Access[_]): List[api.Access[_]] = {
+  def superTypes(a: api.Access[_ <: api.SkillObject]): List[api.Access[_ <: api.SkillObject]] = {
     if (parentType.contains(a)) {
       val p = parentType(a)
       p :: superTypes(p)
@@ -91,8 +106,14 @@ class File(fn0: String) {
   }
   
   def objOfId[T <: B, B <: api.SkillObject](pool: api.Access[T], id: Int): api.SkillObject = {
-    val bp = pool.asInstanceOf[internal.StoragePool[T,B]].basePool
-    var o = bp(id - 1)
+    var o = if (id > 0) {
+      val bp = pool.asInstanceOf[internal.StoragePool[T,B]].basePool
+      bp(id - 1)
+    } else if (id < 0) {
+      createdObjects(-1 - id)
+    } else {
+      throw new Exception("invalid object ID: $pool#$id")
+    }
     if (s(o.getTypeName) == pool || superTypes(s(o.getTypeName)).contains(pool)) {
       o
     } else {
@@ -101,6 +122,7 @@ class File(fn0: String) {
   }
   
   def objOfId(x: String): api.SkillObject = {
+    if (x.trim().equals("null")) return null
     import qq.editor.queries.parser._;
     val tokens = Lexer(x)    
     if (tokens.size != 1) throw new Exception("format error, expected format type#number")
@@ -111,6 +133,15 @@ class File(fn0: String) {
     }
   }
 
+  def idOfObj(o: api.SkillObject): String = { 
+    if (o == null) {
+      "null"
+    } else if (de.ust.skill.common.scala.hacks.GetSkillId(o) == -1) {
+      s"${o.getTypeName}#${createdObjectId(o)}"
+    } else {
+      o.prettyString
+    }
+  }
   /** field definition and type that it belongs to for each field name */
   val fieldsByName: Map[String, Seq[Tuple2[api.Access[_], api.FieldDeclaration[_]]]] =
     (for (t <- s; f <- t.fields) yield (f.name, (t, f))).groupBy(_._1).mapValues(_.map(_._2))

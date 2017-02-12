@@ -10,7 +10,7 @@ class TypeTree(val page: qq.editor.types.TypePage)
   /** node control by type for unfold/highlight */
   val nodes: mutable.Map[api.Access[_], TypeTreeNode] = new mutable.HashMap()
 
-  class TypeTreeNode(τ: api.Access[_])
+  class TypeTreeNode(τ: api.Access[_ <: api.SkillObject])
       extends qq.util.ExpandableNode(
         qq.util.Swing.HBox(
           new TypeNameControl(page, τ),
@@ -37,7 +37,7 @@ class TypeTree(val page: qq.editor.types.TypePage)
     contents = typeTree
   }
 
-  def select(τ: api.Access[_]): Unit = {
+  def select(τ: api.Access[_ <: api.SkillObject]): Unit = {
     /* expand all parents */
     for (x <- page.file.superTypes(τ)) nodes(x).expand
     

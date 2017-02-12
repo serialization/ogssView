@@ -18,8 +18,8 @@ class FieldEdit[F, O <: api.SkillObject](
       val p = new qq.editor.binding.SimpleField(null, page.file, pool, obj, field)
       val ed = new qq.util.binding.LabeledEdit(
         new qq.util.binding.TextEdit(p.asInstanceOf[qq.util.binding.Property[api.SkillObject]],
-          (x: String) ⇒ if (x == "") null else page.file.objOfId(x),
-          (x: api.SkillObject) ⇒ if (x == null) "" else x.prettyString))
+          page.file.objOfId(_),
+          (x: api.SkillObject) ⇒  page.file.idOfObj(x)))
       val en = new qq.util.ExpandableNode(ed) {
         lazySubPart = { x ⇒ new ObjectEdit(page, p.asInstanceOf[qq.util.binding.Property[api.SkillObject]]()) }
       }

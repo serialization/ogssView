@@ -17,7 +17,7 @@ object Main extends SimpleSwingApplication {
   private val tabs = new qq.util.TabbedPane()
 
   /** add a new tab showing type τ. τ == null allowed*/
-  def newTypeTab(τ: api.Access[_]): Unit = {
+  def newTypeTab(τ: api.Access[_ <: api.SkillObject]): Unit = {
     val page = new qq.editor.types.TypePage(file)
     tabs.addPage(page)
     if (τ != null) page.goTo(τ)

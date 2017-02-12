@@ -70,7 +70,7 @@ class SearchResults(val page: ObjectPage)
         .map { x ⇒
           x.values.map { x ⇒
             if (x.isInstanceOf[api.SkillObject])
-              x.asInstanceOf[api.SkillObject].prettyString
+              page.file.idOfObj(x.asInstanceOf[api.SkillObject])
             else
               x
           }.toArray

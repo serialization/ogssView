@@ -48,7 +48,7 @@ class ObjectPage(val file: qq.editor.File) extends qq.editor.Page {
   /** show an object (internal, for goTo, goBack, goForward) */
   private def _goTo(v: View): Unit = {
     currentView = v
-    title = v.obj.toString()
+    title = file.idOfObj(v.obj)
 
     objEdit.contents.clear()
     objEdit.contents += new TopObjectEdit(this, v.obj)

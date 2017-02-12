@@ -5,11 +5,13 @@ import de.ust.skill.common.scala.api;
 /** ?x type identifier */
 class TypeQuery(val file0: qq.editor.File,
                 val variable: String,
-                val pool: api.Access[_]) extends Query(file0) {
+                val pool: api.Access[_ <: api.SkillObject]) extends Query(file0) {
 
   override def variables = Seq(variable)
   override def find() = {
-    for (o ← pool.all) yield Map(variable -> o)
+    for (
+      o ← pool.all if !file.deletedObjects.contains(o)
+    ) yield Map(variable -> o)
   }
   override def prepare(assigned: Seq[String]) = ()
   override def find(assigment: Map[String, Any]) = {

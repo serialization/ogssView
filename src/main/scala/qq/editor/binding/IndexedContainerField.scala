@@ -12,7 +12,7 @@ class IndexedContainerField[O <: api.SkillObject, C[F] <: Buffer[F], F](
   val index: Int)
     extends qq.util.binding.Property[F](owner0, index.toString(), obj.get(field)(index)) {
 
-  description = s"element $index of ${field.name} in ${obj.prettyString}"  
+  description = s"element $index of ${field.name} in ${file.idOfObj(obj)}"  
   /* TODO restrictions */
 
   /**

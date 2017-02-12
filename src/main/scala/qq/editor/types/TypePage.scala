@@ -20,16 +20,16 @@ class TypePage(val file: qq.editor.File) extends qq.editor.Page {
   val graphVisibleModel = new javax.swing.JToggleButton.ToggleButtonModel()
 
   /** the type that is currently shown */
-  var currentType: api.Access[_] = null
+  var currentType: api.Access[_ <: api.SkillObject] = null
 
   /** previously shown types (for back navigation) */
-  val previousType: mutable.Stack[api.Access[_]] = new mutable.Stack()
+  val previousType: mutable.Stack[api.Access[_ <: api.SkillObject]] = new mutable.Stack()
 
   /** previously previously shown types :) (for forward navigation) */
-  val nextType: mutable.Stack[api.Access[_]] = new mutable.Stack()
+  val nextType: mutable.Stack[api.Access[_ <: api.SkillObject]] = new mutable.Stack()
 
   /** show a type (internal, for goTo, goBack, goForward) */
-  private def _goTo(t: api.Access[_]): Unit = {
+  private def _goTo(t: api.Access[_ <: api.SkillObject]): Unit = {
     currentType = t
     title = t.name
     typeEdit.contents.clear()
@@ -37,10 +37,12 @@ class TypePage(val file: qq.editor.File) extends qq.editor.Page {
     typeTree.select(t)
     goBack.enabled = previousType.length > 0
     goForward.enabled = nextType.length > 0
+    newObjectOfThisType.enabled = true
+    showObjectsOfThisType.enabled = true
   }
 
   /** show a type and update navigation */
-  def goTo(t: api.Access[_]): Unit = {
+  def goTo(t: api.Access[_ <: api.SkillObject]): Unit = {
     nextType.clear()
     if (currentType != null && t != currentType) previousType.push(currentType)
     _goTo(t)
@@ -94,11 +96,23 @@ class TypePage(val file: qq.editor.File) extends qq.editor.Page {
   val showObjectsOfThisType = new swing.Action("Show Objects of Current Type") {
     accelerator = Some(javax.swing.KeyStroke.getKeyStroke("ctrl F"))
     mnemonic = swing.event.Key.O.id
+    enabled = false
     override def apply() = {
       qq.editor.Main.newObjectTab(currentType)
     }  
   }
 
+  val newObjectOfThisType = new swing.Action("Create new Object of Current Type") {
+    accelerator = Some(javax.swing.KeyStroke.getKeyStroke("ctrl N"))
+    mnemonic = swing.event.Key.N.id
+    enabled = false
+    override def apply() = {
+      val c = new qq.editor.UserCreateObject(file, currentType)
+      qq.editor.Main.newObjectTab(c.obj)
+    }  
+  }
+  
+  
   val gotoParentType = new swing.Action("Go to Parent Type") {
     accelerator = Some(javax.swing.KeyStroke.getKeyStroke("ctrl P"))
     mnemonic = swing.event.Key.P.id
@@ -125,7 +139,8 @@ class TypePage(val file: qq.editor.File) extends qq.editor.Page {
   override def typeMenuItems = Seq(
     new swing.MenuItem(gotoParentType))
   override def objectMenuItems = Seq(
-    new swing.MenuItem(showObjectsOfThisType))
+    new swing.MenuItem(showObjectsOfThisType),
+    new swing.MenuItem(newObjectOfThisType))
   /* the layout */
   val toolBar = qq.util.Swing.HBox(
     new swing.Button(goBack) {

@@ -17,7 +17,7 @@ case class SimpleFieldEdge[T](
   val to = from.get(field)
   
   override def hashCode = 17 + 31 * java.util.Objects.hash(from, field) + to.hashCode()
-  override def equals(that: Object) = that match {
+  override def equals(that: Any) = that match {
     case that: SimpleFieldEdge[T] =>
       from == that.from && field == that.field && to == that.to
     case _ => false

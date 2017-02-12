@@ -27,7 +27,13 @@ class Graph(
   def energy: Float = nodes.values.map(_.energy).sum
   
   def resetAccumulators: Unit = nodes.values.foreach(_.resetAccumulators)
-  def calculateForce: Unit = nodes.values.foreach(_.calculateForce)
+  def calculateForce(overlapAvoidance: Float): Unit = {
+    val nvis = nodes.values.toIndexedSeq
+    for (i <- 0 until nvis.size;
+         j <- i until nvis.size) {
+      nvis(i).calculateForce(nvis(j), overlapAvoidance)
+    }
+  }
   def move(maxDist: Float): Unit = {
     nodes.values.foreach(_.move(maxDist))
     rigidSubgraphs.foreach(_.move(maxDist))

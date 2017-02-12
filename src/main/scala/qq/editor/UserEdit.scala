@@ -45,14 +45,15 @@ final case class UserCreateObject[T <: api.SkillObject](
   override def undo = {
     file.modify_(new DeleteObject(file, pool, obj))
   }
-  override def getPresentationName = s"created new object ${obj.prettyString}"
-  override def getRedoPresentationName = s"create new object ${obj.prettyString}"
-  override def getUndoPresentationName = s"remove new object ${obj.prettyString}"
+  override def getPresentationName = s"created new object ${file.idOfObj(obj)}"
+  override def getRedoPresentationName = s"create new object ${file.idOfObj(obj)}"
+  override def getUndoPresentationName = s"remove new object ${file.idOfObj(obj)}"
   override def isSignificant = true
   override def die() = {}
 
   override def toEdit = new CreateObject(file, pool, obj)
 
+  file.registerCreatedObject(obj)
   file.modify(this)
 }
 
@@ -77,9 +78,9 @@ final case class UserDeleteObject[T <: api.SkillObject](
   override def undo = {
     file.modify_(new CreateObject(file, pool, obj))
   }
-  override def getPresentationName = s"deleted object ${obj.prettyString}"
-  override def getRedoPresentationName = s"delete object ${obj.prettyString}"
-  override def getUndoPresentationName = s"undelete object ${obj.prettyString}"
+  override def getPresentationName = s"deleted object ${file.idOfObj(obj)}"
+  override def getRedoPresentationName = s"delete object ${file.idOfObj(obj)}"
+  override def getUndoPresentationName = s"undelete object ${file.idOfObj(obj)}"
   override def isSignificant = true
   override def die() = {}
 
@@ -116,9 +117,9 @@ final case class UserSimpleFieldEdit[T <: api.SkillObject, F](
   override def undo = {
     file.modify_(new SimpleFieldEdit(file, pool, obj, field, newValue, oldValue))
   }
-  override def getPresentationName = s"changed ${field.name} of ${obj.prettyString} from $oldValue to $newValue"
-  override def getRedoPresentationName = s"change ${field.name} of ${obj.prettyString} from $oldValue to $newValue"
-  override def getUndoPresentationName = s"change ${field.name} of ${obj.prettyString} from $newValue back to $oldValue"
+  override def getPresentationName = s"changed ${field.name} of ${file.idOfObj(obj)} from $oldValue to $newValue"
+  override def getRedoPresentationName = s"change ${field.name} of ${file.idOfObj(obj)} from $oldValue to $newValue"
+  override def getUndoPresentationName = s"change ${field.name} of ${file.idOfObj(obj)} from $newValue back to $oldValue"
   override def isSignificant = true
   override def die() = {}
 
@@ -171,9 +172,9 @@ final case class UserIndexedContainerInsert[T <: api.SkillObject, C <: Buffer[F]
   override def undo = {
     file.modify_(new IndexedContainerRemove(file, pool, obj, field, index, value))
   }
-  override def getPresentationName = s"inserted $value into ${field.name} of ${obj.prettyString} at index $index"
-  override def getRedoPresentationName = s"insert $value into ${field.name} of ${obj.prettyString} at index $index"
-  override def getUndoPresentationName = s"remove $value from ${field.name} of ${obj.prettyString} at index $index"
+  override def getPresentationName = s"inserted $value into ${field.name} of ${file.idOfObj(obj)} at index $index"
+  override def getRedoPresentationName = s"insert $value into ${field.name} of ${file.idOfObj(obj)} at index $index"
+  override def getUndoPresentationName = s"remove $value from ${field.name} of ${file.idOfObj(obj)} at index $index"
   override def isSignificant = true
   override def die() = {}
 
@@ -210,9 +211,9 @@ final case class UserIndexedContainerRemove[T <: api.SkillObject, C <: Buffer[F]
   override def undo = {
     file.modify_(new IndexedContainerInsert(file, pool, obj, field, index, oldValue))
   }
-  override def getPresentationName = s"remove $oldValue from ${field.name} of ${obj.prettyString} at index $index"
-  override def getRedoPresentationName = s"remove $oldValue from ${field.name} of ${obj.prettyString} at index $index"
-  override def getUndoPresentationName = s"re-insert $oldValue into ${field.name} of ${obj.prettyString} at index $index"
+  override def getPresentationName = s"remove $oldValue from ${field.name} of ${file.idOfObj(obj)} at index $index"
+  override def getRedoPresentationName = s"remove $oldValue from ${field.name} of ${file.idOfObj(obj)} at index $index"
+  override def getUndoPresentationName = s"re-insert $oldValue into ${field.name} of ${file.idOfObj(obj)} at index $index"
   override def isSignificant = true
   override def die() = {}
 
@@ -251,9 +252,9 @@ final case class UserIndexedContainerModify[T <: api.SkillObject, C <: Buffer[F]
   override def undo = {
     file.modify_(new IndexedContainerModify(file, pool, obj, field, index, newValue, oldValue))
   }
-  override def getPresentationName = s"changed ${field.name}($index) of ${obj.prettyString} from $oldValue to $newValue"
-  override def getRedoPresentationName = s"change ${field.name}($index) of ${obj.prettyString} from $oldValue to $newValue"
-  override def getUndoPresentationName = s"change ${field.name}($index) of ${obj.prettyString} from $newValue back to $oldValue"
+  override def getPresentationName = s"changed ${field.name}($index) of ${file.idOfObj(obj)} from $oldValue to $newValue"
+  override def getRedoPresentationName = s"change ${field.name}($index) of ${file.idOfObj(obj)} from $oldValue to $newValue"
+  override def getUndoPresentationName = s"change ${field.name}($index) of ${file.idOfObj(obj)} from $newValue back to $oldValue"
   override def isSignificant = true
   override def die() = {}
 

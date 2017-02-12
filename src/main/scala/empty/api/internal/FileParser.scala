@@ -9,6 +9,7 @@ import java.nio.file.Path
 
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.mutable.HashMap
+import scala.collection.mutable.WeakHashMap
 import scala.collection.mutable.HashSet
 
 import de.ust.skill.common.jvm.streams.MappedInStream
@@ -32,19 +33,26 @@ import _root_.empty.api.SkillFile
  */
 object FileParser extends SkillFileParser[SkillFile] {
 
+  //mr: hack for keeping restrictions accessible (should go to storage pool, but …)
+  val typeRestrictions: WeakHashMap[StoragePool[_, _], HashSet[TypeRestriction]] = WeakHashMap()
+
   // TODO we can make this faster using a hash map (for large type systems)
   def newPool(
     typeId: Int,
     name: String,
     superPool: StoragePool[_ <: SkillObject, _ <: SkillObject],
     rest: HashSet[TypeRestriction]): StoragePool[_ <: SkillObject, _ <: SkillObject] = {
-    name match {
+    val result: StoragePool[_ <: SkillObject, _ <: SkillObject] = name match {
       case _ ⇒
         if (null == superPool)
           new UnknownBasePool(name, typeId)
         else
           superPool.makeSubPool(name, typeId)
     }
+    println(name + " " + rest)
+    //mr: hack for keeping restrictions accessible (should go to storage pool, but …)
+    typeRestrictions(result) = rest
+    result
   }
 
   def makeState(path: Path,

@@ -9,7 +9,10 @@ class DirectTypeQuery(val file0: qq.editor.File,
 
   override def variables = Seq(variable)
   override def find() = {
-    for (o ← pool.asInstanceOf[internal.StoragePool[_, _]].staticInstances) yield Map(variable -> o)
+    for (
+      o ← pool.asInstanceOf[internal.StoragePool[_ <: api.SkillObject, _ <: api.SkillObject]].staticInstances
+      if !file.deletedObjects.contains(o)
+    ) yield Map(variable -> o)
   }
   override def prepare(assigned: Seq[String]) = ()
   override def find(assigment: Map[String, Any]) = {

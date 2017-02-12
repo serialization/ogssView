@@ -60,12 +60,13 @@ class Node(val graph: Graph,
       val δ2 = {val δ2 = δ - (toBorder(δ) + r.toBorder(-δ)) * overlapRemoval
         if (δ2 * δ < 0) δ.max(p.ε()) else δ2 }
       val F = if (connectedTo(r)) {
-        δ.norm  * p.c1() * math.log(δ2.abs / l)
+        δ.norm  * p.c1() * math.log(δ2.abs / l).toFloat
       } else {
-        δ.norm * p.c3() / δ2 / δ2
+        δ.norm * p.c3() / (δ2 * δ2)
       }
 
-      val F = u *
+      force += F
+      energy += F * F
 
     }
   }

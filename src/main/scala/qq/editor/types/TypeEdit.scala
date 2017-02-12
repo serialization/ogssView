@@ -5,11 +5,11 @@ import de.ust.skill.common.scala.internal;
 
 /** show the fields of one type and edit their profile settings. */
 class TypeEdit(val page: qq.editor.types.TypePage,
-               val skillType: api.Access[_]) extends qq.util.VScrollPane {
+               val skillType: api.Access[_ <: api.SkillObject]) extends qq.util.VScrollPane {
 
   /** displays one field. the field properties can be shown and hidden */
   class Field(val page: qq.editor.types.TypePage,
-              val skillType: api.Access[_],
+              val skillType: api.Access[_ <: api.SkillObject],
               val field: api.FieldDeclaration[_])
       extends qq.util.ExpandableNode({
         /* constants need a = value part */
@@ -50,7 +50,7 @@ class TypeEdit(val page: qq.editor.types.TypePage,
   }
 
   private val inner = new swing.BoxPanel(swing.Orientation.Vertical) {
-    def addFieldsOfType(τ: api.Access[_]): Unit = {
+    def addFieldsOfType(τ: api.Access[_ <: api.SkillObject]): Unit = {
       if (page.file.parentType.contains(τ)) {
         addFieldsOfType(page.file.parentType(τ))
       }
@@ -68,9 +68,14 @@ class TypeEdit(val page: qq.editor.types.TypePage,
         }
       }
     }
-    contents += qq.util.Swing.HBox(
-      new swing.Label("@TODO type restrictions") { foreground = java.awt.Color.red },
-      swing.Swing.HGlue)
+    for (
+      rs ← empty.api.internal.FileParser.typeRestrictions.get(skillType.asInstanceOf[de.ust.skill.common.scala.internal.StoragePool[_,_]]);
+      r ← rs
+    ) {
+      contents += qq.util.Swing.HBox(
+        new swing.Label("@" + r.toString()) { foreground = java.awt.Color.red },
+        swing.Swing.HGlue)
+    }
     page.file.parentType.get(skillType) match {
       case Some(parentType) ⇒
         contents += qq.util.Swing.HBox(

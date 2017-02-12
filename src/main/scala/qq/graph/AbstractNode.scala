@@ -11,7 +11,7 @@ case class SkillObjectNode(val skillObject: api.SkillObject)
     extends AbstractNode() {
   
   override def hashCode = skillObject.hashCode()
-  override def equals(that: Object) = that match {
+  override def equals(that: Any) = that match {
     case that: SkillObjectNode => that.skillObject == skillObject
     case _ => false
   }
@@ -20,5 +20,5 @@ case class SkillObjectNode(val skillObject: api.SkillObject)
 case class NullNode()
 extends AbstractNode() {
   /** all null nodes are different */
-  override def equals(that: Object) = this == that
+  override def equals(that: Any) = this == that
 }
