@@ -54,6 +54,14 @@ final case class UserCreateObject[T <: api.SkillObject](
   override def toEdit = new CreateObject(file, pool, obj)
 
   file.registerCreatedObject(obj)
+  /* initialise fields */
+  private def fieldInitialisation[T](f: api.FieldDeclaration[T]): Unit = {
+    obj.set(f, qq.editor.objects.NewValue.default(f.t))
+  }
+  for(f <- p.allFields if ! f.isInstanceOf[internal.fieldTypes.ConstantInteger[_]]) {
+    fieldInitialisation(f)
+  }
+  
   file.modify(this)
 }
 
