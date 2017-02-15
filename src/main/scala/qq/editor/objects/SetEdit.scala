@@ -2,15 +2,14 @@ package qq.editor.objects
 
 import de.ust.skill.common.scala.api;
 import de.ust.skill.common.scala.internal.fieldTypes.SingleBaseTypeContainer;
-import scala.collection.mutable.Buffer;
+import scala.collection.mutable.HashSet;
 
-class IndexedContainerEdit[E, C[E] <: Buffer[E], O <: api.SkillObject](
+class SetEdit[E, C[E] <: HashSet[E], O <: api.SkillObject](
   val page: ObjectPage,
   val pool: api.Access[O],
   val obj: O,
   val field: api.FieldDeclaration[C[E]],
-  val getNewElement: (() ⇒ E) = null,
-  val canResize: Boolean = true)
+  val getNewElement: (() ⇒ E) = null)
     extends swing.BoxPanel(swing.Orientation.Vertical) {
 
   private var firstIndex = 0
@@ -68,19 +67,15 @@ class IndexedContainerEdit[E, C[E] <: Buffer[E], O <: api.SkillObject](
   private val fileEditHandler: (qq.editor.Edit[_] ⇒ Unit) = { e ⇒
     if (e.obj == obj) {
       e match {
-        case e: qq.editor.IndexedContainerEdit[E, C[E], O] ⇒
+        case e: qq.editor.SetEdit[E, C[E], O] ⇒
           if (e.field == field) {
             e match {
-              case e: qq.editor.IndexedContainerInsert[E, C[E], O] ⇒
+              case e: qq.editor.SetInsert[E, C[E], O] ⇒
                 updateHeadValues
-                if (e.index < firstIndex + pageSize) {
-                  refillLower
-                }
-              case e: qq.editor.IndexedContainerRemove[E, C[E], O] ⇒
+                refillLower
+              case e: qq.editor.SetRemove[E, C[E], O] ⇒
                 updateHeadValues
-                if (e.index < firstIndex + pageSize) {
-                  refillLower
-                }
+                refillLower
               case _ ⇒ ()
             }
           }
@@ -110,47 +105,36 @@ class IndexedContainerEdit[E, C[E] <: Buffer[E], O <: api.SkillObject](
   private val lowerPart = new swing.BoxPanel(swing.Orientation.Vertical)
   private def refillLower(): Unit = {
     lowerPart.contents.clear()
-    lowerPart.contents ++= firstIndex.until((firstIndex + pageSize) min obj.get(field).size).map { i ⇒
+    lowerPart.contents ++= obj.get(field).toSeq.sortBy(x => if (x == null) "null" else x.toString).drop(firstIndex).take(pageSize).map { key ⇒
+      val fprop = new qq.editor.binding.SetContainerField(null, page.file, pool, obj, field, key)
       val fed = new ElementFieldEdit(
-          page,
-          field.t.asInstanceOf[SingleBaseTypeContainer[_,_]].groundType,
-          new qq.editor.binding.IndexedContainerField(null, page.file, pool, obj, field, i))
-      if (canResize) {
-        val aa = new swing.Action("add") {
-          icon = new qq.icons.AddListItemIcon(true)
-          override def apply() {
-            new qq.editor.UserIndexedContainerInsert(page.file, pool, obj, field, i, getNewElement())
-          }
+        page,
+        field.t.asInstanceOf[SingleBaseTypeContainer[_, _]].groundType,
+        fprop)
+      val ra = new swing.Action("remove") {
+        icon = new qq.icons.RemoveListItemIcon(true)
+        override def apply() {
+          new qq.editor.UserSetRemove[O, C[E], E](page.file, pool, obj, field, fprop())
         }
-        val ra = new swing.Action("remove") {
-          icon = new qq.icons.RemoveListItemIcon(true)
-          override def apply() {
-            new qq.editor.UserIndexedContainerRemove[O, C[E], E](page.file, pool, obj, field, i)
-          }
-        }
-        qq.util.Swing.HBox(0.0f,
-          fed,
-          new qq.util.PlainButton(ra) { text = "" },
-          new qq.util.PlainButton(aa) { text = "" })
-      } else {
-        fed
       }
+      qq.util.Swing.HBox(0.0f,
+        fed,
+        new qq.util.PlainButton(ra) { text = "" })
     }
-    if (canResize && firstIndex + pageSize >= obj.get(field).size) {
-      /* add a row for inserting at the end; if the fields end at a page break,
+    /* add a row for inserting at the end; if the fields end at a page break,
        * the last page will be too long (due to this append line), but that's,
        * I think, less bad then having the append-line on its own page */
-      val aa = new swing.Action("add") {
-        icon = new qq.icons.AddListItemIcon(true)
-        override def apply() {
-          new qq.editor.UserIndexedContainerInsert(page.file, pool, obj, field, obj.get(field).size, getNewElement())
-        }
+    val aa = new swing.Action("add") {
+      icon = new qq.icons.AddListItemIcon(true)
+      override def apply() {
+        // TODO user select new element
+        new qq.editor.UserSetInsert(page.file, pool, obj, field, getNewElement())
       }
-      lowerPart.contents += qq.util.Swing.HBox(0.0f,
-        new swing.Label(s"end of ${field.name}"),
-        swing.Swing.HGlue,
-        new qq.util.PlainButton(aa) { text = "" })
     }
+    lowerPart.contents += qq.util.Swing.HBox(0.0f,
+      new swing.Label(s"end of ${field.name}"),
+      swing.Swing.HGlue,
+      new qq.util.PlainButton(aa) { text = "" })
 
   }
   en.subPart = lowerPart

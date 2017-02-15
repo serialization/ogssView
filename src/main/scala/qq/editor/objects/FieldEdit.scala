@@ -4,6 +4,7 @@ import de.ust.skill.common.scala.api;
 import de.ust.skill.common.scala.internal;
 import de.ust.skill.common.scala.internal.fieldTypes._;
 import scala.collection.mutable.Buffer
+import scala.collection.mutable.HashSet
 
 class FieldEdit[F, O <: api.SkillObject](
   val page: ObjectPage,
@@ -33,7 +34,10 @@ class FieldEdit[F, O <: api.SkillObject](
       contents += new IndexedContainerEdit(page, pool, obj,
         field.asInstanceOf[api.FieldDeclaration[Buffer[f]]],
         () ⇒ NewValue.default(c.groundType))
-    case c: SetType[_] ⇒ contents += new swing.Label("Todo")
+    case c: SetType[e] ⇒ 
+      contents += new SetEdit(page, pool, obj,
+        field.asInstanceOf[api.FieldDeclaration[HashSet[e]]],
+        () ⇒ NewValue.default(c.groundType)) // TODO user select      
     case c: ConstantLengthArray[f] ⇒
       contents += new IndexedContainerEdit(page, pool, obj,
         field.asInstanceOf[api.FieldDeclaration[Buffer[f]]],

@@ -15,7 +15,7 @@ class SetContainerField[O <: api.SkillObject, C[F] <: HashSet[F], F](
   var key_ = key
   /* TODO restrictions */
 
-  this.restrictions += qq.util.binding.Restriction(x => !obj.get(field).contains(x), "New value is already contained in set")
+  this.restrictions += qq.util.binding.Restriction(x => x == this() || !obj.get(field).contains(x), "New value is already contained in set")
   
   /**
    * when obj.get(field)(index) is the last element and is removed, this object
@@ -34,6 +34,7 @@ class SetContainerField[O <: api.SkillObject, C[F] <: HashSet[F], F](
             }
           case mod: qq.editor.SetReplace[O, C[F], F] ⇒
             if (mod.key == key_) {
+              println(s"repl $key_ ${mod.replacement}")
               key_ = mod.replacement
               this.assignUnchecked(mod.replacement)
             }
@@ -45,7 +46,8 @@ class SetContainerField[O <: api.SkillObject, C[F] <: HashSet[F], F](
   file.onEdit.weak += fileEditHandler
 
   private def selfChangeHandler(x: F): Unit = {
-    new qq.editor.UserSetReplace(file, pool, obj, field, key_, x)
+              println(s"sch $key_ $x")
+    if (key_ != x) new qq.editor.UserSetReplace(file, pool, obj, field, key_, x)
   }
   onChange.strong += selfChangeHandler
 
