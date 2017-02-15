@@ -69,11 +69,11 @@ class FieldSettings[T, U <: api.SkillObject](
         case c: fieldTypes.SingleBaseTypeContainer[_, T] ⇒ ShowAsNodeVisibility
         case m: fieldTypes.MapType[_, _]                 ⇒ ShowAsNodeVisibility
         case s: fieldTypes.StringType                    ⇒ ShowAsNodeVisibility
-        case fieldTypes.ConstantI8(_)                    ⇒ ShowInParentVisibility
-        case fieldTypes.ConstantI16(_)                   ⇒ ShowInParentVisibility
-        case fieldTypes.ConstantI32(_)                   ⇒ ShowInParentVisibility
-        case fieldTypes.ConstantI64(_)                   ⇒ ShowInParentVisibility
-        case fieldTypes.ConstantV64(_)                   ⇒ ShowInParentVisibility
+        case fieldTypes.ConstantI8(_)                    ⇒ HideVisibility
+        case fieldTypes.ConstantI16(_)                   ⇒ HideVisibility
+        case fieldTypes.ConstantI32(_)                   ⇒ HideVisibility
+        case fieldTypes.ConstantI64(_)                   ⇒ HideVisibility
+        case fieldTypes.ConstantV64(_)                   ⇒ HideVisibility
         case fieldTypes.BoolType                         ⇒ ShowInParentVisibility
         case _: fieldTypes.AnnotationType                ⇒ ShowAsNodeVisibility
         case fieldTypes.F32                              ⇒ ShowInParentVisibility

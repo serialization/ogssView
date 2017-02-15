@@ -8,7 +8,8 @@ import scala.swing;
  * A page displaying data about a type, with an optional type tree for naviagation on the
  * left and an option graph representation on the right
  */
-class TypePage(val file: qq.editor.File) extends qq.editor.Page {
+class TypePage(file0: qq.editor.File, settings0: qq.editor.Settings)
+    extends qq.editor.Page(file0, settings0) {
 
   /** types tree visible*/
   def treeVisible: Boolean = treeVisibleModel.isSelected()
@@ -90,16 +91,16 @@ class TypePage(val file: qq.editor.File) extends qq.editor.Page {
     mnemonic = swing.event.Key.G.id
     override def apply() = {
       updateVisibility
-    }  
+    }
   }
-  
+
   val showObjectsOfThisType = new swing.Action("Show Objects of Current Type") {
     accelerator = Some(javax.swing.KeyStroke.getKeyStroke("ctrl F"))
     mnemonic = swing.event.Key.O.id
     enabled = false
     override def apply() = {
       qq.editor.Main.newObjectTab(currentType)
-    }  
+    }
   }
 
   val newObjectOfThisType = new swing.Action("Create new Object of Current Type") {
@@ -109,21 +110,20 @@ class TypePage(val file: qq.editor.File) extends qq.editor.Page {
     override def apply() = {
       val c = new qq.editor.UserCreateObject(file, currentType)
       qq.editor.Main.newObjectTab(c.obj)
-    }  
+    }
   }
-  
-  
+
   val gotoParentType = new swing.Action("Go to Parent Type") {
     accelerator = Some(javax.swing.KeyStroke.getKeyStroke("ctrl P"))
     mnemonic = swing.event.Key.P.id
     override def apply() = {
       file.parentType.get(currentType) match {
-        case Some(τ) => goTo(τ)
-        case None => ()
+        case Some(τ) ⇒ goTo(τ)
+        case None    ⇒ ()
       }
-    }  
+    }
   }
-   
+
   /* menu entries for the main window */
   override def viewMenuItems = Seq(
     new swing.MenuItem(goBack),

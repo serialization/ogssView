@@ -58,10 +58,10 @@ final case class UserCreateObject[T <: api.SkillObject](
   private def fieldInitialisation[T](f: api.FieldDeclaration[T]): Unit = {
     obj.set(f, qq.editor.objects.NewValue.default(f.t))
   }
-  for(f <- p.allFields if ! f.isInstanceOf[internal.fieldTypes.ConstantInteger[_]]) {
+  for (f ← p.allFields if !f.isInstanceOf[internal.fieldTypes.ConstantInteger[_]]) {
     fieldInitialisation(f)
   }
-  
+
   file.modify(this)
 }
 
@@ -269,4 +269,148 @@ final case class UserIndexedContainerModify[T <: api.SkillObject, C <: Buffer[F]
   override def toEdit = new IndexedContainerModify(file, pool, obj, field, index, oldValue, newValue)
 
   if (oldValue != newValue) file.modify(this)
+}
+
+/** edits of things like arrays and lists that have indexed objects */
+sealed abstract class UserSetEdit[T <: api.SkillObject, C <: HashSet[F], F](
+  /** The file this belongs to */
+  f: qq.editor.File,
+  /** The type of the modified object*/
+  p: api.Access[T],
+  /** The object that is modified */
+  o: T,
+  /** The field (collection) that is modified */
+  val field: api.FieldDeclaration[C],
+  /** The member that is modified */
+  val key: F)
+    extends UserEdit[T](f, p, o) {
+
+}
+
+/** insertion of a new value into an indexed container */
+final case class UserSetInsert[T <: api.SkillObject, C <: HashSet[F], F](
+  /** The file this belongs to */
+  f: qq.editor.File,
+  /** The type of the modified object*/
+  p: api.Access[T],
+  /** The object that is modified */
+  o: T,
+  /** The field (collection) that is modified */
+  fd: api.FieldDeclaration[C],
+  /** inserted member (constructor will throw if it already exists) */
+  k: F)
+    extends UserSetEdit[T, C, F](f, p, o, fd, k) {
+
+  /* no merge */
+  override def addEdit(x: UndoableEdit) = false
+  override def replaceEdit(x: UndoableEdit) = false
+
+  override def canRedo = true
+  override def canUndo = true
+  override def redo = {
+    file.modify_(toEdit)
+  }
+  override def undo = {
+    file.modify_(new SetRemove(file, pool, obj, field, key))
+  }
+  override def getPresentationName = s"inserted $key into ${field.name} of ${file.idOfObj(obj)}"
+  override def getRedoPresentationName = s"insert $key into ${field.name} of ${file.idOfObj(obj)}"
+  override def getUndoPresentationName = s"remove $key from ${field.name} of ${file.idOfObj(obj)}"
+  override def isSignificant = true
+  override def die() = {}
+
+  override def toEdit = new SetInsert(file, pool, obj, field, key)
+
+  if (obj.get(field).contains(key)) {
+    throw new IllegalStateException("Insert into set: element already exists")
+  } else {
+    file.modify(this)
+  }
+}
+/** insertion of a new value into an indexed container */
+final case class UserSetRemove[T <: api.SkillObject, C <: HashSet[F], F](
+  /** The file this belongs to */
+  f: qq.editor.File,
+  /** The type of the modified object*/
+  p: api.Access[T],
+  /** The object that is modified */
+  o: T,
+  /** The field (collection) that is modified */
+  fd: api.FieldDeclaration[C],
+  /** deleted member (constructor will throw if it does not exist) */
+  k: F)
+    extends UserSetEdit[T, C, F](f, p, o, fd, k) {
+
+  /* no merge */
+  override def addEdit(x: UndoableEdit) = false
+  override def replaceEdit(x: UndoableEdit) = false
+
+  override def canRedo = true
+  override def canUndo = true
+  override def redo = {
+    file.modify_(toEdit)
+  }
+  override def undo = {
+    file.modify_(new SetInsert(file, pool, obj, field, key))
+  }
+  override def getPresentationName = s"removed $key from ${field.name} of ${file.idOfObj(obj)}"
+  override def getRedoPresentationName = s"remove $key from ${field.name} of ${file.idOfObj(obj)}"
+  override def getUndoPresentationName = s"insert $key into ${field.name} of ${file.idOfObj(obj)}"
+  override def isSignificant = true
+  override def die() = {}
+
+  override def toEdit = new SetRemove(file, pool, obj, field, key)
+
+  if (!obj.get(field).contains(key)) {
+    throw new IllegalStateException("Remove from set: element does not exist")
+  } else {
+    file.modify(this)
+  }
+}
+
+/** insertion of a new value into an indexed container */
+final case class UserSetReplace[T <: api.SkillObject, C <: HashSet[F], F](
+  /** The file this belongs to */
+  f: qq.editor.File,
+  /** The type of the modified object*/
+  p: api.Access[T],
+  /** The object that is modified */
+  o: T,
+  /** The field (collection) that is modified */
+  fd: api.FieldDeclaration[C],
+  /** member that is replaced (constructor will throw if it does not exist) */
+  k: F,
+  /** member that it is replaced with (throw is exist )*/
+  newKey: F)
+    extends UserSetEdit[T, C, F](f, p, o, fd, k) {
+
+  /* no merge */
+  override def addEdit(x: UndoableEdit) = false
+  override def replaceEdit(x: UndoableEdit) = false
+
+  override def canRedo = true
+  override def canUndo = true
+  override def redo = {
+    file.modify_(toEdit)
+  }
+  override def undo = {
+    file.modify_(new SetReplace(file, pool, obj, field, newKey, key))
+  }
+  override def getPresentationName = s"replaced $key with $newKey in ${field.name} of ${file.idOfObj(obj)}"
+  override def getRedoPresentationName = s"replace $key with $newKey in ${field.name} of ${file.idOfObj(obj)}"
+  override def getUndoPresentationName = s"replaced $newKey with $key in ${field.name} of ${file.idOfObj(obj)}"
+  override def isSignificant = true
+  override def die() = {}
+
+  override def toEdit = new SetReplace(file, pool, obj, field, key, newKey)
+
+  if (!obj.get(field).contains(key)) {
+    throw new IllegalStateException("Replace in set: element does not exist")
+  } else {
+    if (obj.get(field).contains(newKey)) {
+      throw new IllegalStateException("Replace in set: new value already exists")
+    } else {
+      file.modify(this)
+    }
+  }
 }

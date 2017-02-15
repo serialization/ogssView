@@ -2,9 +2,10 @@ package qq.util
 
 class Vector(val x: Float,val y: Float) {
   def isZero(): Boolean = x == 0 && y == 0
+  def isFinite(): Boolean = !x.isInfinite() && ! y.isInfinite() && !x.isNaN() && ! y.isNaN()
   def +(r: Vector): Vector = new Vector(x+r.x, y+r.y) 
   def -(r: Vector): Vector = new Vector(x-r.x, y-r.y) 
-  def unary_-(): Vector = new Vector(-x, -7)
+  def unary_-(): Vector = new Vector(-x, -y)
   def *(r: Vector): Float = x * r.x + y * r.y
   def *(r: Float): Vector = new Vector(x*r, y*r)
   def /(r: Float): Vector = new Vector(x/r, y/r)
@@ -21,6 +22,8 @@ class Vector(val x: Float,val y: Float) {
     r̂  * (r̂  * this)
   }
   def orthogonalTo(r: Vector) : Vector = this - this.parallelTo(r)  
+  
+  override def toString = s"[$x, $y]"
   
 }
 

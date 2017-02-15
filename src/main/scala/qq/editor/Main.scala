@@ -7,6 +7,9 @@ import de.ust.skill.common.scala.api;
 
 object Main extends SimpleSwingApplication {
 
+  /** user settings */
+  val settings = new Settings()
+  
   /** the current file */
   var file: File = null
 
@@ -18,27 +21,27 @@ object Main extends SimpleSwingApplication {
 
   /** add a new tab showing type τ. τ == null allowed*/
   def newTypeTab(τ: api.Access[_ <: api.SkillObject]): Unit = {
-    val page = new qq.editor.types.TypePage(file)
+    val page = new qq.editor.types.TypePage(file, settings)
     tabs.addPage(page)
     if (τ != null) page.goTo(τ)
   }
 
   /** add a new tab for showing objects*/
   def newObjectTab(): Unit = {
-    val page = new qq.editor.objects.ObjectPage(file)
+    val page = new qq.editor.objects.ObjectPage(file, settings)
     tabs.addPage(page)
   }
 
   /** add a new tab showing object o. o == null allowed*/
   def newObjectTab(o: api.SkillObject): Unit = {
-    val page = new qq.editor.objects.ObjectPage(file)
+    val page = new qq.editor.objects.ObjectPage(file, settings)
     tabs.addPage(page)
     if (o != null) page.goTo(new page.View(o))
   }
    
   /** add a new tab showing all objects of type τ */
   def newObjectTab(τ: api.Access[_]): Unit = {
-    val page = new qq.editor.objects.ObjectPage(file)
+    val page = new qq.editor.objects.ObjectPage(file, settings)
     tabs.addPage(page)
     if (τ != null) page.find(s"'${τ.name}'")
   }

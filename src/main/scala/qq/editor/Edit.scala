@@ -218,8 +218,6 @@ final case class SetReplace[T <: api.SkillObject, C <: HashSet[F], F](
   o: T,
   /** The field (collection) that is modified */
   fd: api.FieldDeclaration[C],
-  /** The index of the modified member of the collection */
-  i: Int,
   /** The element that is replaced */
   k: F,
   /** the new value it is replaced with */

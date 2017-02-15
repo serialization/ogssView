@@ -8,7 +8,7 @@ import scala.swing;
  * A page displaying data about a (set of) object, with an optional search results page on the
  * left and an option graph representation on the right
  */
-class ObjectPage(val file: qq.editor.File) extends qq.editor.Page {
+class ObjectPage(file0: qq.editor.File, settings0: qq.editor.Settings) extends qq.editor.Page(file0, settings0) {
 
   /** search panel visible*/
   def searchVisible: Boolean = searchVisibleModel.isSelected()
@@ -53,6 +53,9 @@ class ObjectPage(val file: qq.editor.File) extends qq.editor.Page {
     objEdit.contents.clear()
     objEdit.contents += new TopObjectEdit(this, v.obj)
 
+    objGraph.contents.clear()
+    objGraph.contents += new ObjectGraph(this, v.obj)
+    
     goBack.enabled = previousView.length > 0
     goForward.enabled = nextView.length > 0
   }
@@ -161,7 +164,7 @@ val showTypeOfThisObject = new swing.Action("Show Type of Current Object") {
     scala.swing.Swing.HGlue)
   val objSearch = new SearchResults(this)
   val objEdit = qq.util.Swing.HBox()
-  val objGraph = new swing.Label("Todo graph")
+  val objGraph = qq.util.Swing.HBox()
 
   val mainContent = qq.util.Swing.HBox()
 
