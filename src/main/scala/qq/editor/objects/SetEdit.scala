@@ -105,7 +105,7 @@ class SetEdit[E, C[E] <: HashSet[E], O <: api.SkillObject](
   private val lowerPart = new swing.BoxPanel(swing.Orientation.Vertical)
   private def refillLower(): Unit = {
     lowerPart.contents.clear()
-    lowerPart.contents ++= obj.get(field).toSeq.sortBy(x => if (x == null) "null" else x.toString).drop(firstIndex).take(pageSize).map { key ⇒
+    lowerPart.contents ++= obj.get(field).toSeq.sortBy(x => if (x == null) "" else x.toString).drop(firstIndex).take(pageSize).map { key ⇒
       val fprop = new qq.editor.binding.SetContainerField(null, page.file, pool, obj, field, key)
       val fed = new ElementFieldEdit(
         page,
