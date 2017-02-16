@@ -14,6 +14,7 @@ class Property[T](val owner: PropertyOwner, val name: String, var value: T)
 
   var description: String = name
   def apply(): T = this.synchronized { value }
+
   /**
    * Set the value of the property to \c newValue. \throws RestrictionException when
    * newValue violates any restriction.
@@ -23,7 +24,7 @@ class Property[T](val owner: PropertyOwner, val name: String, var value: T)
       case x :: xs ⇒
         throw new RestrictionException(x)
       case Nil ⇒
-        if (value != newValue) {
+        if (qq.util.Neq(value, newValue)) {
           value = newValue
           doOnChange(newValue)
         }
@@ -33,7 +34,7 @@ class Property[T](val owner: PropertyOwner, val name: String, var value: T)
    * Set the value of the property to \c newValue without checking restrictions
    */
   def assignUnchecked(newValue: T): Unit = this.synchronized {
-    if (value != newValue) {
+    if (qq.util.Neq(value, newValue)) {
       value = newValue
       doOnChange(newValue)
     }
@@ -58,10 +59,10 @@ class Property[T](val owner: PropertyOwner, val name: String, var value: T)
       case _: Long    ⇒ new TextEdit(this.asInstanceOf[Property[Long]], _.toLong).asInstanceOf[EditControl[T]]
       case _: Float   ⇒ new TextEdit(this.asInstanceOf[Property[Float]], _.toFloat).asInstanceOf[EditControl[T]]
       case _: Double  ⇒ new TextEdit(this.asInstanceOf[Property[Double]], _.toDouble).asInstanceOf[EditControl[T]]
-      case _: String  ⇒ new TextEdit(this.asInstanceOf[Property[String]], x ⇒ x).asInstanceOf[EditControl[T]]
-      // TODO
-      //      case _: scala.collection.mutable.Buffer[_] => new ListEdit(this.asInstanceOf[Property[scala.collection.mutable.Buffer[T]]]).asInstanceOf[EditControl[T]]
-      //      case _ => new NoEdit(this)
+      case _: String ⇒ new TextEdit(this.asInstanceOf[Property[String]],
+        x ⇒ (if (x == "(null)") null else x), (x: String) ⇒ (if (x == null) "(null)" else x)).asInstanceOf[EditControl[T]]
+      // TODO strings must go outside (fieldtype match) for they can be null
+      // collections are handled on the skill types
     }
   }
 }

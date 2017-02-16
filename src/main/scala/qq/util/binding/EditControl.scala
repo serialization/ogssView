@@ -32,7 +32,7 @@ abstract class EditControl[T](val property: Property[T]) extends swing.Component
       editValue() match {
         case Right(x) ⇒
           val old = property()
-          if (x != old) {
+          if (qq.util.Neq(x, old)) {
             property := x
             if (property.owner != null && property.owner.undoManager != null) {
               property.owner.undoManager.addEdit(new PropertyModifyEdit(property, old, x))

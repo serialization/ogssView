@@ -133,7 +133,7 @@ final case class UserSimpleFieldEdit[T <: api.SkillObject, F](
 
   override def toEdit = new SimpleFieldEdit(file, pool, obj, field, oldValue, newValue)
 
-  if (oldValue != newValue) file.modify(this)
+  if (qq.util.Neq(oldValue, newValue)) file.modify(this)
 }
 
 /** edits of things like arrays and lists that have indexed objects */
@@ -268,7 +268,7 @@ final case class UserIndexedContainerModify[T <: api.SkillObject, C <: Buffer[F]
 
   override def toEdit = new IndexedContainerModify(file, pool, obj, field, index, oldValue, newValue)
 
-  if (oldValue != newValue) file.modify(this)
+  if (qq.util.Neq(oldValue, newValue)) file.modify(this)
 }
 
 /** edits of things like arrays and lists that have indexed objects */
