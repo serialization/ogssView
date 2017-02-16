@@ -47,27 +47,27 @@ class File(fn0: String) {
     onEdit.fire(e)
     onModifiednessChange.fire(isModified)
   }
-  
+
   /**
    * Perform an edit, add it to the undo-queue, and notify the rest of the programme about it
    */
   def modify(e: qq.editor.UserEdit[_]): Unit = {
-    val e2 =  e.toEdit
+    val e2 = e.toEdit
     e2.doIt()
     undoManager.addEdit(e)
     onEdit.fire(e2)
     onModifiednessChange.fire(isModified)
   }
-  
+
   /**
    * we mark objects as deleted by adding them to a deleted object queue. This
    * allows us to undelete them in a way such that all other edits in the undo/redo
    * queue stay valid.
-   * 
+   *
    * The objects are deleted from the skill state before it is saved to file
    */
   val deletedObjects: mutable.HashSet[api.SkillObject] = new mutable.HashSet()
-  
+
   /**
    * created objects do not have a SkillId; we give them temporary negative ones;
    * item 0 hast ID -1 and so on
@@ -81,8 +81,7 @@ class File(fn0: String) {
       createdObjectId(o) = id
     }
   }
-  
-  
+
   /* some auxiliary functions about types */
 
   /** parentType(a) = b if a is directly derived from b, a ∉ Dom(parentType) if a is a root type */
@@ -104,36 +103,43 @@ class File(fn0: String) {
       Nil
     }
   }
-  
+
   def objOfId[T <: B, B <: api.SkillObject](pool: api.Access[T], id: Int): api.SkillObject = {
     var o = if (id > 0) {
-      val bp = pool.asInstanceOf[internal.StoragePool[T,B]].basePool
+      val bp = pool.asInstanceOf[internal.StoragePool[T, B]].basePool
+      if (id > bp.size) {
+        throw new Exception("object does not exist: $pool#$id")
+      }
       bp(id - 1)
     } else if (id < 0) {
       createdObjects(-1 - id)
     } else {
-      throw new Exception("invalid object ID: $pool#$id")
+      throw new Exception("object does not exist: $pool#$id")
     }
     if (s(o.getTypeName) == pool || superTypes(s(o.getTypeName)).contains(pool)) {
       o
     } else {
-      throw new Exception("invalid object ID: $pool#$id")
-    }
-  }
-  
-  def objOfId(x: String): api.SkillObject = {
-    if (x.trim().equals("null")) return null
-    import qq.editor.queries.parser._;
-    val tokens = Lexer(x)    
-    if (tokens.size != 1) throw new Exception("format error, expected format type#number")
-    tokens.head match {
-      case ObjLit(pn,id) =>
-        objOfId(s(pn), id)
-      case _ => throw new Exception("format error, expected format type#number")
+      throw new Exception("object does not exist: $pool#$id")
     }
   }
 
-  def idOfObj(o: api.SkillObject): String = { 
+  def objOfId(x: String): api.SkillObject = {
+    if (x.trim().equals("null")) return null
+    import qq.editor.queries.parser._;
+    try {
+      val tokens = Lexer(x)
+      if (tokens.size != 1) throw new Exception("format error, expected format type#number")
+      tokens.head match {
+        case ObjLit(pn, id) ⇒
+          objOfId(s(pn), id)
+        case _ ⇒ throw new Exception("format error, expected format type#number")
+      }
+    } catch {
+      case _: Exception ⇒ throw new Exception("format error, expected format type#number")
+    }
+  }
+
+  def idOfObj(o: api.SkillObject): String = {
     if (o == null) {
       "null"
     } else if (de.ust.skill.common.scala.hacks.GetSkillId(o) == -1) {
@@ -144,8 +150,8 @@ class File(fn0: String) {
   }
   /** field definition and type that it belongs to for each field name */
   val fieldsByName: Map[String, Seq[Tuple2[api.Access[_], api.FieldDeclaration[_]]]] =
-    (for (t <- s; f <- t.fields) yield (f.name, (t, f))).groupBy(_._1).mapValues(_.map(_._2))
-    
+    (for (t ← s; f ← t.fields) yield (f.name, (t, f))).groupBy(_._1).mapValues(_.map(_._2))
+
   /* type and field settings */
   val typeSettings: Map[api.Access[_], TypeSettings[_]] =
     (for (t ← s) yield (t, new TypeSettings(t, this))).toMap
