@@ -11,8 +11,10 @@ class Graph(
     val page: qq.editor.Page,
     val properties: LayoutSettings) {
 
-  /** nodes in the graph (indexed by the thing they represent).7
-   *  edges are found inside the nodes */
+  /**
+   * nodes in the graph (indexed by the thing they represent).7
+   *  edges are found inside the nodes
+   */
   val nodes: HashMap[AbstractNode, Node] = HashMap()
 
   def addNode(x: AbstractNode): Unit = {
@@ -74,11 +76,26 @@ class Graph(
    */
   def placeNodes(size: java.awt.Dimension): Unit = {
     energyOfStep.clear()
-    for (step ← 0.until(30)) {
+    var stepsize: Float = (size.width max size.height) / 10
+    var energyPreviousStep = Float.PositiveInfinity
+    var stepsWithProgress = 0
+
+    for (step ← 0.until(150)) {
       resetAccumulators
-      calculateForce(((step - 10).toFloat / 10).max(0).min(1), size)
-      move(50f)
+      calculateForce(((step - 50).toFloat / 50).max(0).min(1), size)
+      move(stepsize)
       energyOfStep += energy
+      if (energy <= energyPreviousStep) {
+        stepsWithProgress += 1
+        if (stepsWithProgress >= 5) {
+          stepsize /= 0.95f
+          stepsWithProgress = 0
+        }
+      } else {
+        stepsize *= 0.95f
+        stepsWithProgress = 0
+      }
+      energyPreviousStep = energy
     }
 
   }

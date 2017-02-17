@@ -11,10 +11,10 @@ class RigidSubGraph(
 
   def force: Vector = nodes.foldLeft(new Vector(0f, 0f)) { case (l, r) ⇒ l + r.force } / nodes.size
 
-  def move(maxDist: Float) = {
+  def move(stepSize: Float) = {
     val F = force
-    if (F.isFinite()) {
-      val d = force.min(maxDist)
+    if (F.isFinite() && !F.isZero()) {
+      val d = F.norm * stepSize
       nodes.foreach(_.pos += d)
     }
   }

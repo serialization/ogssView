@@ -13,7 +13,9 @@ class ObjectGraph[O <: api.SkillObject](
 
   private val graph = new qq.graph.Graph(page.file, page, page.settings.graphLayout)
 
-  graph.addNode(new qq.graph.SkillObjectNode(obj))
+  private val origin = new qq.graph.SkillObjectNode(obj)
+  graph.addNode(origin)
+  origin.getOutEdge(page.file).foreach(graph.addEdge(_))
 
   private def updateLayout: Unit = {
     graph.placeNodes(size)
@@ -40,7 +42,7 @@ class ObjectGraph[O <: api.SkillObject](
       }
     }
     for (i ← 0.until(graph.energyOfStep.size)) {
-      g.drawString("x", 10 + 10 * i, 10 + 10 * graph.energyOfStep(i))
+      g.drawString("x", 10 + i, 10 + 10 * graph.energyOfStep(i)/graph.nodes.size)
     }
   }
 
@@ -50,4 +52,6 @@ class ObjectGraph[O <: api.SkillObject](
       updateLayout
       revalidate
   }
+  updateLayout
+  
 }
