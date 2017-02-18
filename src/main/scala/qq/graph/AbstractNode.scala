@@ -29,7 +29,7 @@ case class SkillObjectNode(val skillObject: api.SkillObject)
   override def getOutEdge(file: qq.editor.File) = {
     val τ = file.s(skillObject.getTypeName)
     for (f <- τ.allFields
-        if file.typeSettings(τ).fields(f).visibilityIn(skillObject).showAsNode)
+        if file.fieldSettings(f).visibilityIn(skillObject).showAsNode)
       yield new SkillFieldEdge(skillObject, f)
   }
   override def hashCode = skillObject.hashCode()

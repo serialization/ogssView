@@ -23,10 +23,20 @@ class Vector(val x: Float,val y: Float) {
   }
   def orthogonalTo(r: Vector) : Vector = this - this.parallelTo(r)  
   
-  override def toString = s"[$x, $y]"
-  
+  override def toString = s"($x, $y)"
+
 }
 
 object Vector {
   def fromPolar(r: Float, φ: Double) = new Vector((r * math.cos(φ)).toFloat, r * math.sin(φ).toFloat)
+  def parse(s: String): Vector = {
+    val t = s.trim
+    if (s.head != '(' || s.last != ')') throw new Exception("expected (x,y)")
+    val u = s.drop(1).dropRight(1).split(",")
+    if (u.size != 2) throw new Exception("expected (x,y)")
+    new Vector(u(0).toFloat, u(1).toFloat)
+  }
+  /* can't use sum for that cause requires Numeric and that is ordered */
+  def avg(xs: Iterable[Vector]): Vector = xs.fold(new Vector(0, 0))(_ + _) / xs.size
 }
+

@@ -156,4 +156,7 @@ class File(fn0: String) {
   val typeSettings: Map[api.Access[_], TypeSettings[_]] =
     (for (t ← s) yield (t, new TypeSettings(t, this))).toMap
 
+  val fieldSettings: Map[api.FieldDeclaration[_], FieldSettings[_, _]] =
+    (for (t <- typeSettings.values; fd <- t.typ.fields) yield (fd, t.fields(fd).asInstanceOf[FieldSettings[_, api.SkillObject]])).toMap
+    
 }

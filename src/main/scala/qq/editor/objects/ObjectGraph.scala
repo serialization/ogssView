@@ -15,7 +15,9 @@ class ObjectGraph[O <: api.SkillObject](
 
   private val origin = new qq.graph.SkillObjectNode(obj)
   graph.addNode(origin)
-  origin.getOutEdge(page.file).foreach(graph.addEdge(_))
+  origin.getOutEdge(page.file).seq.foreach(graph.addEdge(_))
+  val foo = graph.nodes.values.seq.toSeq.seq
+  foo.foreach(x=>x.data.getOutEdge(page.file).foreach(graph.addEdge(_)))
 
   private def updateLayout: Unit = {
     graph.placeNodes(size)

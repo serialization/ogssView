@@ -4,7 +4,7 @@ import de.ust.skill.common.scala.api;
 import de.ust.skill.common.scala.internal;
 import de.ust.skill.common.scala.internal.fieldTypes;
 import scala.collection.mutable;
-import com.github.jpbetz.subspace._;
+import qq.util.Vector;
 import qq.util.binding._;
 
 class FieldSettings[T, U <: api.SkillObject](
@@ -13,18 +13,40 @@ class FieldSettings[T, U <: api.SkillObject](
     /** The type this belongs to */
     val containingType: TypeSettings[U]) extends PropertyOwner {
 
+  /* defaults */
+  private val (_hide, _inParent) = field.t.asInstanceOf[internal.fieldTypes.FieldType[_]] match {
+    case u: fieldTypes.UserType[T]                   ⇒ (false, false)
+    case c: fieldTypes.SingleBaseTypeContainer[_, T] ⇒ (false, false)
+    case m: fieldTypes.MapType[_, _]                 ⇒ (false, false)
+    case s: fieldTypes.StringType                    ⇒ (false, false)
+    case fieldTypes.ConstantI8(_)                    ⇒ (true, true)
+    case fieldTypes.ConstantI16(_)                   ⇒ (true, true)
+    case fieldTypes.ConstantI32(_)                   ⇒ (true, true)
+    case fieldTypes.ConstantI64(_)                   ⇒ (true, true)
+    case fieldTypes.ConstantV64(_)                   ⇒ (true, true)
+    case fieldTypes.BoolType                         ⇒ (false, true)
+    case _: fieldTypes.AnnotationType                ⇒ (false, false)
+    case fieldTypes.F32                              ⇒ (false, true)
+    case fieldTypes.F64                              ⇒ (false, true)
+    case fieldTypes.I8                               ⇒ (false, true)
+    case fieldTypes.I16                              ⇒ (false, true)
+    case fieldTypes.I32                              ⇒ (false, true)
+    case fieldTypes.I64                              ⇒ (false, true)
+    case fieldTypes.V64                              ⇒ (false, true)
+  }
+
   /** User preference: hide this field */
-  var prefHide: Property[Boolean] = new Property(this, "Always hide", false)
-  /** User preference: show this field */
-  var prefShow: Property[Boolean] = new Property(this, "Always show", false)
-  /** User preference: show also if null/zero (requires prefShow )*/
-  var prefShowNull: Property[Boolean] = new Property(this, "Even show empty/null values", false)
+  var prefHide: Property[Boolean] = new Property(this, "Always hide", _hide)
+  /** User preference: hide if zero/empty/null */
+  var prefHideNull: Property[Boolean] = new Property(this, "Hide empty/null values", true)
   /** User preference: show inside parent node */
-  var prefShowInParent: Property[Boolean] = new Property(this, "Show inside parent", false)
+  var prefShowInParent: Property[Boolean] = new Property(this, "Show inside parent", _inParent)
   /** User preference: keep edge direction stable */
   var prefFixedEdgeDirection: Property[Boolean] = new Property(this, "Keep edge direction stable", false)
   /** User preference: edge direction (is changed by programme unless prefFixedEdgeDirection)*/
-  var prefEdgeDirection: Property[Vector2] = new Property(this, "Edge direction", Vector2(0.0f, 0.0f))
+  var prefEdgeDirection: Property[Vector] = new Property(this, "Edge direction", new Vector(0.0f, 0.0f)) {
+    restrictions += Restriction(_.abs <= 1, "length must not exceed one")
+  }
 
   /** true if the value of this field in object o is null, empty collection, zero, or empty string */
   private def hasNullValueIn(o: api.SkillObject): Boolean = {
@@ -40,50 +62,25 @@ class FieldSettings[T, U <: api.SkillObject](
       case fieldTypes.ConstantV64(_)                   ⇒ true
       case fieldTypes.BoolType                         ⇒ !o.get(field).asInstanceOf[Boolean]
       case _: fieldTypes.AnnotationType                ⇒ o.get(field) == null
-      case fieldTypes.F32                              ⇒ o.get(field).asInstanceOf[Float] == 0.0
+      case fieldTypes.F32                              ⇒ o.get(field).asInstanceOf[Float] == 0.0f
       case fieldTypes.F64                              ⇒ o.get(field).asInstanceOf[Double] == 0.0
       case fieldTypes.I8                               ⇒ o.get(field).asInstanceOf[Byte] == 0
       case fieldTypes.I16                              ⇒ o.get(field).asInstanceOf[Short] == 0
       case fieldTypes.I32                              ⇒ o.get(field).asInstanceOf[Int] == 0
-      case fieldTypes.I64                              ⇒ o.get(field).asInstanceOf[Long] == 0
-      case fieldTypes.V64                              ⇒ o.get(field).asInstanceOf[Long] == 0
+      case fieldTypes.I64                              ⇒ o.get(field).asInstanceOf[Long] == 0l
+      case fieldTypes.V64                              ⇒ o.get(field).asInstanceOf[Long] == 0l
     }
   }
 
   /** returns true whether and how this field should be shown in object o*/
   def visibilityIn(o: api.SkillObject): FieldVisibility = {
     if (prefHide() /* user says hide */
-      || (hasNullValueIn(o) && !prefShowNull())) { /* or it;s null/empty…*/
+      || (hasNullValueIn(o) && prefHideNull())) { /* or it;s null/empty…*/
       HideVisibility
-    } else if (prefShow()) { /* user says show */
-      if (prefShowInParent()) {
-        ShowInParentVisibility
-      } else {
-        ShowAsNodeVisibility
-      }
-    } else if (!(containingType.typ.fields.contains(field))) { /* default 1: inherit from supertype */
-      containingType.parentTypeSettings.fields(field).visibilityIn(o)
-    } else { /* default 2: decide ourselves */
-      field.t.asInstanceOf[internal.fieldTypes.FieldType[_]] match {
-        case u: fieldTypes.UserType[T]                   ⇒ ShowAsNodeVisibility
-        case c: fieldTypes.SingleBaseTypeContainer[_, T] ⇒ ShowAsNodeVisibility
-        case m: fieldTypes.MapType[_, _]                 ⇒ ShowAsNodeVisibility
-        case s: fieldTypes.StringType                    ⇒ ShowAsNodeVisibility
-        case fieldTypes.ConstantI8(_)                    ⇒ HideVisibility
-        case fieldTypes.ConstantI16(_)                   ⇒ HideVisibility
-        case fieldTypes.ConstantI32(_)                   ⇒ HideVisibility
-        case fieldTypes.ConstantI64(_)                   ⇒ HideVisibility
-        case fieldTypes.ConstantV64(_)                   ⇒ HideVisibility
-        case fieldTypes.BoolType                         ⇒ ShowInParentVisibility
-        case _: fieldTypes.AnnotationType                ⇒ ShowAsNodeVisibility
-        case fieldTypes.F32                              ⇒ ShowInParentVisibility
-        case fieldTypes.F64                              ⇒ ShowInParentVisibility
-        case fieldTypes.I8                               ⇒ ShowInParentVisibility
-        case fieldTypes.I16                              ⇒ ShowInParentVisibility
-        case fieldTypes.I32                              ⇒ ShowInParentVisibility
-        case fieldTypes.I64                              ⇒ ShowInParentVisibility
-        case fieldTypes.V64                              ⇒ ShowInParentVisibility
-      }
+    } else if (prefShowInParent()) {
+      ShowInParentVisibility
+    } else {
+      ShowAsNodeVisibility
     }
   }
 

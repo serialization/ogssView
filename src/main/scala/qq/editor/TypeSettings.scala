@@ -17,11 +17,10 @@ class TypeSettings[T <: api.SkillObject](
   /**
    * Settings for the fields in this type.
    * 
-   * NB: all fields; default behaviour is to inherit the settings from the field
-   * in the parent type, but one can change the settings in the sub type
+   * only own field; behaviour of inherited fields is taken from parent
    */
   val fields: Map[api.FieldDeclaration[_], qq.editor.FieldSettings[_,T]] =
-    (for (f <- typ.allFields) yield (f, new FieldSettings(f, this))).toMap
+    (for (f <- typ.fields) yield (f, new FieldSettings(f, this))).toMap
   
   def parentTypeSettings: TypeSettings[_] = containingFile.typeSettings(
       containingFile.parentType(typ)

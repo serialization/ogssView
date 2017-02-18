@@ -4,12 +4,15 @@ import de.ust.skill.common.scala.api
 import de.ust.skill.common.scala.internal.fieldTypes._
 import scala.collection.mutable.Buffer
 import scala.collection.mutable.HashSet
+import qq.util.Vector
+import qq.editor.File
 
 /** the thing a link in the graph represents */
 abstract class AbstractEdge {
   def getTo: AbstractNode
   def getFrom: AbstractNode
   def textLabel: String
+  def idealDirection(file: File): Vector
 }
 
 case class SkillFieldEdge[T](
@@ -40,6 +43,8 @@ case class SkillFieldEdge[T](
     
   }
   override def textLabel = field.name
+  
+  override def idealDirection(file: File) = file.fieldSettings(field).prefEdgeDirection()
   
  }
   

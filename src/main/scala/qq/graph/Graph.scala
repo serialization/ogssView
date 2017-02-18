@@ -4,6 +4,7 @@ import scala.collection.mutable.HashMap
 import scala.collection.mutable.HashSet
 import scala.collection.mutable.ArrayBuffer
 import de.ust.skill.common.scala.api;
+import qq.util.Vector
 
 /** a graph showing objects from file in page */
 class Graph(
@@ -12,21 +13,39 @@ class Graph(
     val properties: LayoutSettings) {
 
   /**
-   * nodes in the graph (indexed by the thing they represent).7
+   * nodes in the graph (indexed by the thing they represent).
    *  edges are found inside the nodes
    */
   val nodes: HashMap[AbstractNode, Node] = HashMap()
 
   def addNode(x: AbstractNode): Unit = {
     if (!nodes.contains(x)) {
-      nodes(x) = new Node(this, x)
+      val n = new Node(this, x)
+      nodes(x) = n
     }
   }
+  /** add edge x to the graph; add nodes for end points if necessary, append to existing edge is posible. If nodes
+   *  are added, initialise their positions*/
   def addEdge(x: AbstractEdge): Unit = {
     val f = x.getFrom
     val t = x.getTo
-    val F = nodes.getOrElseUpdate(f, new Node(this, f))
-    val T = nodes.getOrElseUpdate(t, new Node(this, t))
+    var addedF = false
+    var addedT = false
+    val F = if (nodes.contains(f)) nodes(f) else {
+      addedF = true;
+      val F = new Node(this, f);
+      nodes(f) = F;
+      F}
+    val T = if (nodes.contains(t)) nodes(t) else {
+      addedT = true;
+      val T = new Node(this, t);
+      nodes(t) = T;
+      T}
+    if (addedF && !addedT) {
+      F.pos = T.pos - x.idealDirection(file) * properties.c2()
+    } else if (addedT) {
+      T.pos = F.pos + x.idealDirection(file) * properties.c2()      
+    }
     // add to existing edge if one exists
     if (F.edgesOut.contains(T)) {
       F.edgesOut(T).data += x
@@ -53,6 +72,9 @@ class Graph(
     ) {
       nvis(i).calculateForce(nvis(j), overlapAvoidance, size)
     }
+    for (n <- nvis; e <- n.edgesOut.values) {
+      e.calculateForce()
+    }
   }
   def move(maxDist: Float): Unit = {
     nodes.values.foreach(_.move(maxDist))
@@ -75,6 +97,21 @@ class Graph(
    * place nodes in a rectangle of the given size
    */
   def placeNodes(size: java.awt.Dimension): Unit = {
+    /* centre and scale current placement *down* to fit into size if necessary */
+    val xmin = nodes.values.map(_.pos.x).min
+    val xmax = nodes.values.map(_.pos.x).max
+    val ymin = nodes.values.map(_.pos.y).min
+    val ymax = nodes.values.map(_.pos.y).max
+    val x0 = (xmin + xmax) / 2
+    val y0 = (ymin + ymax) / 2
+    val ax = if (xmax - xmin > size.width) size.width.toFloat / (xmax - xmin) else 1.0f
+    val ay = if (ymax - ymin > size.height) size.height.toFloat / (ymax - ymin) else 1.0f
+    nodes.values.foreach{x =>
+      x.pos = new Vector(
+          ax*(x.pos.x - x0) + size.width / 2,
+          ay*(x.pos.y - y0) + size.height / 2)
+    }
+    
     energyOfStep.clear()
     var stepsize: Float = (size.width max size.height) / 10
     var energyPreviousStep = Float.PositiveInfinity
@@ -97,7 +134,25 @@ class Graph(
       }
       energyPreviousStep = energy
     }
-
+    if (!cluttered) {
+      updateIdealEdgeDirections
+    }
   }
-
+  def cluttered: Boolean = energy < properties.cluttered() 
+  private def updateIdealEdgeDirections = {
+    val drawnEdges = for (n <- nodes.values; e <- n.edgesOut.values) yield e
+    val abstractEdgesDirections = drawnEdges.toSeq.flatMap(e => e.data.iterator.map(x => (x, e.r)) ++ e.reverseData.iterator.map(x => (x, -e.r)) )
+    val dirByAbsEdge = abstractEdgesDirections.groupBy(_._1).mapValues(x => Vector.avg(x.map(_._2.norm)))
+    for ((e, x) <- dirByAbsEdge if e.isInstanceOf[SkillFieldEdge[_]]) if (x.isFinite()){
+      val f = e.asInstanceOf[SkillFieldEdge[_]].field
+      val d = file.fieldSettings(f).prefEdgeDirection
+      val d0 = d()
+      val a = d0.abs
+      if (a < 1.0) {
+        val d1 = d0 * a + x * (1-a) / 2 
+        println(s"${f.name} $d1 $d0 $x $a")
+        d := d1 
+      }
+    }
+  }
 }
