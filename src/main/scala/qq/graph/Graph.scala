@@ -24,8 +24,10 @@ class Graph(
       nodes(x) = n
     }
   }
-  /** add edge x to the graph; add nodes for end points if necessary, append to existing edge is posible. If nodes
-   *  are added, initialise their positions*/
+  /**
+   * add edge x to the graph; add nodes for end points if necessary, append to existing edge is posible. If nodes
+   *  are added, initialise their positions
+   */
   def addEdge(x: AbstractEdge): Unit = {
     val f = x.getFrom
     val t = x.getTo
@@ -35,16 +37,18 @@ class Graph(
       addedF = true;
       val F = new Node(this, f);
       nodes(f) = F;
-      F}
+      F
+    }
     val T = if (nodes.contains(t)) nodes(t) else {
       addedT = true;
       val T = new Node(this, t);
       nodes(t) = T;
-      T}
+      T
+    }
     if (addedF && !addedT) {
       F.pos = T.pos - x.idealDirection(file) * properties.c2()
     } else if (addedT) {
-      T.pos = F.pos + x.idealDirection(file) * properties.c2()      
+      T.pos = F.pos + x.idealDirection(file) * properties.c2()
     }
     // add to existing edge if one exists
     if (F.edgesOut.contains(T)) {
@@ -121,6 +125,7 @@ class Graph(
       resetAccumulators
       calculateForce(((step - 50).toFloat / 50).max(0).min(1), size)
       move(stepsize)
+      // TODO this is not the energy of Hu
       energyOfStep += energy
       if (energy <= energyPreviousStep) {
         stepsWithProgress += 1
@@ -138,7 +143,7 @@ class Graph(
       updateIdealEdgeDirections
     }
   }
-  def cluttered: Boolean = energy < properties.cluttered() 
+  def cluttered: Boolean = energy / nodes.size > properties.cluttered()
   private def updateIdealEdgeDirections = {
     val drawnEdges = for (n <- nodes.values; e <- n.edgesOut.values) yield e
     val abstractEdgesDirections = drawnEdges.toSeq.flatMap(e => e.data.iterator.map(x => (x, e.r)) ++ e.reverseData.iterator.map(x => (x, -e.r)) )

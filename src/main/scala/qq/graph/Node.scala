@@ -20,7 +20,8 @@ class Node(val graph: Graph,
   def left: Int = (pos.x - width / 2).toInt
   def top: Int = (pos.y - height / 2).toInt
   var rigidSubGraph: Option[RigidSubGraph] = None
-
+  var clampedAt: Option[Vector] = None
+  
   var energy: Float = 0
   var force: Vector = new Vector(0f, 0f)
 
@@ -29,8 +30,11 @@ class Node(val graph: Graph,
     force = new Vector(0f, 0f)
   }
   def move(stepSize: Float): Unit = {
-    // rigid subgraphs are moves as a whole elsewhere
-    if (rigidSubGraph.isEmpty && force.isFinite() && !force.isZero()) pos += force.norm * stepSize
+    // rigid subgraphs are moved as a whole elsewhere
+    clampedAt match {
+      case Some(x) => pos = x
+      case None => if (rigidSubGraph.isEmpty && force.isFinite() && !force.isZero()) pos += force.norm * stepSize
+    }
   }
   /** x.toborder(r) = r * k for some k and x.pos+x.toBorder(r) is on the border of the rectangular node x */
   def toBorder(r: Vector): Vector = {

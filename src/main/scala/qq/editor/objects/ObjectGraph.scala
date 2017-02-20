@@ -1,7 +1,7 @@
 package qq.editor.objects
 
 import de.ust.skill.common.scala.api
-
+/** Show obj and neighbouthood as graph */
 class ObjectGraph[O <: api.SkillObject](
   val page: ObjectPage,
   val obj: O)
@@ -19,7 +19,9 @@ class ObjectGraph[O <: api.SkillObject](
   val foo = graph.nodes.values.seq.toSeq.seq
   foo.foreach(x=>x.data.getOutEdge(page.file).foreach(graph.addEdge(_)))
 
-  private def updateLayout: Unit = {
+  def updateLayout: Unit = {
+    // clamp origin to centre
+    graph.nodes(origin).clampedAt = Some(qq.util.Vector(size) / 2)
     graph.placeNodes(size)
     peer.removeAll()
     graph.nodes.values.foreach(x ⇒ peer.add(x.uiElement.peer))
@@ -52,8 +54,8 @@ class ObjectGraph[O <: api.SkillObject](
   reactions += {
     case e: swing.event.UIElementResized ⇒
       updateLayout
-      revalidate
+      repaint
+      
   }
-  updateLayout
-  
+ // don't updateLayout here, do it outside after added to container, when size is known
 }

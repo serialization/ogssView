@@ -22,7 +22,7 @@ case class SkillFieldEdge[T](
   
   val to = from.get(field)
   
-  override def hashCode = 17 + 31 * java.util.Objects.hash(from, field) + to.hashCode()
+  override def hashCode = 17 + 31 * java.util.Objects.hash(from, field) + (if(to != null) to.hashCode() else 0)
   override def equals(that: Any) = that match {
     case that: SkillFieldEdge[T] =>
       from == that.from && field == that.field && to == that.to
