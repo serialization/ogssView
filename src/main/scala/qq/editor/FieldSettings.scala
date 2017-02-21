@@ -1,6 +1,7 @@
 package qq.editor
 
 import de.ust.skill.common.scala.api;
+import java.util.prefs.Preferences;
 import de.ust.skill.common.scala.internal;
 import de.ust.skill.common.scala.internal.fieldTypes;
 import scala.collection.mutable;
@@ -13,6 +14,8 @@ class FieldSettings[T, U <: api.SkillObject](
     /** The type this belongs to */
     val containingType: TypeSettings[U]) extends PropertyOwner {
 
+  private val prefs = Preferences.userRoot().node(s"/qq/skilledit/fieldsettings/${containingType.typ.name}/${field.name}");  
+  
   /* defaults */
   private val (_hide, _inParent) = field.t.asInstanceOf[internal.fieldTypes.FieldType[_]] match {
     case u: fieldTypes.UserType[T]                   ⇒ (false, false)
@@ -36,18 +39,25 @@ class FieldSettings[T, U <: api.SkillObject](
   }
 
   /** User preference: hide this field */
-  var prefHide: Property[Boolean] = new Property(this, "Always hide", _hide)
+  var prefHide: Property[Boolean] = new Property(this, "Always hide", prefs.getBoolean("hide",  _hide))
   /** User preference: hide if zero/empty/null */
-  var prefHideNull: Property[Boolean] = new Property(this, "Hide empty/null values", true)
+  var prefHideNull: Property[Boolean] = new Property(this, "Hide empty/null values", prefs.getBoolean("hideEmpty",  true))
   /** User preference: show inside parent node */
-  var prefShowInParent: Property[Boolean] = new Property(this, "Show inside parent", _inParent)
+  var prefShowInParent: Property[Boolean] = new Property(this, "Show inside parent", prefs.getBoolean("showInParent",  _inParent))
   /** User preference: keep edge direction stable */
-  var prefFixedEdgeDirection: Property[Boolean] = new Property(this, "Keep edge direction stable", false)
+  var prefFixedEdgeDirection: Property[Boolean] = new Property(this, "Keep edge direction stable", prefs.getBoolean("stableDirection",  false))
   /** User preference: edge direction (is changed by programme unless prefFixedEdgeDirection)*/
-  var prefEdgeDirection: Property[Vector] = new Property(this, "Edge direction", new Vector(0.0f, 0.0f)) {
+  var prefEdgeDirection: Property[Vector] = new Property(this, "Edge direction", Vector.parse(prefs.get("idealDirection","(0,0)"))) {
     restrictions += Restriction(_.abs <= 1, "length must not exceed one")
   }
 
+  prefHide.onChange.strong += (prefs.putBoolean("hide", _))
+  prefHideNull.onChange.strong += (prefs.putBoolean("hideEmpty", _))
+  prefShowInParent.onChange.strong += (prefs.putBoolean("showInParent", _))
+  prefFixedEdgeDirection.onChange.strong += (prefs.putBoolean("stableDirection", _))
+  prefEdgeDirection.onChange.strong += (x => prefs.put("idealDirection", x.toString))
+  
+  
   /** true if the value of this field in object o is null, empty collection, zero, or empty string */
   private def hasNullValueIn(o: api.SkillObject): Boolean = {
     field.t.asInstanceOf[internal.fieldTypes.FieldType[_]] match {

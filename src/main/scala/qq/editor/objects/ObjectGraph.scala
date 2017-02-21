@@ -24,7 +24,9 @@ class ObjectGraph[O <: api.SkillObject](
     graph.nodes(origin).clampedAt = Some(qq.util.Vector(size) / 2)
     graph.placeNodes(size)
     peer.removeAll()
-    graph.nodes.values.foreach(x ⇒ peer.add(x.uiElement.peer))
+    graph.nodes.values.foreach{x ⇒ 
+      x.edgesOut.values.foreach { y => peer.add(y.uiElement.peer) }
+      peer.add(x.uiElement.peer)}
   }
 
   override def paintComponent(g: swing.Graphics2D) {
@@ -43,6 +45,11 @@ class ObjectGraph[O <: api.SkillObject](
       g.drawLine(c.pos.x.toInt, c.pos.y.toInt, xx.x.toInt, xx.y.toInt)
       for (e ← c.edgesOut.values) {
         e.draw(g)
+        e.updateToolTop
+        e.uiElement.peer.setSize(e.uiElement.preferredSize)
+        val x = (c.pos + e.to.pos) / 2
+        e.uiElement.peer.setLocation(x.x.toInt, x.y.toInt)
+        e.uiElement.repaint()
       }
     }
     for (i ← 0.until(graph.energyOfStep.size)) {

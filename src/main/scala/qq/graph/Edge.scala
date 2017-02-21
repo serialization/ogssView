@@ -19,6 +19,12 @@ class Edge(
   /** abstract edges represented by a edge in the opposite direction of this one */
   val reverseData: HashSet[AbstractEdge] = HashSet()
 
+  val uiElement = new swing.Label(".")
+  def updateToolTop: Unit = {
+    uiElement.tooltip = s"<html><div>${from.data.toString()}</div><div>${to.data.toString()}</div></html>"
+    
+  }
+  
   def r: Vector = to.pos - from.pos
   /** calculate the direction stabilising force due to this edge and add it to from and to */
   def calculateForce(): Unit = {
