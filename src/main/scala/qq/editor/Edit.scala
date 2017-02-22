@@ -2,7 +2,11 @@ package qq.editor
 
 import de.ust.skill.common.scala.api;
 import de.ust.skill.common.scala.internal;
-import scala.collection.mutable._;
+import scala.collection.mutable.Buffer;
+import scala.collection.mutable.ArrayBuffer;
+import scala.collection.mutable.ListBuffer;
+import scala.collection.mutable.HashSet;
+import scala.collection.mutable.HashMap;
 import javax.swing.undo._;
 
 /**
@@ -232,3 +236,97 @@ final case class SetReplace[T <: api.SkillObject, C <: HashSet[F], F](
 }
 
 
+/** maps are treated as a function from a key-tuple to value. We give up using scala types, here */
+sealed abstract class MapEdit[T <: api.SkillObject, F](
+  /** The file this belongs to */
+  f: qq.editor.File,
+  /** The type of the modified object*/
+  p: api.Access[T],
+  /** The object that is modified */
+  o: T,
+  /** The field map that is modified */
+  val field: api.FieldDeclaration[F],
+  /** The index as sequence of keys of the modified member of the collection */
+  val index: Seq[Any])
+    extends Edit[T](f, p, o) {
+
+}
+import de.ust.skill.common.scala.internal.fieldTypes.MapType
+
+/** insertion of a new value into an indexed container */
+final case class MapInsert[T <: api.SkillObject, F](
+  /** The file this belongs to */
+  f: qq.editor.File,
+  /** The type of the modified object*/
+  p: api.Access[T],
+  /** The object that is modified */
+  o: T,
+  /** The field (collection) that is modified */
+  fd: api.FieldDeclaration[F],
+  /** The index of the modified member of the collection */
+  i: Seq[Any],
+  /** the value of the new member (the new f[i]; the old f[i] becomes f[i+1] &c.)*/
+  val value: Any)
+    extends MapEdit[T, F](f, p, o, fd, i) {
+
+  override def doIt(): Unit = {
+    val temp = obj.get(field)
+    println(this)
+    println(temp)
+    qq.editor.objects.MapEdit.insert(obj.get(field).asInstanceOf[HashMap[Any,Any]], fd.t.asInstanceOf[MapType[_,_]], index, value)
+    println(temp)
+  }
+}
+
+
+/** removal of an value from an indexed container */
+final case class MapRemove[T <: api.SkillObject, F](
+  /** The file this belongs to */
+  f: qq.editor.File,
+  /** The type of the modified object*/
+  p: api.Access[T],
+  /** The object that is modified */
+  o: T,
+  /** The field (collection) that is modified */
+  fd: api.FieldDeclaration[F],
+  /** The index of the modified member of the collection */
+  i: Seq[Any],
+  /** the value of the new member (the new f[i]; the old f[i] becomes f[i+1] &c.)*/
+  val value: Any)
+    extends MapEdit[T, F](f, p, o, fd, i) {
+
+  override def doIt(): Unit = {
+    val temp = obj.get(field)
+    println(this)
+    println(temp)
+    qq.editor.objects.MapEdit.remove(obj.get(field).asInstanceOf[HashMap[Any,Any]], fd.t.asInstanceOf[MapType[_,_]], index)
+    println(temp)
+  }
+}
+
+/** change of the value of a member of an indexed container */
+final case class MapModify[T <: api.SkillObject, F](
+  /** The file this belongs to */
+  f: qq.editor.File,
+  /** The type of the modified object*/
+  p: api.Access[T],
+  /** The object that is modified */
+  o: T,
+  /** The field (collection) that is modified */
+  fd: api.FieldDeclaration[F],
+  /** The index of the modified member of the collection */
+  i: Seq[Any],
+  /** Value before modification */
+  val oldValue: Any,
+  /** Value after modification */
+  val newValue: Any)
+    extends MapEdit[T, F](f, p, o, fd, i) {
+
+  override def doIt(): Unit = {
+    val temp = obj.get(field)
+    println(this)
+    println(temp)
+    qq.editor.objects.MapEdit.set(temp.asInstanceOf[HashMap[Any,Any]], fd.t.asInstanceOf[MapType[_,_]], index, newValue)
+    println(temp)
+  }
+}

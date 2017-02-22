@@ -10,6 +10,7 @@ import qq.util.binding.Property
 
 /**
  * Functions to create a new value of a ground type; either default or ask the user
+ * TODO restrictions
  */
 object NewValue {
   def default[T](τ: api.FieldType[T]): T = {
@@ -59,21 +60,27 @@ object NewValue {
       case _: StringType ⇒ new Property(null, prompt, "")
       case _: ConstantLengthArray[_] | _: ListType[_] | _: VariableLengthArray[_]
         | _: SetType[_] | _: MapType[_, _] ⇒
-        throw new Exception(s"non-ground field typ $τ does not have prompr")
+        throw new Exception(s"non-ground field type $τ does not have prompt")
       case ConstantI8(_) | ConstantI16(_) | ConstantI32(_) | ConstantI64(_)
         | ConstantV64(_) ⇒
-        throw new Exception(s"constant field typ $τ does not have prompt")
+        throw new Exception(s"constant field type $τ does not have prompt")
     }
     val dlg = new swing.Dialog()
       val ed = new ElementFieldEdit(page, τ.asInstanceOf[FieldType[T]], p) 
       dlg.contents = qq.util.Swing.VBox(
            ed,
            new swing.Button(swing.Action("Ok") {
-             ed.editField.inner.componentToProperty()
+             ed.editField.componentToProperty()
              dlg.close
              }))
       dlg.modal = true
     dlg.open()
-    p().asInstanceOf[T]
+    val result = p().asInstanceOf[T]
+    if (τ.isInstanceOf[StringType]) {
+      /* explicitly add strings to the string pool, otherwise serialsation
+       * fails when it is used as key of a map. */
+      page.file.s.String.add(result.asInstanceOf[String])
+    }
+    result
   }
 }

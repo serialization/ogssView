@@ -22,23 +22,44 @@ class Edge(
   val uiElement = new swing.Label(".")
   def updateToolTop: Unit = {
     uiElement.tooltip = s"<html><div>${from.data.toString()}</div><div>${to.data.toString()}</div></html>"
-    
+
   }
-  
+
   def r: Vector = to.pos - from.pos
   /** calculate the direction stabilising force due to this edge and add it to from and to */
   def calculateForce(): Unit = {
-    // average of all edges?
-    
-    val d = Vector.avg(data.toSeq.map(_.idealDirection(graph.file)) ++ reverseData.toSeq.map(-_.idealDirection(graph.file)))
-    val F = (d - r * (d * r) / (r * r)) * graph.properties.c4()
-    if (F.isFinite()) {
+    def Fp(p: Vector) = (p - r * (p * r) / (r * r)) * graph.properties.c4()
+    def apply(F: Vector) = if (F.isFinite()) {
       val ff = F * F
       from.force -= F
       to.force += F
       from.energy += ff
       to.energy += ff
     }
+    def sameField(e: AbstractEdge, f: AbstractEdge) = {
+      e.isInstanceOf[SkillFieldEdge[_]] &&
+        f.isInstanceOf[SkillFieldEdge[_]] &&
+        e.asInstanceOf[SkillFieldEdge[_]].field ==
+        f.asInstanceOf[SkillFieldEdge[_]].field
+    }
+
+    for (e ← data) {
+      val n = from.edgesOut.values.count(_.data.exists(sameField(e, _))) +
+        from.edgesIn.values.count(_.reverseData.exists(sameField(e, _))) +
+        to.edgesOut.values.count(_.reverseData.exists(sameField(e, _))) +
+        to.edgesIn.values.count(_.data.exists(sameField(e, _)))
+      println(s"$e $n")
+      apply(Fp(e.idealDirection(graph.file)) / (n - 1))
+    }
+    for (e ← reverseData) {
+      val n = to.edgesOut.values.count(_.data.exists(sameField(e, _))) +
+        to.edgesIn.values.count(_.reverseData.exists(sameField(e, _))) +
+        from.edgesOut.values.count(_.reverseData.exists(sameField(e, _))) +
+        from.edgesIn.values.count(_.data.exists(sameField(e, _)))
+      println(s"$e $n")
+      apply(-Fp(e.idealDirection(graph.file)) / (n - 1))
+    }
+
   }
 
   /** print a block of strings */

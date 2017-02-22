@@ -91,7 +91,7 @@ class ExpandableNode(val node: swing.Component)
   private val subBox = Swing.HBox(spacer)
 
   contents ++= Seq(
-    Swing.HBox(erbtn, node),
+    Swing.HBox(0.0f, erbtn, node),
     subBox)
 
 }

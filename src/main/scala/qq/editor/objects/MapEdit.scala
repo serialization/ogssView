@@ -4,18 +4,21 @@ import de.ust.skill.common.scala.api;
 import de.ust.skill.common.scala.internal.fieldTypes.MapType
 import de.ust.skill.common.scala.internal.fieldTypes.FieldType
 import scala.collection.mutable.HashMap;
+import qq.util.Swing.HBox
+import qq.util.Swing.VBox
+import swing.Swing.HGlue
 
-class MapEdit[K,V,C[K, V] <: HashMap[K, V], O <: api.SkillObject](
+class MapEdit[K, V, C[K, V] <: HashMap[K, V], O <: api.SkillObject](
   val page: ObjectPage,
   val pool: api.Access[O],
   val obj: O,
   val field: api.FieldDeclaration[C[K, V]])
     extends swing.BoxPanel(swing.Orientation.Vertical) {
 
-  
-  val skillType = field.t.asInstanceOf[MapType[_,_]]
+  val skillType = field.t.asInstanceOf[MapType[K, V]]
   val groundTypes = MapEdit.typeList(skillType)
-  
+  val elType = groundTypes.last
+
   private var firstIndex = 0
   private val pageSize = qq.editor.Main.settings.editCollectionPageSize()
 
@@ -70,14 +73,11 @@ class MapEdit[K,V,C[K, V] <: HashMap[K, V], O <: api.SkillObject](
 
   private val fileEditHandler: (qq.editor.Edit[_] ⇒ Unit) = { e ⇒
     if (e.obj == obj) {
-/*      e match {
-        case e: qq.editor.SetEdit[E, C[E], O] ⇒
+            e match {
+        case e: qq.editor.MapEdit[C[K, V], O] ⇒
           if (e.field == field) {
             e match {
-              case e: qq.editor.SetInsert[E, C[E], O] ⇒
-                updateHeadValues
-                refillLower
-              case e: qq.editor.SetRemove[E, C[E], O] ⇒
+              case _: qq.editor.MapInsert[C[K, V], O] | _: qq.editor.MapRemove[C[K, V], O]⇒
                 updateHeadValues
                 refillLower
               case _ ⇒ ()
@@ -85,7 +85,7 @@ class MapEdit[K,V,C[K, V] <: HashMap[K, V], O <: api.SkillObject](
           }
         case _ ⇒ ()
       }
- */   }
+  }
   }
 
   page.file.onEdit.weak += fileEditHandler
@@ -94,7 +94,7 @@ class MapEdit[K,V,C[K, V] <: HashMap[K, V], O <: api.SkillObject](
 
   private def switchHeadStyle(expanded: Boolean) = {
     head.contents.clear()
-    head.contents ++= Seq(nameLbl, swing.Swing.HGlue)
+    head.contents ++= Seq(nameLbl, HGlue)
     if (expanded) {
       head.contents ++= Seq(pgUpBtn, shownLbl, pgDnBtn)
     } else {
@@ -110,21 +110,29 @@ class MapEdit[K,V,C[K, V] <: HashMap[K, V], O <: api.SkillObject](
   private def refillLower(): Unit = {
     lowerPart.contents.clear()
     lowerPart.contents ++= MapEdit.keys(obj.get(field), skillType).toSeq.sortBy(x ⇒ if (x == null) "" else x.toString).drop(firstIndex).take(pageSize).map { key ⇒
-      /*val fprop = new qq.editor.binding.SetContainerField(null, page.file, pool, obj, field, key)
-      val fed = new ElementFieldEdit(
+      val keysbox = VBox()
+      for ((k, t) ← key.zip(groundTypes)) {
+        keysbox.contents += qq.util.Swing.HBox(new GroundValueLabel(page, t, k), swing.Swing.HGlue)
+      }
+      val fprop = qq.editor.binding.MapField(null, page.file, pool, obj, field, key, elType)
+      val valed = new ElementFieldEdit(
         page,
-        field.t.asInstanceOf[SingleBaseTypeContainer[_, _]].groundType,
-        fprop)
+        elType,
+        fprop,
+        false)
       val ra = new swing.Action("remove") {
         icon = new qq.icons.RemoveListItemIcon(true)
         override def apply() {
-          new qq.editor.UserSetRemove[O, C[E], E](page.file, pool, obj, field, fprop())
+          new qq.editor.UserMapRemove[O, C[K,V]](page.file, pool, obj, field, key)
         }
       }
-      qq.util.Swing.HBox(0.0f,
-        fed,
-        new qq.util.PlainButton(ra) { text = "" }) */
-      new swing.Label(key.toString)
+      HBox(0.0f,
+        VBox(0.0f,
+          HBox(0.0f, //new swing.Label("⋅"),
+            keysbox),
+          HBox(0.0f, //new swing.Label("↦"),
+            valed)),
+        new qq.util.PlainButton(ra) { text = "" })
     }
     /* add a row for inserting at the end; if the fields end at a page break,
        * the last page will be too long (due to this append line), but that's,
@@ -132,8 +140,9 @@ class MapEdit[K,V,C[K, V] <: HashMap[K, V], O <: api.SkillObject](
     val aa = new swing.Action("add") {
       icon = new qq.icons.AddListItemIcon(true)
       override def apply() {
-        // TODO user select new element
-       // new qq.editor.UserSetInsert(page.file, pool, obj, field, getNewElement())
+        // TODO nicer
+        val keys = for(τ <- groundTypes.dropRight(1)) yield NewValue.prompt(τ, "key", page)
+        new qq.editor.UserMapInsert(page.file, pool, obj, field, keys, NewValue.default(groundTypes.last))
       }
     }
     lowerPart.contents += qq.util.Swing.HBox(0.0f,
@@ -159,30 +168,77 @@ object MapEdit {
   /** flatten the nested map type into a list of ground types */
   def typeList(τ: MapType[_, _]): Seq[FieldType[_]] = {
     τ.valueType match {
-      case τ2: MapType[_, _] =>
+      case τ2: MapType[_, _] ⇒
         τ.keyType +: typeList(τ2)
-      case _ =>
-      Seq(τ.keyType, τ.valueType)
+      case _ ⇒
+        Seq(τ.keyType, τ.valueType)
     }
   }
   /** number of entries in a map (complete ones) */
-  def size(m: HashMap[_,_], τ: MapType[_, _]): Int = {
+  def size(m: HashMap[_, _], τ: MapType[_, _]): Int = {
     τ.valueType match {
-      case τ2: MapType[_, _] =>
-        m.map(e => MapEdit.size(e._2.asInstanceOf[HashMap[_,_]], τ2)).sum
-      case _ =>
+      case τ2: MapType[_, _] ⇒
+        m.map(e ⇒ MapEdit.size(e._2.asInstanceOf[HashMap[_, _]], τ2)).sum
+      case _ ⇒
         m.size
     }
   }
   /** enumerate all key tuples */
-  def keys(m: HashMap[_,_], τ: MapType[_, _]): Iterable[Seq[Any]] = {
+  def keys(m: HashMap[_, _], τ: MapType[_, _]): Iterable[Seq[Any]] = {
     τ.valueType match {
-      case τ2: MapType[_, _] =>
-        m.flatMap(e => keys(e._2.asInstanceOf[HashMap[_,_]], τ2).map(f => e._1 +: f))
-      case _ =>
+      case τ2: MapType[_, _] ⇒
+        m.flatMap(e ⇒ keys(e._2.asInstanceOf[HashMap[_, _]], τ2).map(f ⇒ e._1 +: f))
+      case _ ⇒
         m.keys.map(Seq(_))
     }
   }
-  
-  
+
+  def get(m: HashMap[Any, Any], τ: MapType[_, _], key: Seq[Any]): Any = {
+    τ.valueType match {
+      case τ2: MapType[_, _] ⇒
+        get(m(key.head).asInstanceOf[HashMap[Any, Any]], τ2, key.tail)
+      case _ ⇒
+        m(key.head)
+    }
+  }
+  def contains(m: HashMap[Any, Any], τ: MapType[_, _], key: Seq[Any]): Boolean = {
+    τ.valueType match {
+      case τ2: MapType[_, _] ⇒
+        m.contains(key.head) && contains(m(key.head).asInstanceOf[HashMap[Any, Any]], τ2, key.tail)
+      case _ ⇒
+        m.contains(key.head)
+    }
+  }
+  def set(m: HashMap[Any, Any], τ: MapType[_, _], key: Seq[Any], value: Any): Unit = {
+    τ.valueType match {
+      case τ2: MapType[_, _] ⇒
+        set(m(key.head).asInstanceOf[HashMap[Any, Any]], τ2, key.tail, value)
+      case _ ⇒
+        m(key.head) = value
+    }
+  }
+  def insert(m: HashMap[Any, Any], τ: MapType[_, _], key: Seq[Any], value: Any): Unit = {
+    τ.valueType match {
+      case τ2: MapType[_, _] ⇒
+        if (!m.contains(key.head)) {
+          m(key.head) = new HashMap()
+        }
+        insert(m(key.head).asInstanceOf[HashMap[Any, Any]], τ2, key.tail, value)
+      case _ ⇒
+        m(key.head) = value
+    }
+  }
+  def remove(m: HashMap[Any, Any], τ: MapType[_, _], key: Seq[Any]): Unit = {
+    τ.valueType match {
+      case τ2: MapType[_, _] ⇒
+        remove(m(key.head).asInstanceOf[HashMap[Any, Any]], τ2, key.tail)
+        if (m(key.head).asInstanceOf[HashMap[Any, Any]].size == 0) {
+          m.remove(key.head) 
+        }
+      case _ ⇒
+        m.remove(key.head)
+    }
+  }
+
+
 }

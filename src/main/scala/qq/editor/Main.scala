@@ -225,6 +225,7 @@ object Main extends SimpleSwingApplication {
       new Menu("Edit") {
         mnemonic = swing.event.Key.E
         contents ++= Seq(undoMenuItem, redoMenuItem)
+        contents += new MenuItem(Action("Properties") {settings.prefEdit.visible = true})
       },
       viewMenu, objectMenu, typeMenu)
   }

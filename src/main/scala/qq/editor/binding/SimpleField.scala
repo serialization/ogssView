@@ -14,17 +14,8 @@ class SimpleField[O <: api.SkillObject, F](
   description = s"${field.name} in ${file.idOfObj(obj)}"
 
   restrictions ++= Restrictions(field)
+  restrictions ++= Restrictions(file, field.t)
 
-  if (field.t.isInstanceOf[internal.fieldTypes.UserType[_]]) {
-    restrictions += qq.util.binding.Restriction(
-      { (x: F) ⇒
-        x == null || {
-          val t = file.s(x.asInstanceOf[api.SkillObject].getTypeName)
-          t == field.t || file.superTypes(t).contains(field.t)
-        }
-      },
-      "object must have type " + field.t + " or sub-type")
-  }
   private val fileEditHandler: (qq.editor.Edit[_] ⇒ Unit) = { x ⇒
     if (x.obj == obj && x.isInstanceOf[qq.editor.SimpleFieldEdit[_, _]]) {
       val y = x.asInstanceOf[qq.editor.SimpleFieldEdit[O, F]]

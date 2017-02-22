@@ -1,6 +1,8 @@
 package qq.editor.binding
 
 import de.ust.skill.common.scala.api;
+import de.ust.skill.common.scala.internal.fieldTypes.SingleBaseTypeContainer;
+import de.ust.skill.common.scala.internal.fieldTypes.FieldType;
 import scala.collection.mutable.Buffer;
 
 class IndexedContainerField[O <: api.SkillObject, C[F] <: Buffer[F], F](
@@ -14,6 +16,7 @@ class IndexedContainerField[O <: api.SkillObject, C[F] <: Buffer[F], F](
 
   description = s"element $index of ${field.name} in ${file.idOfObj(obj)}"  
   // TODO restrictions ++= Restrictions(field)
+  restrictions ++= Restrictions(file, field.t.asInstanceOf[SingleBaseTypeContainer[_,_]].groundType.asInstanceOf[FieldType[F]]) 
 
   /**
    * when obj.get(field)(index) is the last element and is removed, this object

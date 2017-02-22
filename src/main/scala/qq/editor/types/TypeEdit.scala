@@ -2,6 +2,11 @@ package qq.editor.types
 
 import de.ust.skill.common.scala.api;
 import de.ust.skill.common.scala.internal;
+import qq.util.Swing.VBox
+import qq.util.Swing.HBox
+import swing.Swing.HGlue
+import swing.Swing.RigidBox
+import scala.swing.Dimension
 
 /** show the fields of one type and edit their profile settings. */
 class TypeEdit(val page: qq.editor.types.TypePage,
@@ -21,10 +26,22 @@ class TypeEdit(val page: qq.editor.types.TypePage,
           case _                                  ⇒ "" /* non-constants don't */
         }
         /* main part is type and name; FieldTypeControl makes user types in the type clickable */
-        var typeAndName = qq.util.Swing.HBox(
-          new FieldTypeControl(page, field.t),
+        val ftc = new FieldTypeControl(page, field.t)
+        val ftcw = ftc.preferredSize.width
+        var typeAndName = if (ftcw > 40) {
+        VBox(
+            HBox( ftc,HGlue),
+          HBox(RigidBox(new Dimension(40,0)),
+              new swing.Label(" " + field.name + constantValuePart),
+          HGlue)
+)          
+        } else {
+        HBox(
+          ftc,
+          RigidBox(new Dimension(40 - ftcw, 0)),
           new swing.Label(" " + field.name + constantValuePart),
-          swing.Swing.HGlue)
+          HGlue)
+        }
         /* when there are field restrictions, make a vbox with restrictions followed by type and name */
         var f2 = field.asInstanceOf[internal.FieldDeclaration[_, _]]
         if (f2.restrictions.size == 0) {
@@ -32,7 +49,7 @@ class TypeEdit(val page: qq.editor.types.TypePage,
         } else {
           new swing.BoxPanel(swing.Orientation.Vertical) {
             contents ++= f2.restrictions.map { x ⇒
-              qq.util.Swing.HBox(
+              HBox(
                 new swing.Label(
                   /* non-null has no nice toString */
                   if (x.isInstanceOf[internal.restrictions.NonNull[_]]) {
@@ -40,7 +57,7 @@ class TypeEdit(val page: qq.editor.types.TypePage,
                   } else {
                     "@" + x.toString
                   }),
-                swing.Swing.HGlue)
+                HGlue)
             }
             contents += typeAndName
           }
@@ -55,10 +72,10 @@ class TypeEdit(val page: qq.editor.types.TypePage,
         addFieldsOfType(page.file.parentType(τ))
       }
       contents += new qq.util.ExpandableNode(
-        qq.util.Swing.HBox(
+        HBox(
           new swing.Label("" + τ.fields.length + " fields from "),
           new TypeNameControl(page, τ),
-          swing.Swing.HGlue)) {
+          HGlue)) {
 
         if (τ.fields.length > 0) {
           subPart = new swing.BoxPanel(swing.Orientation.Vertical) {
@@ -72,28 +89,28 @@ class TypeEdit(val page: qq.editor.types.TypePage,
       rs ← empty.api.internal.FileParser.typeRestrictions.get(skillType.asInstanceOf[de.ust.skill.common.scala.internal.StoragePool[_,_]]);
       r ← rs
     ) {
-      contents += qq.util.Swing.HBox(
+      contents += HBox(
         new swing.Label("@" + r.toString()) { foreground = java.awt.Color.red },
-        swing.Swing.HGlue)
+        HGlue)
     }
     page.file.parentType.get(skillType) match {
       case Some(parentType) ⇒
-        contents += qq.util.Swing.HBox(
+        contents += HBox(
           new TypeNameControl(page, skillType),
           new swing.Label(" : "),
           new TypeNameControl(page, parentType),
           new swing.Label(" {"),
-          swing.Swing.HGlue)
+          HGlue)
       case None ⇒
-        contents += qq.util.Swing.HBox(
+        contents += HBox(
           new TypeNameControl(page, skillType),
           new swing.Label(" {"),
-          swing.Swing.HGlue)
+          HGlue)
     }
     addFieldsOfType(skillType)
-    contents += qq.util.Swing.HBox(
+    contents += HBox(
       new swing.Label("}"),
-      swing.Swing.HGlue)
+      HGlue)
 
   }
 

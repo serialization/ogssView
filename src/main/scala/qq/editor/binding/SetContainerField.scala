@@ -1,6 +1,8 @@
 package qq.editor.binding
 
 import de.ust.skill.common.scala.api;
+import de.ust.skill.common.scala.internal.fieldTypes.SingleBaseTypeContainer;
+import de.ust.skill.common.scala.internal.fieldTypes.FieldType;
 import scala.collection.mutable.HashSet;
 
 class SetContainerField[O <: api.SkillObject, C[F] <: HashSet[F], F](
@@ -14,8 +16,8 @@ class SetContainerField[O <: api.SkillObject, C[F] <: HashSet[F], F](
 
   var key_ = key
   // TODO restrictions ++= Restrictions(field)
-
-  this.restrictions += qq.util.binding.Restriction(x => x == this() || !obj.get(field).contains(x), "New value is already contained in set")
+  restrictions ++= Restrictions(file, field.t.asInstanceOf[SingleBaseTypeContainer[_,_]].groundType.asInstanceOf[FieldType[F]]) 
+  restrictions += qq.util.binding.Restriction(x => x == this() || !obj.get(field).contains(x), "New value is already contained in set")
   
   /**
    * when obj.get(field)(index) is the last element and is removed, this object

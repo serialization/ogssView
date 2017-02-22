@@ -2,7 +2,11 @@ package qq.editor
 
 import de.ust.skill.common.scala.api;
 import de.ust.skill.common.scala.internal;
-import scala.collection.mutable._;
+import scala.collection.mutable.Buffer;
+import scala.collection.mutable.ArrayBuffer;
+import scala.collection.mutable.ListBuffer;
+import scala.collection.mutable.HashSet;
+import scala.collection.mutable.HashMap;
 import javax.swing.undo._;
 
 /**
@@ -412,5 +416,165 @@ final case class UserSetReplace[T <: api.SkillObject, C <: HashSet[F], F](
     } else {
       file.modify(this)
     }
+  }
+}
+
+/** edits maps as lists indexed by  key sequence */
+sealed abstract class UserMapEdit[T <: api.SkillObject, F](
+  /** The file this belongs to */
+  f: qq.editor.File,
+  /** The type of the modified object*/
+  p: api.Access[T],
+  /** The object that is modified */
+  o: T,
+  /** The field (collection) that is modified */
+  val field: api.FieldDeclaration[F],
+  /** The index of the modified member of the collection */
+  val index: Seq[Any])
+    extends UserEdit[T](f, p, o) {
+
+}
+
+/** insertion of a new value into a map */
+final case class UserMapInsert[T <: api.SkillObject, F](
+  /** The file this belongs to */
+  f: qq.editor.File,
+  /** The type of the modified object*/
+  p: api.Access[T],
+  /** The object that is modified */
+  o: T,
+  /** The field (collection) that is modified */
+  fd: api.FieldDeclaration[F],
+  /** The index of the modified member of the collection */
+  i: Seq[Any],
+  /** the value of the new member */
+  val value: Any)
+    extends UserMapEdit[T, F](f, p, o, fd, i) {
+
+  /* no merge */
+  override def addEdit(x: UndoableEdit) = false
+  override def replaceEdit(x: UndoableEdit) = false
+
+  override def canRedo = true
+  override def canUndo = true
+  override def redo = {
+    file.modify_(toEdit)
+  }
+  override def undo = {
+    file.modify_(new MapRemove(file, pool, obj, field, index, value))
+  }
+  override def getPresentationName = s"inserted $value into ${field.name} of ${file.idOfObj(obj)} at index $index"
+  override def getRedoPresentationName = s"insert $value into ${field.name} of ${file.idOfObj(obj)} at index $index"
+  override def getUndoPresentationName = s"remove $value from ${field.name} of ${file.idOfObj(obj)} at index $index"
+  override def isSignificant = true
+  override def die() = {}
+
+  override def toEdit = new MapInsert(file, pool, obj, field, index, value)
+
+  import qq.editor.objects.MapEdit.contains
+  import de.ust.skill.common.scala.internal.fieldTypes.MapType
+  if (contains(obj.get(field).asInstanceOf[HashMap[Any, Any]], field.t.asInstanceOf[MapType[_, _]], index)) {
+    throw new IllegalStateException("Insert into map: key already exists")
+  } else {
+    file.modify(this)
+  }
+}
+
+/** insertion of a new value into an indexed container */
+final case class UserMapRemove[T <: api.SkillObject, F](
+  /** The file this belongs to */
+  f: qq.editor.File,
+  /** The type of the modified object*/
+  p: api.Access[T],
+  /** The object that is modified */
+  o: T,
+  /** The field (collection) that is modified */
+  fd: api.FieldDeclaration[F],
+  /** The index of the modified member of the collection */
+  i: Seq[Any])
+    extends UserMapEdit[T, F](f, p, o, fd, i) {
+
+  import qq.editor.objects.MapEdit.contains
+  import qq.editor.objects.MapEdit.get
+  import de.ust.skill.common.scala.internal.fieldTypes.MapType
+
+  val oldValue: Any = get(obj.get(field).asInstanceOf[HashMap[Any, Any]], field.t.asInstanceOf[MapType[_, _]], index)
+
+  /* no merge */
+  override def addEdit(x: UndoableEdit) = false
+  override def replaceEdit(x: UndoableEdit) = false
+
+  override def canRedo = true
+  override def canUndo = true
+  override def redo = {
+    file.modify_(toEdit)
+  }
+  override def undo = {
+    file.modify_(new MapInsert(file, pool, obj, field, index, oldValue))
+  }
+  override def getPresentationName = s"remove $oldValue from ${field.name} of ${file.idOfObj(obj)} at index $index"
+  override def getRedoPresentationName = s"remove $oldValue from ${field.name} of ${file.idOfObj(obj)} at index $index"
+  override def getUndoPresentationName = s"re-insert $oldValue into ${field.name} of ${file.idOfObj(obj)} at index $index"
+  override def isSignificant = true
+  override def die() = {}
+
+  override def toEdit = new MapRemove(file, pool, obj, field, index, oldValue)
+
+  if (!contains(obj.get(field).asInstanceOf[HashMap[Any, Any]], field.t.asInstanceOf[MapType[_, _]], index)) {
+    throw new IllegalStateException("Remove from map: key does not exists")
+  } else {
+    file.modify(this)
+  }
+}
+
+/** change of the value of a member of an indexed container */
+final case class UserMapModify[T <: api.SkillObject, F](
+  /** The file this belongs to */
+  f: qq.editor.File,
+  /** The type of the modified object*/
+  p: api.Access[T],
+  /** The object that is modified */
+  o: T,
+  /** The field (collection) that is modified */
+  fd: api.FieldDeclaration[F],
+  /** The index of the modified member of the collection */
+  i: Seq[Any],
+  /** Value after modification */
+  val newValue: Any)
+    extends UserMapEdit[T, F](f, p, o, fd, i) {
+
+  import qq.editor.objects.MapEdit.contains
+  import qq.editor.objects.MapEdit.get
+  import de.ust.skill.common.scala.internal.fieldTypes.MapType
+
+  val oldValue: Any = get(obj.get(field).asInstanceOf[HashMap[Any, Any]], field.t.asInstanceOf[MapType[_, _]], index)
+
+  /* no merge */
+  override def addEdit(x: UndoableEdit) = false
+  override def replaceEdit(x: UndoableEdit) = false
+
+  override def canRedo = true
+  override def canUndo = true
+  override def redo = {
+    file.modify_(toEdit)
+  }
+  override def undo = {
+    file.modify_(new MapModify(file, pool, obj, field, index, newValue, oldValue))
+  }
+  override def getPresentationName = s"changed ${field.name}($index) of ${file.idOfObj(obj)} from $oldValue to $newValue"
+  override def getRedoPresentationName = s"change ${field.name}($index) of ${file.idOfObj(obj)} from $oldValue to $newValue"
+  override def getUndoPresentationName = s"change ${field.name}($index) of ${file.idOfObj(obj)} from $newValue back to $oldValue"
+  override def isSignificant = true
+  override def die() = {}
+
+  override def toEdit = new MapModify(file, pool, obj, field, index, oldValue, newValue)
+
+  if (qq.util.Neq(oldValue, newValue)) {
+    if (!contains(obj.get(field).asInstanceOf[HashMap[Any, Any]], field.t.asInstanceOf[MapType[_, _]], index)) {
+      throw new IllegalStateException("Map modify: key does not exists")
+    } else {
+      file.modify(this)
+    }
+
   }
 }
