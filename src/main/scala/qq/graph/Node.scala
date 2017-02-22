@@ -10,13 +10,13 @@ class Node(val graph: Graph,
 
   val edgesOut: HashMap[Node, Edge] = HashMap()
   val edgesIn: HashMap[Node, Edge] = HashMap()
-  def degree = edgesOut.size + edgesIn.size
+  def degree = edgesOut.size + edgesIn.size - (if (connectedTo(this)) 2 else 0)
   def connectedTo(r: Node) = edgesOut.contains(r) || edgesIn.contains(r)
 
   val uiElement = data.getUiElement(graph)
   var pos: Vector = new Vector(0f, 0f)
-  def width: Int = uiElement.peer.getWidth
-  def height: Int = uiElement.peer.getHeight
+  def width: Int = uiElement.peer.getPreferredSize.getWidth.toInt
+  def height: Int = uiElement.peer.getPreferredSize.getHeight.toInt
   def left: Int = (pos.x - width / 2).toInt
   def top: Int = (pos.y - height / 2).toInt
   var rigidSubGraph: Option[RigidSubGraph] = None
@@ -60,13 +60,13 @@ class Node(val graph: Graph,
     if (r == this) {
       // distance to border
       val (dl, dr, dt, db) = (left, bounds.width - left - width, top, bounds.height - height - top)
-      def Fᵣ(x: Int) = { val xx = (x- 10).toFloat.max(p.ε()); p.c3() / xx / xx }
+      def Fᵣ(x: Int) = { val xx = (x- 10).toFloat.max(p.ε()); p.c3() / xx / xx / xx }
       val F = new Vector(Fᵣ(dl) - Fᵣ(dr), Fᵣ(dt) - Fᵣ(db))
       force += F
       energy += F * F
     } else {
-      val deg = (degree + r.degree - 1)
-      val l = if (deg <= 5) p.c2() else p.c2() * math.sqrt(deg / 5)
+      val deg = (degree.min{r.degree})
+      val l = p.c2() * math.sqrt(deg)//if (deg <= 5) p.c2() else p.c2() * math.sqrt(deg / 5)
       val δ = (r.pos - pos).max(p.ε())
       val δ2 = {
         val δ2 = δ - (toBorder(δ) - r.toBorder(-δ)) * overlapRemoval

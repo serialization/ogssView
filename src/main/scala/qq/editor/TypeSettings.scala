@@ -25,4 +25,6 @@ class TypeSettings[T <: api.SkillObject](
   def parentTypeSettings: TypeSettings[_] = containingFile.typeSettings(
       containingFile.parentType(typ)
       )
+      
+  val expanded: mutable.HashSet[Seq[api.FieldDeclaration[_]]] = mutable.HashSet()
 }

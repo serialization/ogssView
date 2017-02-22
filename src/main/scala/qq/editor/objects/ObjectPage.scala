@@ -54,7 +54,8 @@ class ObjectPage(file0: qq.editor.File, settings0: qq.editor.Settings) extends q
     objEdit.contents += new TopObjectEdit(this, v.obj)
 
     objGraph.contents.clear()
-    objGraph.contents += new ObjectGraph(this, v.obj)
+    val og = new ObjectGraph(this, v.obj)
+    objGraph.contents += og
     
     goBack.enabled = previousView.length > 0
     goForward.enabled = nextView.length > 0

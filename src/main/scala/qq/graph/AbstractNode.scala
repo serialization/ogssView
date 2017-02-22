@@ -14,13 +14,14 @@ abstract class AbstractNode() {
 
 case class SkillObjectNode(val skillObject: api.SkillObject)
     extends AbstractNode() {
-  
+ 
+  private def theNode = this
   override def getUiElement(graph: Graph) = {
     /* TODO context menu */
     new qq.util.PlainButton(
-        new swing.Action(graph.page.file.idOfObj(skillObject)){
+        new swing.Action(graph.viewer.page.file.idOfObj(skillObject)){
           override def apply() = {
-            for (i <- getOutEdge(graph.page.file)) graph.addEdge(i)
+            graph.viewer.expandCollapse(theNode)
           }
         }) {
       

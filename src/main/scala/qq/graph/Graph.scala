@@ -9,7 +9,7 @@ import qq.util.Vector
 /** a graph showing objects from file in page */
 class Graph(
     val file: qq.editor.File,
-    val page: qq.editor.Page,
+    val viewer: qq.editor.objects.ObjectGraph[_],
     val properties: LayoutSettings) {
 
   /**
@@ -68,21 +68,20 @@ class Graph(
   def energy: Float = nodes.values.map(_.energy).sum
 
   def resetAccumulators: Unit = nodes.values.foreach(_.resetAccumulators)
-  def calculateForce(overlapAvoidance: Float, size: java.awt.Dimension): Unit = {
+  private def calculateForce(overlapAvoidance: Float, size: java.awt.Dimension, stepSize: Float): Unit = {
     val nvis = nodes.values.toIndexedSeq
-    for (
-      i ← 0 until nvis.size;
-      j ← i until nvis.size
-    ) {
-      nvis(i).calculateForce(nvis(j), overlapAvoidance, size)
-    }
-    for (n <- nvis; e <- n.edgesOut.values) {
-      e.calculateForce()
+    for (i ← 0 until nvis.size) {
+      for (j ← i until nvis.size) {
+        nvis(i).calculateForce(nvis(j), overlapAvoidance, size)
+      }
+      for (e ← nvis(i).edgesOut.values) {
+        e.calculateForce()
+      }
     }
   }
-  def move(maxDist: Float): Unit = {
-    nodes.values.foreach(_.move(maxDist))
-    rigidSubgraphs.foreach(_.move(maxDist))
+  def move(stepSize: Float): Unit = {
+      nodes.values.foreach(_.move(stepSize))
+    //  rigidSubgraphs.foreach(_.move(maxDist))
   }
   /**
    * freeze current layout, i.e. add all nodes to one rigid sub-graph
@@ -97,6 +96,7 @@ class Graph(
   }
 
   val energyOfStep = new ArrayBuffer[Float]()
+  val stepOfStep = new ArrayBuffer[Float]()
   /**
    * place nodes in a rectangle of the given size
    */
@@ -106,27 +106,30 @@ class Graph(
     val xmax = nodes.values.map(_.pos.x).max
     val ymin = nodes.values.map(_.pos.y).min
     val ymax = nodes.values.map(_.pos.y).max
-    val x0 = (xmin + xmax) / 2
-    val y0 = (ymin + ymax) / 2
-    val ax = if (xmax - xmin > size.width) size.width.toFloat / (xmax - xmin) else 1.0f
-    val ay = if (ymax - ymin > size.height) size.height.toFloat / (ymax - ymin) else 1.0f
-    nodes.values.foreach{x =>
-      x.pos = new Vector(
-          ax*(x.pos.x - x0) + size.width / 2,
-          ay*(x.pos.y - y0) + size.height / 2)
+    if (xmin < 0 || ymin < 0 || xmax > size.width || ymax > size.height) {
+      val x0 = (xmin + xmax) / 2
+      val y0 = (ymin + ymax) / 2
+      val ax = if (xmax - xmin > size.width) size.width.toFloat / (xmax - xmin) else 1.0f
+      val ay = if (ymax - ymin > size.height) size.height.toFloat / (ymax - ymin) else 1.0f
+      nodes.values.foreach { x ⇒
+        x.pos = new Vector(
+          ax * (x.pos.x - x0) + size.width / 2,
+          ay * (x.pos.y - y0) + size.height / 2)
+      }
     }
-    
     energyOfStep.clear()
-    var stepsize: Float = (size.width max size.height) / 10
+    stepOfStep.clear()
+    var stepsize: Float = 10
     var energyPreviousStep = Float.PositiveInfinity
     var stepsWithProgress = 0
 
     for (step ← 0.until(150)) {
       resetAccumulators
-      calculateForce(((step - 50).toFloat / 50).max(0).min(1), size)
+      calculateForce(((step - 50).toFloat / 50).max(0).min(1), size, stepsize)
       move(stepsize)
       // TODO this is not the energy of Hu
       energyOfStep += energy
+      stepOfStep += stepsize
       if (energy <= energyPreviousStep) {
         stepsWithProgress += 1
         if (stepsWithProgress >= 5) {
@@ -145,18 +148,19 @@ class Graph(
   }
   def cluttered: Boolean = energy / nodes.size > properties.cluttered()
   private def updateIdealEdgeDirections = {
-    val drawnEdges = for (n <- nodes.values; e <- n.edgesOut.values) yield e
-    val abstractEdgesDirections = drawnEdges.toSeq.flatMap(e => e.data.iterator.map(x => (x, e.r)) ++ e.reverseData.iterator.map(x => (x, -e.r)) )
-    val dirByAbsEdge = abstractEdgesDirections.groupBy(_._1).mapValues(x => Vector.avg(x.map(_._2.norm)))
-    for ((e, x) <- dirByAbsEdge if e.isInstanceOf[SkillFieldEdge[_]]) if (x.isFinite()){
-      val f = e.asInstanceOf[SkillFieldEdge[_]].field
+    val drawnEdges = for (n ← nodes.values; e ← n.edgesOut.values) yield e
+    val abstractEdgesDirections = drawnEdges.toSeq.flatMap(e ⇒ e.data.iterator.map(x ⇒ (x, e.r)) ++ e.reverseData.iterator.map(x ⇒ (x, -e.r)))
+    val dirByAbsEdge = abstractEdgesDirections
+      .filter(_._1.isInstanceOf[SkillFieldEdge[_]])
+      .groupBy(_._1.asInstanceOf[SkillFieldEdge[_]].field)
+      .mapValues(x ⇒ Vector.avg(x.map(_._2.norm)))
+    for ((f, x) ← dirByAbsEdge if (x.isFinite())) {
       val d = file.fieldSettings(f).prefEdgeDirection
       val d0 = d()
-      val a = d0.abs
-      if (a < 1.0) {
-        val d1 = d0 * a + x * (1-a) / 2 
-        println(s"${f.name} $d1 $d0 $x $a")
-        d := d1 
+      if (d0.abs < 1.0) {
+        val d1 = d0 * d0.abs + x * (1 - d0.abs)
+        println(s"${f.name} $d1 $d0 $x ${d1.abs}")
+        d := d1.min(0.95f)
       }
     }
   }
