@@ -54,8 +54,10 @@ class FieldSettings[T, U <: api.SkillObject](
   prefHide.onChange.strong += (prefs.putBoolean("hide", _))
   prefHideNull.onChange.strong += (prefs.putBoolean("hideEmpty", _))
   prefShowInParent.onChange.strong += (prefs.putBoolean("showInParent", _))
-  prefFixedEdgeDirection.onChange.strong += (prefs.putBoolean("stableDirection", _))
-  prefEdgeDirection.onChange.strong += (x => prefs.put("idealDirection", x.toString))
+  prefFixedEdgeDirection.onChange.strong += {x =>
+    prefs.putBoolean("stableDirection", x)
+    if (x) prefs.put("idealDirection", prefEdgeDirection().toString)}
+  prefEdgeDirection.onChange.strong += (x => if (prefFixedEdgeDirection()) prefs.put("idealDirection", x.toString))
   
   
   /** true if the value of this field in object o is null, empty collection, zero, or empty string */

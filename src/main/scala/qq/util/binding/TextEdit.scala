@@ -54,7 +54,7 @@ class TextEdit[T](p: Property[T],
       } catch {
         case e: Exception ⇒
           // TODO better message for known cases
-          Left(List(e.toString() + " "  + e.getMessage))
+          Left(List(e.toString() + " " + e.getMessage))
       }
   }
 
@@ -73,5 +73,12 @@ class TextEdit[T](p: Property[T],
     ef.visible = vms.size != 0
     ef.text = vms.mkString("\n")
   })
+
+  listenTo(keys)
+  listenTo(tf.keys)
+  reactions += {
+    case scala.swing.event.KeyPressed(_, scala.swing.event.Key.Escape, _, _) ⇒
+      propertyToComponent(p())
+  }
 
 }

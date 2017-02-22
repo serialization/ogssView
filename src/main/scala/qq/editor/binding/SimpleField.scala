@@ -13,7 +13,7 @@ class SimpleField[O <: api.SkillObject, F](
 
   description = s"${field.name} in ${file.idOfObj(obj)}"
 
-  /* TODO restrictions */
+  restrictions ++= Restrictions(field)
 
   if (field.t.isInstanceOf[internal.fieldTypes.UserType[_]]) {
     restrictions += qq.util.binding.Restriction(

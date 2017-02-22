@@ -27,6 +27,7 @@ object TabbedPane {
     override def title_=(x: String): Unit = { super.title = x; updateTabComponent_ }
     /// TODO why does peer.indexOfComponent(pg.content.peer) below work and this doesn't?
     override def index: Int = if (tabbedPane != null) tabbedPane.peer.indexOfComponent(content.peer) else 0;
+    def show(): Unit = tabbedPane.peer.setSelectedIndex(index)
   }
   class ClosablePage(parent0: TabbedPane, title0: String, content0: swing.Component, tip0: String)
       extends Page(parent0, title0, content0, tip0) {

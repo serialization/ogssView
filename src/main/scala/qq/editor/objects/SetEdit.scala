@@ -13,7 +13,7 @@ class SetEdit[E, C[E] <: HashSet[E], O <: api.SkillObject](
     extends swing.BoxPanel(swing.Orientation.Vertical) {
 
   private var firstIndex = 0
-  private val pageSize = 10 // TODO preferences
+  private val pageSize = qq.editor.Main.settings.editCollectionPageSize()
 
   /** label showing field name */
   private val nameLbl = new swing.Label(field.name)
@@ -105,7 +105,7 @@ class SetEdit[E, C[E] <: HashSet[E], O <: api.SkillObject](
   private val lowerPart = new swing.BoxPanel(swing.Orientation.Vertical)
   private def refillLower(): Unit = {
     lowerPart.contents.clear()
-    lowerPart.contents ++= obj.get(field).toSeq.sortBy(x => if (x == null) "" else x.toString).drop(firstIndex).take(pageSize).map { key ⇒
+    lowerPart.contents ++= obj.get(field).toSeq.sortBy(x ⇒ if (x == null) "" else x.toString).drop(firstIndex).take(pageSize).map { key ⇒
       val fprop = new qq.editor.binding.SetContainerField(null, page.file, pool, obj, field, key)
       val fed = new ElementFieldEdit(
         page,
@@ -127,12 +127,11 @@ class SetEdit[E, C[E] <: HashSet[E], O <: api.SkillObject](
     val aa = new swing.Action("add") {
       icon = new qq.icons.AddListItemIcon(true)
       override def apply() {
-        // TODO user select new element
         new qq.editor.UserSetInsert(page.file, pool, obj, field, getNewElement())
       }
     }
     lowerPart.contents += qq.util.Swing.HBox(0.0f,
-      new swing.Label(s"end of ${field.name}"),
+      new swing.Label(if (firstIndex + pageSize >= obj.get(field).size) s"end of ${field.name}" else ""),
       swing.Swing.HGlue,
       new qq.util.PlainButton(aa) { text = "" })
 
@@ -142,6 +141,10 @@ class SetEdit[E, C[E] <: HashSet[E], O <: api.SkillObject](
 
   updateHeadValues
   refillLower
-  en.collapse
+  if (obj.get(field).size > 0 && obj.get(field).size <= qq.editor.Main.settings.editCollectionSmall()) {
+    en.expand()
+  } else {
+    en.collapse()
+  }
 
 }

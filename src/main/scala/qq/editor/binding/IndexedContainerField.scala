@@ -13,7 +13,7 @@ class IndexedContainerField[O <: api.SkillObject, C[F] <: Buffer[F], F](
     extends qq.util.binding.Property[F](owner0, index.toString(), obj.get(field)(index)) {
 
   description = s"element $index of ${field.name} in ${file.idOfObj(obj)}"  
-  /* TODO restrictions */
+  // TODO restrictions ++= Restrictions(field)
 
   /**
    * when obj.get(field)(index) is the last element and is removed, this object

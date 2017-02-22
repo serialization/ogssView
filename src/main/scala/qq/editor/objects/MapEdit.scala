@@ -1,18 +1,21 @@
 package qq.editor.objects
 
 import de.ust.skill.common.scala.api;
-import de.ust.skill.common.scala.internal.fieldTypes.SingleBaseTypeContainer;
-import scala.collection.mutable.Buffer;
+import de.ust.skill.common.scala.internal.fieldTypes.MapType
+import de.ust.skill.common.scala.internal.fieldTypes.FieldType
+import scala.collection.mutable.HashMap;
 
-class IndexedContainerEdit[E, C[E] <: Buffer[E], O <: api.SkillObject](
+class MapEdit[K,V,C[K, V] <: HashMap[K, V], O <: api.SkillObject](
   val page: ObjectPage,
   val pool: api.Access[O],
   val obj: O,
-  val field: api.FieldDeclaration[C[E]],
-  val getNewElement: (() ⇒ E) = null,
-  val canResize: Boolean = true)
+  val field: api.FieldDeclaration[C[K, V]])
     extends swing.BoxPanel(swing.Orientation.Vertical) {
 
+  
+  val skillType = field.t.asInstanceOf[MapType[_,_]]
+  val groundTypes = MapEdit.typeList(skillType)
+  
   private var firstIndex = 0
   private val pageSize = qq.editor.Main.settings.editCollectionPageSize()
 
@@ -27,7 +30,7 @@ class IndexedContainerEdit[E, C[E] <: Buffer[E], O <: api.SkillObject](
   private val pgDnAct = new swing.Action("Next Page") {
     icon = new qq.icons.ForwardIcon(true, true)
     override def apply() {
-      val n = obj.get(field).size
+      val n = MapEdit.size(obj.get(field), skillType)
       if (firstIndex + pageSize < n) {
         firstIndex += pageSize
         updateHeadValues
@@ -38,7 +41,7 @@ class IndexedContainerEdit[E, C[E] <: Buffer[E], O <: api.SkillObject](
   private val pgUpAct = new swing.Action("Previous Page") {
     icon = new qq.icons.BackIcon(true, true)
     override def apply() {
-      val n = obj.get(field).size
+      val n = MapEdit.size(obj.get(field), skillType)
       if (firstIndex > 0) {
         firstIndex -= pageSize min firstIndex
         updateHeadValues
@@ -58,7 +61,7 @@ class IndexedContainerEdit[E, C[E] <: Buffer[E], O <: api.SkillObject](
 
   /** update number of elements and current position in header */
   private def updateHeadValues(): Unit = {
-    val n = obj.get(field).size
+    val n = MapEdit.size(obj.get(field), skillType)
     countLbl.text = "" + n + " elements"
     shownLbl.text = "" + firstIndex + " to " + ((firstIndex + pageSize - 1) min (n - 1)) + " of " + n
     pgUpAct.enabled = firstIndex > 0
@@ -67,26 +70,22 @@ class IndexedContainerEdit[E, C[E] <: Buffer[E], O <: api.SkillObject](
 
   private val fileEditHandler: (qq.editor.Edit[_] ⇒ Unit) = { e ⇒
     if (e.obj == obj) {
-      e match {
-        case e: qq.editor.IndexedContainerEdit[E, C[E], O] ⇒
+/*      e match {
+        case e: qq.editor.SetEdit[E, C[E], O] ⇒
           if (e.field == field) {
             e match {
-              case e: qq.editor.IndexedContainerInsert[E, C[E], O] ⇒
+              case e: qq.editor.SetInsert[E, C[E], O] ⇒
                 updateHeadValues
-                if (e.index < firstIndex + pageSize) {
-                  refillLower
-                }
-              case e: qq.editor.IndexedContainerRemove[E, C[E], O] ⇒
+                refillLower
+              case e: qq.editor.SetRemove[E, C[E], O] ⇒
                 updateHeadValues
-                if (e.index < firstIndex + pageSize) {
-                  refillLower
-                }
+                refillLower
               case _ ⇒ ()
             }
           }
         case _ ⇒ ()
       }
-    }
+ */   }
   }
 
   page.file.onEdit.weak += fileEditHandler
@@ -110,47 +109,37 @@ class IndexedContainerEdit[E, C[E] <: Buffer[E], O <: api.SkillObject](
   private val lowerPart = new swing.BoxPanel(swing.Orientation.Vertical)
   private def refillLower(): Unit = {
     lowerPart.contents.clear()
-    lowerPart.contents ++= firstIndex.until((firstIndex + pageSize) min obj.get(field).size).map { i ⇒
+    lowerPart.contents ++= MapEdit.keys(obj.get(field), skillType).toSeq.sortBy(x ⇒ if (x == null) "" else x.toString).drop(firstIndex).take(pageSize).map { key ⇒
+      /*val fprop = new qq.editor.binding.SetContainerField(null, page.file, pool, obj, field, key)
       val fed = new ElementFieldEdit(
         page,
         field.t.asInstanceOf[SingleBaseTypeContainer[_, _]].groundType,
-        new qq.editor.binding.IndexedContainerField(null, page.file, pool, obj, field, i))
-      if (canResize) {
-        val aa = new swing.Action("add") {
-          icon = new qq.icons.AddListItemIcon(true)
-          override def apply() {
-            new qq.editor.UserIndexedContainerInsert(page.file, pool, obj, field, i, getNewElement())
-          }
+        fprop)
+      val ra = new swing.Action("remove") {
+        icon = new qq.icons.RemoveListItemIcon(true)
+        override def apply() {
+          new qq.editor.UserSetRemove[O, C[E], E](page.file, pool, obj, field, fprop())
         }
-        val ra = new swing.Action("remove") {
-          icon = new qq.icons.RemoveListItemIcon(true)
-          override def apply() {
-            new qq.editor.UserIndexedContainerRemove[O, C[E], E](page.file, pool, obj, field, i)
-          }
-        }
-        qq.util.Swing.HBox(0.0f,
-          fed,
-          new qq.util.PlainButton(ra) { text = "" },
-          new qq.util.PlainButton(aa) { text = "" })
-      } else {
-        fed
       }
+      qq.util.Swing.HBox(0.0f,
+        fed,
+        new qq.util.PlainButton(ra) { text = "" }) */
+      new swing.Label(key.toString)
     }
-    if (canResize && firstIndex + pageSize >= obj.get(field).size) {
-      /* add a row for inserting at the end; if the fields end at a page break,
+    /* add a row for inserting at the end; if the fields end at a page break,
        * the last page will be too long (due to this append line), but that's,
        * I think, less bad then having the append-line on its own page */
-      val aa = new swing.Action("add") {
-        icon = new qq.icons.AddListItemIcon(true)
-        override def apply() {
-          new qq.editor.UserIndexedContainerInsert(page.file, pool, obj, field, obj.get(field).size, getNewElement())
-        }
+    val aa = new swing.Action("add") {
+      icon = new qq.icons.AddListItemIcon(true)
+      override def apply() {
+        // TODO user select new element
+       // new qq.editor.UserSetInsert(page.file, pool, obj, field, getNewElement())
       }
-      lowerPart.contents += qq.util.Swing.HBox(0.0f,
-        new swing.Label(s"end of ${field.name}"),
-        swing.Swing.HGlue,
-        new qq.util.PlainButton(aa) { text = "" })
     }
+    lowerPart.contents += qq.util.Swing.HBox(0.0f,
+      new swing.Label(if (firstIndex + pageSize >= MapEdit.size(obj.get(field), skillType)) s"end of ${field.name}" else ""),
+      swing.Swing.HGlue,
+      new qq.util.PlainButton(aa) { text = "" })
 
   }
   en.subPart = lowerPart
@@ -164,4 +153,36 @@ class IndexedContainerEdit[E, C[E] <: Buffer[E], O <: api.SkillObject](
     en.collapse()
   }
 
+}
+
+object MapEdit {
+  /** flatten the nested map type into a list of ground types */
+  def typeList(τ: MapType[_, _]): Seq[FieldType[_]] = {
+    τ.valueType match {
+      case τ2: MapType[_, _] =>
+        τ.keyType +: typeList(τ2)
+      case _ =>
+      Seq(τ.keyType, τ.valueType)
+    }
+  }
+  /** number of entries in a map (complete ones) */
+  def size(m: HashMap[_,_], τ: MapType[_, _]): Int = {
+    τ.valueType match {
+      case τ2: MapType[_, _] =>
+        m.map(e => MapEdit.size(e._2.asInstanceOf[HashMap[_,_]], τ2)).sum
+      case _ =>
+        m.size
+    }
+  }
+  /** enumerate all key tuples */
+  def keys(m: HashMap[_,_], τ: MapType[_, _]): Iterable[Seq[Any]] = {
+    τ.valueType match {
+      case τ2: MapType[_, _] =>
+        m.flatMap(e => keys(e._2.asInstanceOf[HashMap[_,_]], τ2).map(f => e._1 +: f))
+      case _ =>
+        m.keys.map(Seq(_))
+    }
+  }
+  
+  
 }

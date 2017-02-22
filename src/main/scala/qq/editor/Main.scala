@@ -24,12 +24,14 @@ object Main extends SimpleSwingApplication {
     val page = new qq.editor.types.TypePage(file, settings)
     tabs.addPage(page)
     if (τ != null) page.goTo(τ)
+    page.show()
   }
 
   /** add a new tab for showing objects*/
   def newObjectTab(): Unit = {
     val page = new qq.editor.objects.ObjectPage(file, settings)
     tabs.addPage(page)
+    page.show()
   }
 
   /** add a new tab showing object o. o == null allowed*/
@@ -37,6 +39,7 @@ object Main extends SimpleSwingApplication {
     val page = new qq.editor.objects.ObjectPage(file, settings)
     tabs.addPage(page)
     if (o != null) page.goTo(new page.View(o))
+    page.show()
   }
    
   /** add a new tab showing all objects of type τ */
@@ -44,6 +47,7 @@ object Main extends SimpleSwingApplication {
     val page = new qq.editor.objects.ObjectPage(file, settings)
     tabs.addPage(page)
     if (τ != null) page.find(s"'${τ.name}'")
+    page.show()
   }
  
   

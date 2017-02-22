@@ -108,35 +108,35 @@ class File(fn0: String) {
     var o = if (id > 0) {
       val bp = pool.asInstanceOf[internal.StoragePool[T, B]].basePool
       if (id > bp.size) {
-        throw new Exception("object does not exist: $pool#$id")
+        throw new Exception(s"object does not exist: $pool#$id")
       }
       bp(id - 1)
     } else if (id < 0) {
       createdObjects(-1 - id)
     } else {
-      throw new Exception("object does not exist: $pool#$id")
+      throw new Exception(s"object does not exist: $pool#$id")
     }
     if (s(o.getTypeName) == pool || superTypes(s(o.getTypeName)).contains(pool)) {
       o
     } else {
-      throw new Exception("object does not exist: $pool#$id")
+      throw new Exception(s"object does not exist: $pool#$id")
     }
   }
 
   def objOfId(x: String): api.SkillObject = {
     if (x.trim().equals("null")) return null
     import qq.editor.queries.parser._;
-    try {
-      val tokens = Lexer(x)
-      if (tokens.size != 1) throw new Exception("format error, expected format type#number")
-      tokens.head match {
-        case ObjLit(pn, id) ⇒
-          objOfId(s(pn), id)
-        case _ ⇒ throw new Exception("format error, expected format type#number")
-      }
-    } catch {
+
+    val tokens = try { Lexer(x) } catch {
       case _: Exception ⇒ throw new Exception("format error, expected format type#number")
     }
+    if (tokens.size != 1) throw new Exception("format error, expected format type#number")
+    tokens.head match {
+      case ObjLit(pn, id) ⇒
+        objOfId(s(pn), id)
+      case _ ⇒ throw new Exception("format error, expected format type#number")
+    }
+
   }
 
   def idOfObj(o: api.SkillObject): String = {
@@ -157,6 +157,6 @@ class File(fn0: String) {
     (for (t ← s) yield (t, new TypeSettings(t, this))).toMap
 
   val fieldSettings: Map[api.FieldDeclaration[_], FieldSettings[_, _]] =
-    (for (t <- typeSettings.values; fd <- t.typ.fields) yield (fd, t.fields(fd).asInstanceOf[FieldSettings[_, api.SkillObject]])).toMap
-    
+    (for (t ← typeSettings.values; fd ← t.typ.fields) yield (fd, t.fields(fd).asInstanceOf[FieldSettings[_, api.SkillObject]])).toMap
+
 }

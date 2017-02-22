@@ -39,7 +39,7 @@ class ObjectPage(file0: qq.editor.File, settings0: qq.editor.Settings) extends q
   /**
    * a function that does something with an object. When not null, the page will be
    * in an object selection mode and contain a `select' button that will cause
-   * tis continuation to be called with the current object
+   * this continuation to be called with the current object
    */
   val objectSelectionContinuation: api.SkillObject ⇒ Unit = null
   /** Title for object selection */

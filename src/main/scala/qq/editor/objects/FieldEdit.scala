@@ -5,6 +5,7 @@ import de.ust.skill.common.scala.internal;
 import de.ust.skill.common.scala.internal.fieldTypes._;
 import scala.collection.mutable.Buffer
 import scala.collection.mutable.HashSet
+import scala.collection.mutable.HashMap
 
 class FieldEdit[F, O <: api.SkillObject](
   val page: ObjectPage,
@@ -37,12 +38,14 @@ class FieldEdit[F, O <: api.SkillObject](
     case c: SetType[e] ⇒ 
       contents += new SetEdit(page, pool, obj,
         field.asInstanceOf[api.FieldDeclaration[HashSet[e]]],
-        () ⇒ NewValue.default(c.groundType)) // TODO user select      
+        () ⇒ NewValue.prompt(c.groundType,"New entry:",page))       
     case c: ConstantLengthArray[f] ⇒
       contents += new IndexedContainerEdit(page, pool, obj,
         field.asInstanceOf[api.FieldDeclaration[Buffer[f]]],
         canResize = false)
-    case m: MapType[_, _] ⇒ contents += new swing.Label("Todo")
+    case m: MapType[k, v] ⇒
+            contents += new MapEdit(page, pool, obj,
+        field.asInstanceOf[api.FieldDeclaration[HashMap[k,v]]])
     /* constants are only shown in the type; they're stored there, anyway */
     case ConstantI8(_) | ConstantI16(_) | ConstantI32(_) | ConstantI64(_)
       | ConstantV64(_) ⇒

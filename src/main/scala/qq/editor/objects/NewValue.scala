@@ -6,6 +6,7 @@ import scala.collection.mutable.ListBuffer
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.mutable.HashSet
 import scala.collection.mutable.HashMap
+import qq.util.binding.Property
 
 /**
  * Functions to create a new value of a ground type; either default or ask the user
@@ -39,7 +40,40 @@ object NewValue {
         (new HashMap[k, v]()).asInstanceOf[T]
       case ConstantI8(_) | ConstantI16(_) | ConstantI32(_) | ConstantI64(_)
         | ConstantV64(_) ⇒
-        throw new Exception("field type $τ is not ground and does not have a default value")
+        throw new Exception(s"constant field typ $τ does not have a default value")
     }
+  }
+
+  def prompt[T](τ: api.FieldType[T], prompt: String, page: ObjectPage): T = {
+    // special case for references TODO
+    val p = τ.asInstanceOf[FieldType[T]] match {
+      case BoolType  ⇒ new Property(null, prompt, false)
+      case I8        ⇒ new Property(null, prompt, 0.toByte)
+      case I16       ⇒ new Property(null, prompt, 0.toShort)
+      case I32       ⇒ new Property(null, prompt, 0)
+      case I64 | V64 ⇒ new Property(null, prompt, 0L)
+      case F64       ⇒ new Property(null, prompt, 0.0)
+      case F32       ⇒ new Property(null, prompt, 0.0f)
+      case _: AnnotationType | _: UserType[_] ⇒
+        new Property(null, prompt, null.asInstanceOf[T])
+      case _: StringType ⇒ new Property(null, prompt, "")
+      case _: ConstantLengthArray[_] | _: ListType[_] | _: VariableLengthArray[_]
+        | _: SetType[_] | _: MapType[_, _] ⇒
+        throw new Exception(s"non-ground field typ $τ does not have prompr")
+      case ConstantI8(_) | ConstantI16(_) | ConstantI32(_) | ConstantI64(_)
+        | ConstantV64(_) ⇒
+        throw new Exception(s"constant field typ $τ does not have prompt")
+    }
+    val dlg = new swing.Dialog()
+      val ed = new ElementFieldEdit(page, τ.asInstanceOf[FieldType[T]], p) 
+      dlg.contents = qq.util.Swing.VBox(
+           ed,
+           new swing.Button(swing.Action("Ok") {
+             ed.editField.inner.componentToProperty()
+             dlg.close
+             }))
+      dlg.modal = true
+    dlg.open()
+    p().asInstanceOf[T]
   }
 }
