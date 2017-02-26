@@ -11,7 +11,7 @@ class LabeledEdit[T](val inner: EditControl[T])
 
   override lazy val peer = new javax.swing.JPanel with SuperMixin
 
-  private val label = new swing.Label(inner.property.name) { tooltip = inner.property.description }
+  val label = new swing.Label(inner.property.name) { tooltip = inner.property.description }
 
   private val orientation =
     if (label.preferredSize.getWidth < maxLeftColumnLabelWidth)

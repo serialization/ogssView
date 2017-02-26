@@ -36,28 +36,43 @@ class Edge(
       from.energy += ff
       to.energy += ff
     }
+    // when many edges for the same field meet at one node we make the force
+    // weaker so that the nodes at the other end don't get pushed together too much.
+    // thank data and reverseDate that's a lot of cases…
+    
+    // e and f represent the same field
     def sameField(e: AbstractEdge, f: AbstractEdge) = {
       e.isInstanceOf[SkillFieldEdge[_]] &&
         f.isInstanceOf[SkillFieldEdge[_]] &&
         e.asInstanceOf[SkillFieldEdge[_]].field ==
         f.asInstanceOf[SkillFieldEdge[_]].field
     }
+    /* number of edges from source that represent the same field as e */
+    def sameSourceEdgeCount(source: Node, e: AbstractEdge) = {
+      source.edgesOut.values.count(_.data.exists(sameField(e, _))) +
+        source.edgesIn.values.count(_.reverseData.exists(sameField(e, _)))
+    }
+    /* number of edges to target that represent the same field as e */
+    def sameTargetEdgeCount(target: Node, e: AbstractEdge) = {
+      target.edgesOut.values.count(_.reverseData.exists(sameField(e, _))) +
+        target.edgesIn.values.count(_.data.exists(sameField(e, _)))
+    }
 
     for (e ← data) {
-      val n = from.edgesOut.values.count(_.data.exists(sameField(e, _))) +
-        from.edgesIn.values.count(_.reverseData.exists(sameField(e, _))) +
-        to.edgesOut.values.count(_.reverseData.exists(sameField(e, _))) +
-        to.edgesIn.values.count(_.data.exists(sameField(e, _)))
-      println(s"$e $n")
-      apply(Fp(e.idealDirection(graph.file)) / (n - 1))
+      val scale = if (e.isInstanceOf[SkillFieldEdge[_]]) {
+        sameSourceEdgeCount(from, e) + sameTargetEdgeCount(to, e) - 1
+      } else {
+        1
+      }
+      apply(Fp(e.idealDirection(graph.file)) / scale)
     }
     for (e ← reverseData) {
-      val n = to.edgesOut.values.count(_.data.exists(sameField(e, _))) +
-        to.edgesIn.values.count(_.reverseData.exists(sameField(e, _))) +
-        from.edgesOut.values.count(_.reverseData.exists(sameField(e, _))) +
-        from.edgesIn.values.count(_.data.exists(sameField(e, _)))
-      println(s"$e $n")
-      apply(-Fp(e.idealDirection(graph.file)) / (n - 1))
+      val scale = if (e.isInstanceOf[SkillFieldEdge[_]]) {
+        sameSourceEdgeCount(to, e) + sameTargetEdgeCount(from, e) - 1
+      } else {
+        1
+      }
+      apply(-Fp(e.idealDirection(graph.file)) / scale)
     }
 
   }

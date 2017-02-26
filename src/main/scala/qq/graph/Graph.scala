@@ -123,9 +123,11 @@ class Graph(
     var energyPreviousStep = Float.PositiveInfinity
     var stepsWithProgress = 0
 
-    for (step ← 0.until(150)) {
+    val initialIterations = properties.initialIterations()
+    val phaseInIterations = properties.phaseInIterations()
+    for (step ← 0.until(properties.iterations)) {
       resetAccumulators
-      calculateForce(((step - 50).toFloat / 50).max(0).min(1), size, stepsize)
+      calculateForce(((step - initialIterations).toFloat / phaseInIterations).max(0).min(1), size, stepsize)
       move(stepsize)
       // TODO this is not the energy of Hu
       energyOfStep += energy

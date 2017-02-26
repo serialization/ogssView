@@ -420,7 +420,7 @@ final case class UserSetReplace[T <: api.SkillObject, C <: HashSet[F], F](
 }
 
 /** edits maps as lists indexed by  key sequence */
-sealed abstract class UserMapEdit[T <: api.SkillObject, F](
+sealed abstract class UserMapEdit[T <: api.SkillObject, K, V, C[K,V] <: HashMap[K,V]](
   /** The file this belongs to */
   f: qq.editor.File,
   /** The type of the modified object*/
@@ -428,7 +428,7 @@ sealed abstract class UserMapEdit[T <: api.SkillObject, F](
   /** The object that is modified */
   o: T,
   /** The field (collection) that is modified */
-  val field: api.FieldDeclaration[F],
+  val field: api.FieldDeclaration[C[K,V]],
   /** The index of the modified member of the collection */
   val index: Seq[Any])
     extends UserEdit[T](f, p, o) {
@@ -436,7 +436,7 @@ sealed abstract class UserMapEdit[T <: api.SkillObject, F](
 }
 
 /** insertion of a new value into a map */
-final case class UserMapInsert[T <: api.SkillObject, F](
+final case class UserMapInsert[T <: api.SkillObject, K, V, C[K,V] <: HashMap[K,V]](
   /** The file this belongs to */
   f: qq.editor.File,
   /** The type of the modified object*/
@@ -444,12 +444,12 @@ final case class UserMapInsert[T <: api.SkillObject, F](
   /** The object that is modified */
   o: T,
   /** The field (collection) that is modified */
-  fd: api.FieldDeclaration[F],
+  fd: api.FieldDeclaration[C[K,V]],
   /** The index of the modified member of the collection */
   i: Seq[Any],
   /** the value of the new member */
   val value: Any)
-    extends UserMapEdit[T, F](f, p, o, fd, i) {
+    extends UserMapEdit[T, K, V, C](f, p, o, fd, i) {
 
   /* no merge */
   override def addEdit(x: UndoableEdit) = false
@@ -471,9 +471,9 @@ final case class UserMapInsert[T <: api.SkillObject, F](
 
   override def toEdit = new MapInsert(file, pool, obj, field, index, value)
 
-  import qq.editor.objects.MapEdit.contains
+  import qq.util.FlattenedMap.contains
   import de.ust.skill.common.scala.internal.fieldTypes.MapType
-  if (contains(obj.get(field).asInstanceOf[HashMap[Any, Any]], field.t.asInstanceOf[MapType[_, _]], index)) {
+  if (contains(obj.get(field), field.t.asInstanceOf[MapType[K, V]], index)) {
     throw new IllegalStateException("Insert into map: key already exists")
   } else {
     file.modify(this)
@@ -481,7 +481,7 @@ final case class UserMapInsert[T <: api.SkillObject, F](
 }
 
 /** insertion of a new value into an indexed container */
-final case class UserMapRemove[T <: api.SkillObject, F](
+final case class UserMapRemove[T <: api.SkillObject, K, V, C[K,V] <: HashMap[K,V]](
   /** The file this belongs to */
   f: qq.editor.File,
   /** The type of the modified object*/
@@ -489,16 +489,16 @@ final case class UserMapRemove[T <: api.SkillObject, F](
   /** The object that is modified */
   o: T,
   /** The field (collection) that is modified */
-  fd: api.FieldDeclaration[F],
+  fd: api.FieldDeclaration[C[K,V]],
   /** The index of the modified member of the collection */
   i: Seq[Any])
-    extends UserMapEdit[T, F](f, p, o, fd, i) {
+    extends UserMapEdit[T, K, V, C](f, p, o, fd, i) {
 
-  import qq.editor.objects.MapEdit.contains
-  import qq.editor.objects.MapEdit.get
+  import qq.util.FlattenedMap.contains
+  import qq.util.FlattenedMap.get
   import de.ust.skill.common.scala.internal.fieldTypes.MapType
 
-  val oldValue: Any = get(obj.get(field).asInstanceOf[HashMap[Any, Any]], field.t.asInstanceOf[MapType[_, _]], index)
+  val oldValue: Any = get(obj.get(field), field.t.asInstanceOf[MapType[K, V]], index)
 
   /* no merge */
   override def addEdit(x: UndoableEdit) = false
@@ -520,7 +520,7 @@ final case class UserMapRemove[T <: api.SkillObject, F](
 
   override def toEdit = new MapRemove(file, pool, obj, field, index, oldValue)
 
-  if (!contains(obj.get(field).asInstanceOf[HashMap[Any, Any]], field.t.asInstanceOf[MapType[_, _]], index)) {
+  if (!contains(obj.get(field), field.t.asInstanceOf[MapType[K, V]], index)) {
     throw new IllegalStateException("Remove from map: key does not exists")
   } else {
     file.modify(this)
@@ -528,7 +528,7 @@ final case class UserMapRemove[T <: api.SkillObject, F](
 }
 
 /** change of the value of a member of an indexed container */
-final case class UserMapModify[T <: api.SkillObject, F](
+final case class UserMapModify[T <: api.SkillObject, K, V, C[K,V] <: HashMap[K,V]](
   /** The file this belongs to */
   f: qq.editor.File,
   /** The type of the modified object*/
@@ -536,18 +536,18 @@ final case class UserMapModify[T <: api.SkillObject, F](
   /** The object that is modified */
   o: T,
   /** The field (collection) that is modified */
-  fd: api.FieldDeclaration[F],
+  fd: api.FieldDeclaration[C[K,V]],
   /** The index of the modified member of the collection */
   i: Seq[Any],
   /** Value after modification */
   val newValue: Any)
-    extends UserMapEdit[T, F](f, p, o, fd, i) {
+    extends UserMapEdit[T, K, V, C](f, p, o, fd, i) {
 
-  import qq.editor.objects.MapEdit.contains
-  import qq.editor.objects.MapEdit.get
+  import qq.util.FlattenedMap.contains
+  import qq.util.FlattenedMap.get
   import de.ust.skill.common.scala.internal.fieldTypes.MapType
 
-  val oldValue: Any = get(obj.get(field).asInstanceOf[HashMap[Any, Any]], field.t.asInstanceOf[MapType[_, _]], index)
+  val oldValue: Any = get(obj.get(field), field.t.asInstanceOf[MapType[K, V]], index)
 
   /* no merge */
   override def addEdit(x: UndoableEdit) = false
@@ -570,7 +570,7 @@ final case class UserMapModify[T <: api.SkillObject, F](
   override def toEdit = new MapModify(file, pool, obj, field, index, oldValue, newValue)
 
   if (qq.util.Neq(oldValue, newValue)) {
-    if (!contains(obj.get(field).asInstanceOf[HashMap[Any, Any]], field.t.asInstanceOf[MapType[_, _]], index)) {
+    if (!contains(obj.get(field), field.t.asInstanceOf[MapType[K, V]], index)) {
       throw new IllegalStateException("Map modify: key does not exists")
     } else {
       file.modify(this)

@@ -273,7 +273,7 @@ final case class MapInsert[T <: api.SkillObject, F](
     val temp = obj.get(field)
     println(this)
     println(temp)
-    qq.editor.objects.MapEdit.insert(obj.get(field).asInstanceOf[HashMap[Any,Any]], fd.t.asInstanceOf[MapType[_,_]], index, value)
+    qq.util.FlattenedMap.insert(obj.get(field).asInstanceOf[HashMap[Any,Any]], fd.t.asInstanceOf[MapType[_,_]], index, value)
     println(temp)
   }
 }
@@ -299,7 +299,7 @@ final case class MapRemove[T <: api.SkillObject, F](
     val temp = obj.get(field)
     println(this)
     println(temp)
-    qq.editor.objects.MapEdit.remove(obj.get(field).asInstanceOf[HashMap[Any,Any]], fd.t.asInstanceOf[MapType[_,_]], index)
+    qq.util.FlattenedMap.remove(obj.get(field).asInstanceOf[HashMap[Any,Any]], fd.t.asInstanceOf[MapType[_,_]], index)
     println(temp)
   }
 }
@@ -326,7 +326,7 @@ final case class MapModify[T <: api.SkillObject, F](
     val temp = obj.get(field)
     println(this)
     println(temp)
-    qq.editor.objects.MapEdit.set(temp.asInstanceOf[HashMap[Any,Any]], fd.t.asInstanceOf[MapType[_,_]], index, newValue)
+    qq.util.FlattenedMap.set(temp.asInstanceOf[HashMap[Any,Any]], fd.t.asInstanceOf[MapType[_,_]], index, newValue)
     println(temp)
   }
 }

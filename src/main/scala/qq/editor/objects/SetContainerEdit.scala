@@ -4,7 +4,7 @@ import de.ust.skill.common.scala.api;
 import de.ust.skill.common.scala.internal.fieldTypes.SingleBaseTypeContainer;
 import scala.collection.mutable.HashSet;
 
-class SetEdit[E, C[E] <: HashSet[E], O <: api.SkillObject](
+class SetContainerEdit[E, C[E] <: HashSet[E], O <: api.SkillObject](
   val page: ObjectPage,
   val pool: api.Access[O],
   val obj: O,

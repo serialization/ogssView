@@ -16,11 +16,12 @@ class ObjectGraph[O <: api.SkillObject](
 
   private var graph = new qq.graph.Graph(page.file, this, page.settings.graphLayout)
 
-  private val root = new qq.graph.SkillObjectNode(obj)
-  private val visibleNodes = new HashSet[qq.graph.AbstractNode]
-  private val expandedNodes = new HashSet[qq.graph.AbstractNode]
+  val root = new qq.graph.SkillObjectNode(obj)
+  val visibleNodes = new HashSet[qq.graph.AbstractNode]
+  val expandedNodes = new HashSet[qq.graph.AbstractNode]
   private val pathsToNode = new HashMap[qq.graph.AbstractNode, Set[Seq[api.FieldDeclaration[_]]]]
 
+  // TODO save at the type the field belongs to
   private def expandPrefs = page.file.typeSettings(page.file.s(obj.getTypeName)).expanded
   def expandCollapse(n: qq.graph.AbstractNode) {
     if (expandedNodes.contains(n)) {
@@ -35,12 +36,14 @@ class ObjectGraph[O <: api.SkillObject](
   }
 
   def updateLayout: Unit = {
+    val t0 = System.nanoTime()
     visibleNodes.clear()
     expandedNodes.clear()
     pathsToNode.clear()
     visibleNodes += root
     expandedNodes += root
     pathsToNode(root) = Set(Seq())
+    val t1 = System.nanoTime()
     // follow paths to expanded nodes
     for (path ← expandPrefs) {
       def expandPath(o: api.SkillObject,
@@ -51,20 +54,38 @@ class ObjectGraph[O <: api.SkillObject](
             val node = new qq.graph.SkillObjectNode(o)
             visibleNodes += node
             expandedNodes += node
-              pathsToNode.getOrElseUpdate(node, Set())
+            pathsToNode.getOrElseUpdate(node, Set())
             pathsToNode(node) += pathToO
             true
           } else {
             val field = pathToDo.head
-            val p = o.get(field).asInstanceOf[api.SkillObject]
-            if (expandPath(p, pathToO :+ field, pathToDo.tail)) {
-              val node = new qq.graph.SkillObjectNode(o)
-              visibleNodes += node
-              pathsToNode.getOrElseUpdate(node, Set())
-              pathsToNode(node) += pathToO
-              true
-            } else {
-              false
+            val node = new qq.graph.SkillObjectNode(o)
+            val toNext = node.edgeForField(graph.file, field)
+            toNext match {
+              case Some(edge) ⇒
+                edge.getTo match {
+                  case qq.graph.SkillObjectNode(p) ⇒
+                    if (expandPath(p, pathToO :+ field, pathToDo.tail)) {
+                      visibleNodes += node
+                      pathsToNode.getOrElseUpdate(node, Set())
+                      pathsToNode(node) += pathToO
+                      true
+                    } else {
+                      false
+                    }
+                  case next ⇒
+                    // last step can lead to a collections (size == 1)
+                    visibleNodes += node
+                    pathsToNode.getOrElseUpdate(node, Set())
+                    pathsToNode(node) += pathToO
+                    visibleNodes += next
+                    expandedNodes += next
+                    pathsToNode.getOrElseUpdate(next, Set())
+                    pathsToNode(next) += pathToO :+ field
+                    true
+
+                }
+              case None ⇒ false // path leads nowhere (null or hidden or wrong type)
             }
           }
         } else {
@@ -74,7 +95,7 @@ class ObjectGraph[O <: api.SkillObject](
       expandPath(obj, Seq(), path)
     }
     // go to fields of expanded nodes
-
+    val t2 = System.nanoTime()
     graph = new qq.graph.Graph(page.file, this, page.settings.graphLayout)
 
     for (node ← visibleNodes) graph.addNode(node)
@@ -85,8 +106,8 @@ class ObjectGraph[O <: api.SkillObject](
           case e: qq.graph.SkillFieldEdge[_] ⇒
             val to = e.getTo
             pathsToNode.getOrElseUpdate(to, Set())
-               pathsToNode(to) ++= pathsToNode(node).map(_ :+ e.field)
-          case _ ⇒ ()
+            pathsToNode(to) ++= pathsToNode(node).map(_ :+ e.field)
+          case _ ⇒ println("huh?" + e)
         }
       }
     }
@@ -98,14 +119,21 @@ class ObjectGraph[O <: api.SkillObject](
       }
     }
 
-    // clamp origin to centre
-    graph.nodes(root).clampedAt = Some(qq.util.Vector(size) / 2)
+    val t3 = System.nanoTime()
+    if (page.settings.graphLayout.rootAtCentre()) {
+      // clamp root to centre
+      graph.nodes(root).clampedAt = Some(qq.util.Vector(size) / 2)
+    }
     graph.placeNodes(size)
+    val t4 = System.nanoTime()
     peer.removeAll()
     graph.nodes.values.foreach { x ⇒
       x.edgesOut.values.foreach { y ⇒ peer.add(y.uiElement.peer) }
       peer.add(x.uiElement.peer)
     }
+    val t5 = System.nanoTime()
+    println(s"${graph.nodes.size} nodes ${graph.nodes.values.map(_.edgesOut.size).sum} edges follow paths: ${t2 - t1} ns, place: ${(t4 - t3)/1E6} ms, total ${(t5 - t0)/1E6} ms E=${graph.energyOfStep.last} stepsize=${graph.stepOfStep.last}")
+
   }
 
   override def paintComponent(g: swing.Graphics2D) {
@@ -142,10 +170,19 @@ class ObjectGraph[O <: api.SkillObject](
   listenTo(this)
   reactions += {
     case e: swing.event.UIElementResized ⇒
-      println("res " + this.bounds)
       updateLayout
       repaint
 
-  }
-  // don't updateLayout here, do it outside after added to container, when size is known
+  }  
+  
+  // simple solution to dealing with edits: rebuilt when any object we show changes 
+  val onEdit = (ed: qq.editor.Edit[_]) => { if (visibleNodes.contains(new qq.graph.SkillObjectNode(ed.obj.asInstanceOf[api.SkillObject]))) {
+    updateLayout
+    repaint
+  }}
+  
+  page.file.onEdit.weak += onEdit
+
+  // don't updateLayout when created, it is done in resize, when the size is known
+
 }

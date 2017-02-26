@@ -3,14 +3,14 @@ package qq.editor.binding
 import de.ust.skill.common.scala.api;
 import de.ust.skill.common.scala.internal.fieldTypes.SingleBaseTypeContainer;
 import de.ust.skill.common.scala.internal.fieldTypes.FieldType;
-import scala.collection.mutable.Buffer;
+import scala.collection.mutable.HashMap;
 
-class MapField[O <: api.SkillObject, F, G](
+class MapContainerField[O <: api.SkillObject, K, V, C[K,V] <: HashMap[K,V], G](
   owner0: qq.util.binding.PropertyOwner,
   val file: qq.editor.File,
   val pool: api.Access[O],
   val obj: O,
-  val field: api.FieldDeclaration[F],
+  val field: api.FieldDeclaration[C[K,V]],
   val index: Seq[Any], 
   val groundType: api.FieldType[G],
   val initValue: G)
@@ -28,16 +28,16 @@ class MapField[O <: api.SkillObject, F, G](
 
   private val fileEditHandler: (qq.editor.Edit[_] ⇒ Unit) = { x ⇒
     if (!disabled && x.obj == obj && x.isInstanceOf[qq.editor.MapEdit[_, _]]) {
-      val y = x.asInstanceOf[qq.editor.MapEdit[O, F]]
+      val y = x.asInstanceOf[qq.editor.MapEdit[O, C[K,V]]]
       if (y.field == field) {
         y match {
-          case ins: qq.editor.MapInsert[O, F] ⇒
+          case ins: qq.editor.MapInsert[O, C[K,V]] ⇒
             // ignore
-          case del: qq.editor.MapRemove[O, F] ⇒
+          case del: qq.editor.MapRemove[O, C[K,V]] ⇒
             if (del.index == index) {
                 disabled = true
             }
-          case mod: qq.editor.MapModify[O, F] ⇒
+          case mod: qq.editor.MapModify[O, C[K,V]] ⇒
             if (mod.index == index) {
               this.assignUnchecked(mod.newValue.asInstanceOf[G])
             }
@@ -54,24 +54,24 @@ class MapField[O <: api.SkillObject, F, G](
 
 }
 
-object MapField {
+object MapContainerField {
   /** construct map field according to the ground type of the value */
-  def apply[O <: api.SkillObject, F, G](
+  def apply[O <: api.SkillObject, K, V, C[K,V] <: HashMap[K,V], G](
     owner0: qq.util.binding.PropertyOwner,
     file: qq.editor.File,
     pool: api.Access[O],
     obj: O,
-    field: api.FieldDeclaration[F],
+    field: api.FieldDeclaration[C[K,V]],
     index: Seq[Any], 
-    groundType: api.FieldType[G]): MapField[O, F, G]=  {
+    groundType: api.FieldType[G]): MapContainerField[O, K, V, C, G]=  {
     
     import scala.collection.mutable.HashMap
     import de.ust.skill.common.scala.internal.fieldTypes._
-    import qq.editor.objects.MapEdit.get
+    import qq.util.FlattenedMap.get
     
-    val initValue = get(obj.get(field).asInstanceOf[HashMap[Any,Any]],
-        field.t.asInstanceOf[MapType[_,_]], index).asInstanceOf[G]
-    new MapField(owner0, file, pool, obj, field, index, groundType, initValue)
+    val initValue = get(obj.get(field),
+        field.t.asInstanceOf[MapType[K,V]], index).asInstanceOf[G]
+    new MapContainerField(owner0, file, pool, obj, field, index, groundType, initValue)
     
   }
   

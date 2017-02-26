@@ -18,6 +18,7 @@ class ObjectPage(file0: qq.editor.File, settings0: qq.editor.Settings) extends q
   /** graph visible */
   def graphVisible: Boolean = graphVisibleModel.isSelected()
   val graphVisibleModel = new javax.swing.JToggleButton.ToggleButtonModel()
+  graphVisibleModel.setSelected(true)
 
   class View(
       val obj: api.SkillObject,
@@ -66,11 +67,15 @@ class ObjectPage(file0: qq.editor.File, settings0: qq.editor.Settings) extends q
     objSearch.queryText := q
     objSearch.searchAction()
   }
-  /** show a type and update navigation */
+  /** show a root object and potential other objects and update navigation */
   def goTo(v: View): Unit = {
     nextView.clear()
     if (currentView != null && v.obj != currentView.obj) previousView.push(currentView)
     _goTo(v)
+  }
+  /** show an object */
+  def goTo(o: api.SkillObject): Unit = {
+    goTo(new View(o))
   }
   /** show previously shown type */
   val goBack = new swing.Action("Back") {

@@ -6,6 +6,7 @@ import de.ust.skill.common.scala.internal.fieldTypes._;
 import scala.collection.mutable.Buffer
 import scala.collection.mutable.HashSet
 import scala.collection.mutable.HashMap
+import qq.util.binding.Property
 
 class FieldEdit[F, O <: api.SkillObject](
   val page: ObjectPage,
@@ -18,15 +19,7 @@ class FieldEdit[F, O <: api.SkillObject](
     case _: AnnotationType
       | _: UserType[_] ⇒
       val p = new qq.editor.binding.SimpleField(null, page.file, pool, obj, field)
-      val ed = new qq.util.binding.LabeledEdit(
-        new qq.util.binding.TextEdit(p.asInstanceOf[qq.util.binding.Property[api.SkillObject]],
-          page.file.objOfId(_),
-          (x: api.SkillObject) ⇒  page.file.idOfObj(x)))
-      val en = new qq.util.ExpandableNode(ed) {
-        lazySubPart = { x ⇒ new ObjectEdit(page, p.asInstanceOf[qq.util.binding.Property[api.SkillObject]]()) }
-      }
-      p.onChange.strong += (_ ⇒ en.collapse())
-      contents += en
+      contents += new ReferenceEdit(p.asInstanceOf[Property[api.SkillObject]], page)
     case c: ListType[f] ⇒
       contents += new IndexedContainerEdit(page, pool, obj,
         field.asInstanceOf[api.FieldDeclaration[Buffer[f]]],
@@ -36,7 +29,7 @@ class FieldEdit[F, O <: api.SkillObject](
         field.asInstanceOf[api.FieldDeclaration[Buffer[f]]],
         () ⇒ NewValue.default(c.groundType))
     case c: SetType[e] ⇒ 
-      contents += new SetEdit(page, pool, obj,
+      contents += new SetContainerEdit(page, pool, obj,
         field.asInstanceOf[api.FieldDeclaration[HashSet[e]]],
         () ⇒ NewValue.prompt(c.groundType,"New entry:",page))       
     case c: ConstantLengthArray[f] ⇒
@@ -44,7 +37,7 @@ class FieldEdit[F, O <: api.SkillObject](
         field.asInstanceOf[api.FieldDeclaration[Buffer[f]]],
         canResize = false)
     case m: MapType[k, v] ⇒
-            contents += new MapEdit(page, pool, obj,
+            contents += new MapContainerEdit(page, pool, obj,
         field.asInstanceOf[api.FieldDeclaration[HashMap[k,v]]])
     /* constants are only shown in the type; they're stored there, anyway */
     case ConstantI8(_) | ConstantI16(_) | ConstantI32(_) | ConstantI64(_)
