@@ -24,7 +24,7 @@ trait PropertyOwner {
   val undoManager: javax.swing.undo.UndoManager = null
 
   def propertyPage() = {
-    val box = qq.util.Swing.VBox()
+    val box = qq.util.Swing.VBoxD()
     box.contents ++= properties.map { x => new LabeledEdit(x.defaultEditor)}
     box
   }

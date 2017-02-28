@@ -148,7 +148,7 @@ val showTypeOfThisObject = new swing.Action("Show Type of Current Object") {
   override def objectMenuItems = Seq(
     new qq.util.TodoMenuItem("…"))
   /* the layout */
-  val toolBar = qq.util.Swing.HBox(
+  val toolBar = qq.util.Swing.HBoxD(
     new swing.Button(goBack) {
       text = ""
       icon = new qq.icons.BackIcon(true)
@@ -169,10 +169,10 @@ val showTypeOfThisObject = new swing.Action("Show Type of Current Object") {
     },
     scala.swing.Swing.HGlue)
   val objSearch = new SearchResults(this)
-  val objEdit = qq.util.Swing.HBox()
-  val objGraph = qq.util.Swing.HBox()
+  val objEdit = qq.util.Swing.HBoxD()
+  val objGraph = qq.util.Swing.HBoxT()
 
-  val mainContent = qq.util.Swing.HBox()
+  val mainContent = qq.util.Swing.HBoxD()
 
   def updateVisibility: Unit = {
     mainContent.contents.clear()
@@ -201,5 +201,5 @@ val showTypeOfThisObject = new swing.Action("Show Type of Current Object") {
   }
   updateVisibility
   title = "Types"
-  content = qq.util.Swing.VBox(toolBar, mainContent)
+  content = qq.util.Swing.VBoxD(toolBar, mainContent)
 }

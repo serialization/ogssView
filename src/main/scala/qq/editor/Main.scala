@@ -7,6 +7,11 @@ import de.ust.skill.common.scala.api;
 
 object Main extends SimpleSwingApplication {
 
+  
+  // ugh, buttons have background again with sys UI. And font is very small.
+  // And the ugly anti-aliased fonts are still there
+  // javax.swing.UIManager.setLookAndFeel(javax.swing.UIManager.getSystemLookAndFeelClassName())
+  
   /** user settings */
   val settings = new Settings()
   

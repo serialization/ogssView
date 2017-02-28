@@ -20,5 +20,5 @@ class TopObjectEdit[P <: api.SkillObject](
   val page: ObjectPage,
   val obj: P)
     extends qq.util.VScrollPane {
-  contents = qq.util.Swing.VBox(new ObjectEdit(page, obj), swing.Swing.VGlue)
+  contents = qq.util.Swing.VBoxD(new ObjectEdit(page, obj), swing.Swing.VGlue)
 }

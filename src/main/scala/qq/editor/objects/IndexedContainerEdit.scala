@@ -3,6 +3,7 @@ package qq.editor.objects
 import de.ust.skill.common.scala.api;
 import de.ust.skill.common.scala.internal.fieldTypes.SingleBaseTypeContainer;
 import scala.collection.mutable.Buffer;
+import qq.util.Swing.HBoxD;
 
 class IndexedContainerEdit[E, C[E] <: Buffer[E], O <: api.SkillObject](
   val page: ObjectPage,
@@ -91,7 +92,7 @@ class IndexedContainerEdit[E, C[E] <: Buffer[E], O <: api.SkillObject](
 
   page.file.onEdit.weak += fileEditHandler
 
-  private val head = qq.util.Swing.HBox()
+  private val head = HBoxD()
 
   private def switchHeadStyle(expanded: Boolean) = {
     head.contents.clear()
@@ -102,7 +103,7 @@ class IndexedContainerEdit[E, C[E] <: Buffer[E], O <: api.SkillObject](
       head.contents += countLbl
     }
   }
-  private val en = new qq.util.ExpandableNode(head) {
+  private val en = new qq.util.ExpandableNode(head,false) {
     override def onCollapse() = { switchHeadStyle(false) }
     override def onExpand() = { switchHeadStyle(true) }
   }
@@ -128,7 +129,7 @@ class IndexedContainerEdit[E, C[E] <: Buffer[E], O <: api.SkillObject](
             new qq.editor.UserIndexedContainerRemove[O, C[E], E](page.file, pool, obj, field, i)
           }
         }
-        qq.util.Swing.HBox(0.0f,
+        qq.util.Swing.HBoxD(0.0f,
           fed,
           new qq.util.PlainButton(ra) { text = "" },
           new qq.util.PlainButton(aa) { text = "" })
@@ -146,7 +147,7 @@ class IndexedContainerEdit[E, C[E] <: Buffer[E], O <: api.SkillObject](
           new qq.editor.UserIndexedContainerInsert(page.file, pool, obj, field, obj.get(field).size, getNewElement())
         }
       }
-      lowerPart.contents += qq.util.Swing.HBox(0.0f,
+      lowerPart.contents += qq.util.Swing.HBoxD(0.0f,
         new swing.Label(s"end of ${field.name}"),
         swing.Swing.HGlue,
         new qq.util.PlainButton(aa) { text = "" })

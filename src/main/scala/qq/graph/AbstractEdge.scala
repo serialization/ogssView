@@ -15,6 +15,7 @@ abstract class AbstractEdge {
   def getFrom: AbstractNode
   def textLabel: String
   def idealDirection(file: File): Vector
+  def toDecoration: EdgeDecoration = SmallArrowDecoration
 }
 
 case class SkillFieldEdge[T](

@@ -39,9 +39,9 @@ class FieldSettingsEdit(
 
   contents ++= Seq(
       hideEd,
-      qq.util.Swing.HBox(
+      qq.util.Swing.HBoxD(
         swing.Swing.RigidBox(new scala.swing.Dimension(15,0)),
-        qq.util.Swing.VBox(
+        qq.util.Swing.VBoxD(
         hideNullEd,
         showInParentEd,
         fixDirEd,

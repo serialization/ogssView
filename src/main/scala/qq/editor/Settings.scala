@@ -24,6 +24,12 @@ class Settings extends PropertyOwner {
     "Maximum size of collections that get their members added to the graph",
     prefs.getInt("graphCollectionSmall", 5))
   graphCollectionSmall.onChange.strong += (prefs.putInt("graphCollectionSmall", _))
+
+  val graphMaxStringLength = new Property(this,
+    "Truncate strings to this length in the graph view",
+    prefs.getInt("graphMaxStringLength", 21))
+  graphMaxStringLength.onChange.strong += (prefs.putInt("graphMaxStringLength", _))
+  
   
   def prefEdit = {
     

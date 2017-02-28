@@ -99,8 +99,8 @@ class SearchResults(val page: ObjectPage)
       }
   }
   import qq.util.Swing._;
-  contents += VBox(
-    HBox(queryEdit, new swing.Button(searchAction)),
+  contents += VBoxD(
+    HBoxD(queryEdit, new swing.Button(searchAction)),
     queryError,
     resultsPart)
 }

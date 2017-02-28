@@ -1,6 +1,13 @@
 package qq.util.binding
 
-/**
+import qq.util.Swing.HBoxD
+import qq.util.Swing.VBoxD
+import swing.Swing.HGlue
+import swing.Swing.RigidBox
+import javax.swing.JPanel
+import swing.Label
+
+/*
  * Puts a label above an unlabled edit control.
  */
 class LabeledEdit[T](val inner: EditControl[T])
@@ -9,9 +16,9 @@ class LabeledEdit[T](val inner: EditControl[T])
   private def leftColumnWidth = 25
   private def maxLeftColumnLabelWidth = leftColumnWidth - 2
 
-  override lazy val peer = new javax.swing.JPanel with SuperMixin
+  override lazy val peer = new JPanel with SuperMixin
 
-  val label = new swing.Label(inner.property.name) { tooltip = inner.property.description }
+  val label = new Label(inner.property.name) { tooltip = inner.property.description }
 
   private val orientation =
     if (label.preferredSize.getWidth < maxLeftColumnLabelWidth)
@@ -22,17 +29,17 @@ class LabeledEdit[T](val inner: EditControl[T])
   peer.setLayout(new javax.swing.BoxLayout(peer, orientation.id))
 
   if (orientation == swing.Orientation.Vertical) {
-    contents += qq.util.Swing.HBox(
+    contents += HBoxD(
       label,
-      swing.Swing.HGlue)
+      HGlue)
     contents += inner
 
   } else {
-    contents += qq.util.Swing.VBox(
-      qq.util.Swing.HBox(
+    contents += VBoxD(
+      HBoxD(
         label,
-        swing.Swing.HGlue),
-      swing.Swing.RigidBox(new java.awt.Dimension(leftColumnWidth, 0)))
+        HGlue),
+      RigidBox(new java.awt.Dimension(leftColumnWidth, 0)))
     contents += inner
   }
 

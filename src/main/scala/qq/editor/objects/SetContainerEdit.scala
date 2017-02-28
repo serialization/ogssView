@@ -86,7 +86,7 @@ class SetContainerEdit[E, C[E] <: HashSet[E], O <: api.SkillObject](
 
   page.file.onEdit.weak += fileEditHandler
 
-  private val head = qq.util.Swing.HBox()
+  private val head = qq.util.Swing.HBoxD()
 
   private def switchHeadStyle(expanded: Boolean) = {
     head.contents.clear()
@@ -97,7 +97,7 @@ class SetContainerEdit[E, C[E] <: HashSet[E], O <: api.SkillObject](
       head.contents += countLbl
     }
   }
-  private val en = new qq.util.ExpandableNode(head) {
+  private val en = new qq.util.ExpandableNode(head, false) {
     override def onCollapse() = { switchHeadStyle(false) }
     override def onExpand() = { switchHeadStyle(true) }
   }
@@ -117,7 +117,7 @@ class SetContainerEdit[E, C[E] <: HashSet[E], O <: api.SkillObject](
           new qq.editor.UserSetRemove[O, C[E], E](page.file, pool, obj, field, fprop())
         }
       }
-      qq.util.Swing.HBox(0.0f,
+      qq.util.Swing.HBoxD(0.0f,
         fed,
         new qq.util.PlainButton(ra) { text = "" })
     }
@@ -130,7 +130,7 @@ class SetContainerEdit[E, C[E] <: HashSet[E], O <: api.SkillObject](
         new qq.editor.UserSetInsert(page.file, pool, obj, field, getNewElement())
       }
     }
-    lowerPart.contents += qq.util.Swing.HBox(0.0f,
+    lowerPart.contents += qq.util.Swing.HBoxD(0.0f,
       new swing.Label(if (firstIndex + pageSize >= obj.get(field).size) s"end of ${field.name}" else ""),
       swing.Swing.HGlue,
       new qq.util.PlainButton(aa) { text = "" })

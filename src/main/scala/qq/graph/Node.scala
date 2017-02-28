@@ -36,6 +36,11 @@ class Node(val graph: Graph,
       case None => if (rigidSubGraph.isEmpty && force.isFinite() && !force.isZero()) pos += force.norm * stepSize
     }
   }
+  
+  /** @retval true if line though centre in direction @c d intersects top or bottom edge of bounds. */
+  def intersectsTopOrBottom(d: Vector): Boolean = {
+    d.x.abs * height < width * d.y.abs
+  }
   /** x.toborder(r) = r * k for some k and x.pos+x.toBorder(r) is on the border of the rectangular node x */
   def toBorder(r: Vector): Vector = {
     if (r.x == 0 && r.y == 0 || width == 0 || height == 0) return new Vector(0f, 0f)

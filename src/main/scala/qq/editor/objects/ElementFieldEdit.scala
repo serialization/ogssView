@@ -28,7 +28,7 @@ class ElementFieldEdit[E, O <: api.SkillObject](
     case I8 | I16 | I32 | I64 | V64 | F32 | F64 | BoolType | _: StringType ⇒
       val editField = fieldProperty.defaultEditor
       val optLabel = if (addLabel) new qq.util.binding.LabeledEdit(editField) else editField
-      (editField, new qq.util.ExpandableNode(optLabel))
+      (editField, new qq.util.ExpandableNode(optLabel, true))
   })
 
   contents += wholeComponent

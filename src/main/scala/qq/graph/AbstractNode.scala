@@ -13,6 +13,8 @@ abstract class AbstractNode() {
   def getUiElement(graph: Graph): swing.UIElement
   /** outgoing edges */
   def getOutEdge(file: qq.editor.File): Iterator[AbstractEdge]
+  /** name in graph */
+  def name(graph: Graph): String
 }
 
 case class SkillObjectNode(val skillObject: api.SkillObject)
@@ -42,13 +44,14 @@ case class SkillObjectNode(val skillObject: api.SkillObject)
     case that: SkillObjectNode ⇒ that.skillObject == skillObject
     case _                     ⇒ false
   }
+  override def name(graph: Graph) = graph.file.idOfObj(skillObject)
 }
 
 case class ValueNode[T](val skillObject: api.SkillObject, val field: api.FieldDeclaration[T])
     extends AbstractNode() {
 
   override def getUiElement(graph: Graph) = {
-    UIElements.value(graph, skillObject.get(field))
+    UIElements.value(graph, this, skillObject.get(field))
   }
   override def getOutEdge(file: qq.editor.File) = Iterator() // values are leaves
   override def hashCode = java.util.Objects.hash(skillObject, field)
@@ -56,6 +59,8 @@ case class ValueNode[T](val skillObject: api.SkillObject, val field: api.FieldDe
     case that: ValueNode[T] ⇒ that.skillObject == skillObject && that.field == field
     case _                  ⇒ false
   }
+  override def name(graph: Graph) = UIElements.valueShortString(skillObject.get(field))
+
 }
 case class NullNode[T](val skillObject: api.SkillObject, val field: api.FieldDeclaration[T])
     extends AbstractNode() {
@@ -67,6 +72,7 @@ case class NullNode[T](val skillObject: api.SkillObject, val field: api.FieldDec
     case that: ValueNode[T] ⇒ that.skillObject == skillObject && that.field == field
     case _                  ⇒ false
   }
+  override def name(graph: Graph) = "⊥"
 }
 case class ListNode[E, C[E] <: Buffer[E]](val skillObject: api.SkillObject, val field: api.FieldDeclaration[C[E]])
     extends AbstractNode() {
@@ -86,12 +92,13 @@ case class ListNode[E, C[E] <: Buffer[E]](val skillObject: api.SkillObject, val 
     case that: ListNode[E, C] ⇒ that.skillObject == skillObject && that.field == field
     case _                    ⇒ false
   }
+  override def name(graph: Graph) = (if (field.t.isInstanceOf[ListType[_]]) "list of " else "array of ") + skillObject.get(field).size
 }
 case class ListValueNode[E, C[E] <: Buffer[E]](val skillObject: api.SkillObject, val field: api.FieldDeclaration[C[E]], val index: Int)
     extends AbstractNode() {
 
   override def getUiElement(graph: Graph) = {
-    UIElements.value(graph, skillObject.get(field)(index))
+    UIElements.value(graph, this, skillObject.get(field)(index))
   }
   override def getOutEdge(file: qq.editor.File) = Iterator() // values are leaves
   override def hashCode = java.util.Objects.hash(skillObject, field) ^ (index * 33)
@@ -99,6 +106,7 @@ case class ListValueNode[E, C[E] <: Buffer[E]](val skillObject: api.SkillObject,
     case that: ListValueNode[E, C] ⇒ that.skillObject == skillObject && that.field == field && that.index == index
     case _                         ⇒ false
   }
+  override def name(graph: Graph) = UIElements.valueShortString(skillObject.get(field)(index))
 }
 case class ListNullNode[E, C[E] <: Buffer[E]](val skillObject: api.SkillObject, val field: api.FieldDeclaration[C[E]], val index: Int)
     extends AbstractNode() {
@@ -110,6 +118,7 @@ case class ListNullNode[E, C[E] <: Buffer[E]](val skillObject: api.SkillObject, 
     case that: ListNullNode[E, C] ⇒ that.skillObject == skillObject && that.field == field && that.index == index
     case _                        ⇒ false
   }
+  override def name(graph: Graph) = "⊥"
 }
 case class SetNode[E, C[E] <: HashSet[E]](val skillObject: api.SkillObject, val field: api.FieldDeclaration[C[E]])
     extends AbstractNode() {
@@ -129,12 +138,13 @@ case class SetNode[E, C[E] <: HashSet[E]](val skillObject: api.SkillObject, val 
     case that: SetNode[E, C] ⇒ that.skillObject == skillObject && that.field == field
     case _                   ⇒ false
   }
+  override def name(graph: Graph) = "set of " + skillObject.get(field).size
 }
 case class SetValueNode[E, C[E] <: HashSet[E]](val skillObject: api.SkillObject, val field: api.FieldDeclaration[C[E]], val element: E)
     extends AbstractNode() {
 
   override def getUiElement(graph: Graph) = {
-    UIElements.value(graph, element)
+    UIElements.value(graph, this, element)
   }
   override def getOutEdge(file: qq.editor.File) = Iterator() // values are leaves
   override def hashCode = java.util.Objects.hash(skillObject, field) ^ (if (element == null) 0 else element.hashCode())
@@ -142,6 +152,7 @@ case class SetValueNode[E, C[E] <: HashSet[E]](val skillObject: api.SkillObject,
     case that: SetValueNode[E, C] ⇒ that.skillObject == skillObject && that.field == field && !qq.util.Neq(that.element, element)
     case _                        ⇒ false
   }
+  override def name(graph: Graph) = UIElements.valueShortString(element)
 }
 // at most one null per set
 case class SetNullNode[E, C[E] <: HashSet[E]](val skillObject: api.SkillObject, val field: api.FieldDeclaration[C[E]])
@@ -154,6 +165,7 @@ case class SetNullNode[E, C[E] <: HashSet[E]](val skillObject: api.SkillObject, 
     case that: SetNullNode[E, C] ⇒ that.skillObject == skillObject && that.field == field
     case _                       ⇒ false
   }
+  override def name(graph: Graph) = "⊥"
 }
 case class MapNode[K, V, C[K, V] <: HashMap[K, V]](val skillObject: api.SkillObject, val field: api.FieldDeclaration[C[K, V]])
     extends AbstractNode() {
@@ -174,13 +186,14 @@ case class MapNode[K, V, C[K, V] <: HashMap[K, V]](val skillObject: api.SkillObj
     case that: MapNode[K, V, C] ⇒ that.skillObject == skillObject && that.field == field
     case _                      ⇒ false
   }
+  override def name(g: Graph) = "map of "+FlattenedMap.size(skillObject.get(field),field.t.asInstanceOf[MapType[K,V]])
 }
 case class MapValueNode[K, V, C[K, V] <: HashMap[K, V]](val skillObject: api.SkillObject, val field: api.FieldDeclaration[C[K, V]], val index: Seq[Any])
     extends AbstractNode() {
 
   private def fieldType = field.t.asInstanceOf[MapType[K, V]]
   override def getUiElement(graph: Graph) = {
-    UIElements.value(graph, FlattenedMap.get(skillObject.get(field), fieldType, index))
+    UIElements.value(graph, this, FlattenedMap.get(skillObject.get(field), fieldType, index))
   }
   override def getOutEdge(file: qq.editor.File) = Iterator() // values are leaves
   override def hashCode = java.util.Objects.hash(skillObject, field, index)
@@ -188,6 +201,7 @@ case class MapValueNode[K, V, C[K, V] <: HashMap[K, V]](val skillObject: api.Ski
     case that: MapValueNode[K, V, C] ⇒ that.skillObject == skillObject && that.field == field && that.index == index
     case _                           ⇒ false
   }
+  override def name(graph: Graph) = UIElements.valueShortString(FlattenedMap.get(skillObject.get(field), fieldType, index))
 }
 case class MapNullNode[K, V, C[K, V] <: HashMap[K, V]](val skillObject: api.SkillObject, val field: api.FieldDeclaration[C[K, V]], val index: Seq[Any])
     extends AbstractNode() {
@@ -199,4 +213,5 @@ case class MapNullNode[K, V, C[K, V] <: HashMap[K, V]](val skillObject: api.Skil
     case that: MapNullNode[K, V, C] ⇒ that.skillObject == skillObject && that.field == field && that.index == index
     case _                          ⇒ false
   }
+  override def name(graph: Graph) = "⊥"
 }

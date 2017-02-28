@@ -67,7 +67,7 @@ object NewValue {
     }
     val dlg = new swing.Dialog()
       val ed = new ElementFieldEdit(page, τ.asInstanceOf[FieldType[T]], p) 
-      dlg.contents = qq.util.Swing.VBox(
+      dlg.contents = qq.util.Swing.VBoxD(
            ed,
            new swing.Button(swing.Action("Ok") {
              ed.editField.componentToProperty()

@@ -34,7 +34,7 @@ class TypePage(file0: qq.editor.File, settings0: qq.editor.Settings)
     currentType = t
     title = t.name
     typeEdit.contents.clear()
-    typeEdit.contents += new TypeEdit(this, t)
+    typeEdit.contents += new TypeEdit(this, file, t)
     typeTree.select(t)
     goBack.enabled = previousType.length > 0
     goForward.enabled = nextType.length > 0
@@ -142,7 +142,7 @@ class TypePage(file0: qq.editor.File, settings0: qq.editor.Settings)
     new swing.MenuItem(showObjectsOfThisType),
     new swing.MenuItem(newObjectOfThisType))
   /* the layout */
-  val toolBar = qq.util.Swing.HBox(
+  val toolBar = qq.util.Swing.HBoxD(
     new swing.Button(goBack) {
       text = ""
       icon = new qq.icons.BackIcon(true)
@@ -163,10 +163,10 @@ class TypePage(file0: qq.editor.File, settings0: qq.editor.Settings)
     },
     scala.swing.Swing.HGlue)
   val typeTree = new TypeTree(this)
-  val typeEdit = qq.util.Swing.HBox()
+  val typeEdit = qq.util.Swing.HBoxT()
   val typeGraph = new swing.Label("Todo graph")
 
-  val mainContent = qq.util.Swing.HBox()
+  val mainContent = qq.util.Swing.HBoxD()
 
   def updateVisibility: Unit = {
     mainContent.contents.clear()
@@ -195,5 +195,5 @@ class TypePage(file0: qq.editor.File, settings0: qq.editor.Settings)
   }
   updateVisibility
   title = "Types"
-  content = qq.util.Swing.VBox(toolBar, mainContent)
+  content = qq.util.Swing.VBoxD(toolBar, mainContent)
 }

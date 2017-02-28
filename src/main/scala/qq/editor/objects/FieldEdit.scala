@@ -46,7 +46,7 @@ class FieldEdit[F, O <: api.SkillObject](
     case BoolType | _: StringType | I8 | I16 | I32 | I64 | V64 | F32 | F64 ⇒
       val p = new qq.editor.binding.SimpleField(null, page.file, pool, obj, field)
       val ed = new qq.util.binding.LabeledEdit(p.defaultEditor)
-      contents += new qq.util.ExpandableNode(ed)
+      contents += new qq.util.ExpandableNode(ed, false)
   }
 
 }

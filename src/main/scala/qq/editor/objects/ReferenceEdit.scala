@@ -12,7 +12,7 @@ class ReferenceEdit(val p: Property[api.SkillObject], val page: ObjectPage, val 
 
   val labeledField = if (addLabel) new qq.util.binding.LabeledEdit(editField) else null
 
-  val exn = new qq.util.ExpandableNode(if (addLabel) labeledField else editField)
+  val exn = new qq.util.ExpandableNode(if (addLabel) labeledField else editField, false)
 
   def onValueChange(x: api.SkillObject): Unit = {
     def setAllPopupMenus(x: swing.PopupMenu): Unit = {

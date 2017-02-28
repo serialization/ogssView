@@ -29,7 +29,7 @@ class GroundValueLabel(
         new swing.Label(value.toString)
       }
   }
-  val en = new qq.util.ExpandableNode(labelField)
+  val en = new qq.util.ExpandableNode(labelField, false)
 
   typ match {
     case _: AnnotationType

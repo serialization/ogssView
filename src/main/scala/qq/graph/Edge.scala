@@ -19,9 +19,35 @@ class Edge(
   /** abstract edges represented by a edge in the opposite direction of this one */
   val reverseData: HashSet[AbstractEdge] = HashSet()
 
-  val uiElement = new swing.Label(".")
+  val uiElementAtFrom = new swing.Label("  ")
+  val uiElementAtTo = new swing.Label("  ")
   def updateToolTop: Unit = {
-    uiElement.tooltip = s"<html><div>${from.data.toString()}</div><div>${to.data.toString()}</div></html>"
+    // two tool tips with all edges neatly on top of each other
+    uiElementAtFrom.tooltip = s"""<html><table><tr>
+      <td valign="middle">${from.data.name(graph)}</td>
+      <td valign="middle"><center>${
+      (data.map(x ⇒ x.textLabel + " " + x.toDecoration.symbol) ++
+        reverseData.map(x ⇒ x.toDecoration.reverseSymbol + " " + x.textLabel)).mkString("<br>")
+    }</center></td>
+      <td valign="middle">${to.data.name(graph)}</td></tr></html>"""
+    uiElementAtTo.tooltip = s"""<html><table><tr>
+      <td valign="middle">${to.data.name(graph)}</td>
+      <td valign="middle"><center>${
+      (reverseData.map(x ⇒ x.textLabel + " " + x.toDecoration.symbol) ++
+        data.map(x ⇒ x.toDecoration.reverseSymbol + " " + x.textLabel)).mkString("<br>")
+    }</center></td>
+      <td valign="middle">${from.data.name(graph)}</td></tr></html>"""
+    uiElementAtFrom.peer.setSize(uiElementAtFrom.preferredSize)
+    uiElementAtTo.peer.setSize(uiElementAtTo.preferredSize)
+    // invisible labels that show the tool tips at the endpoints of the edges
+    val fromCenter = from.pos + from.toBorder(to.pos - from.pos)
+    val toCenter = to.pos + to.toBorder(from.pos - to.pos)
+    uiElementAtFrom.peer.setLocation(
+      fromCenter.x.toInt - uiElementAtFrom.preferredSize.width / 2,
+      fromCenter.y.toInt - uiElementAtFrom.preferredSize.height / 2)
+    uiElementAtTo.peer.setLocation(
+      toCenter.x.toInt - uiElementAtTo.preferredSize.width / 2,
+      toCenter.y.toInt - uiElementAtTo.preferredSize.height / 2)
 
   }
 
@@ -39,7 +65,7 @@ class Edge(
     // when many edges for the same field meet at one node we make the force
     // weaker so that the nodes at the other end don't get pushed together too much.
     // thank data and reverseDate that's a lot of cases…
-    
+
     // e and f represent the same field
     def sameField(e: AbstractEdge, f: AbstractEdge) = {
       e.isInstanceOf[SkillFieldEdge[_]] &&
@@ -118,7 +144,9 @@ class Edge(
   def draw(g: swing.Graphics2D) {
     val t = g.getTransform
     val fromLabels = reverseData.iterator.map(_.textLabel).toSeq
+    val fromDecorations = reverseData.iterator.map(_.toDecoration).toSeq.distinct
     val toLabels = data.iterator.map(_.textLabel).toSeq
+    val toDecorations = data.iterator.map(_.toDecoration).toSeq.distinct
     if (from == to) {
       g.translate(from.pos.x.toInt + from.width / 2, from.pos.y.toInt)
       g.drawOval(-10, -20, 40, 40)
@@ -129,19 +157,48 @@ class Edge(
       val t = to.pos + to.toBorder(from.pos - to.pos)
       g.translate(f.x.toInt, f.y.toInt)
       val d = t - f
+      val fromBelow = from.intersectsTopOrBottom(d) ^ (d.y > 0)
+      val toBelow = to.intersectsTopOrBottom(d) ^ (d.y < 0)
       val φ = d.direction
       if (φ.abs <= math.Pi / 2) {
         // write in direction of edge
         g.rotate(φ)
-        putsstr(g, 0, d.abs, toLabels)
-        putsstl(g, 0, 0, fromLabels)
-        g.drawLine(0, 0, d.abs.toInt, 0)
+        var width = d.abs.toInt
+        for (d ← fromDecorations) {
+          d.draw(g)
+          width -= d.width
+          g.translate(d.width, 0)
+        }
+        g.translate(width, 0)
+        g.rotate(math.Pi)
+        for (d ← toDecorations) {
+          d.draw(g)
+          width -= d.width
+          g.translate(d.width, 0)
+        }
+        g.rotate(math.Pi)
+        if (toBelow) putssbr(g, 0, 0, toLabels) else putsstr(g, 0, 0, toLabels)
+        if (fromBelow) putssbl(g, 0, -width, fromLabels) else putsstl(g, 0, -width, fromLabels)
+        g.drawLine(0, 0, -width, 0)
       } else {
         // write in opposite direction
-        g.rotate(φ + math.Pi)
-        putsstr(g, 0, 0, fromLabels)
-        putsstl(g, 0, -d.abs, toLabels)
-        g.drawLine(0, 0, -d.abs.toInt, 0)
+        g.rotate(φ)
+        var width = d.abs.toInt
+        for (d ← fromDecorations) {
+          d.draw(g)
+          width -= d.width
+          g.translate(d.width, 0)
+        }
+        g.translate(width, 0)
+        g.rotate(math.Pi)
+        for (d ← toDecorations) {
+          d.draw(g)
+          width -= d.width
+          g.translate(d.width, 0)
+        }
+        if (toBelow) putssbl(g, 0, 0, toLabels) else putsstl(g, 0, 0, toLabels)
+        if (fromBelow) putssbr(g, 0, width, fromLabels) else putsstr(g, 0, width, fromLabels)
+        g.drawLine(0, 0, width, 0)
 
       }
     }

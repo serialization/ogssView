@@ -4,8 +4,8 @@ import de.ust.skill.common.scala.api;
 import de.ust.skill.common.scala.internal.fieldTypes.MapType
 import de.ust.skill.common.scala.internal.fieldTypes.FieldType
 import scala.collection.mutable.HashMap;
-import qq.util.Swing.HBox
-import qq.util.Swing.VBox
+import qq.util.Swing.HBoxD
+import qq.util.Swing.VBoxD
 import swing.Swing.HGlue
 import qq.util.FlattenedMap
 
@@ -91,7 +91,7 @@ class MapContainerEdit[K, V, C[K, V] <: HashMap[K, V], O <: api.SkillObject](
 
   page.file.onEdit.weak += fileEditHandler
 
-  private val head = qq.util.Swing.HBox()
+  private val head = HBoxD()
 
   private def switchHeadStyle(expanded: Boolean) = {
     head.contents.clear()
@@ -102,7 +102,7 @@ class MapContainerEdit[K, V, C[K, V] <: HashMap[K, V], O <: api.SkillObject](
       head.contents += countLbl
     }
   }
-  private val en = new qq.util.ExpandableNode(head) {
+  private val en = new qq.util.ExpandableNode(head, false) {
     override def onCollapse() = { switchHeadStyle(false) }
     override def onExpand() = { switchHeadStyle(true) }
   }
@@ -111,9 +111,9 @@ class MapContainerEdit[K, V, C[K, V] <: HashMap[K, V], O <: api.SkillObject](
   private def refillLower(): Unit = {
     lowerPart.contents.clear()
     lowerPart.contents ++= FlattenedMap.keys(obj.get(field), skillType).toSeq.sortBy(x ⇒ if (x == null) "" else x.toString).drop(firstIndex).take(pageSize).map { key ⇒
-      val keysbox = VBox()
+      val keysbox = VBoxD()
       for ((k, t) ← key.zip(groundTypes)) {
-        keysbox.contents += qq.util.Swing.HBox(new GroundValueLabel(page, t, k), swing.Swing.HGlue)
+        keysbox.contents += qq.util.Swing.HBoxD(new GroundValueLabel(page, t, k), swing.Swing.HGlue)
       }
       val fprop = qq.editor.binding.MapContainerField(null, page.file, pool, obj, field, key, elType)
       val valed = new ElementFieldEdit(
@@ -127,11 +127,11 @@ class MapContainerEdit[K, V, C[K, V] <: HashMap[K, V], O <: api.SkillObject](
           new qq.editor.UserMapRemove[O, K, V, C](page.file, pool, obj, field, key)
         }
       }
-      HBox(0.0f,
-        VBox(0.0f,
-          HBox(0.0f, //new swing.Label("⋅"),
+      HBoxD(0.0f,
+        VBoxD(0.0f,
+          HBoxD(0.0f, //new swing.Label("⋅"),
             keysbox),
-          HBox(0.0f, //new swing.Label("↦"),
+          HBoxD(0.0f, //new swing.Label("↦"),
             valed)),
         new qq.util.PlainButton(ra) { text = "" })
     }
@@ -146,7 +146,7 @@ class MapContainerEdit[K, V, C[K, V] <: HashMap[K, V], O <: api.SkillObject](
         new qq.editor.UserMapInsert(page.file, pool, obj, field, keys, NewValue.default(groundTypes.last))
       }
     }
-    lowerPart.contents += qq.util.Swing.HBox(0.0f,
+    lowerPart.contents += qq.util.Swing.HBoxD(0.0f,
       new swing.Label(if (firstIndex + pageSize >= FlattenedMap.size(obj.get(field), skillType)) s"end of ${field.name}" else ""),
       swing.Swing.HGlue,
       new qq.util.PlainButton(aa) { text = "" })

@@ -1,18 +1,30 @@
 package qq.util
 
 object Swing {
-  def HBox(xs: swing.Component*): swing.BoxPanel = new swing.BoxPanel(swing.Orientation.Horizontal) {
+  def HBox(textStyle: Boolean, xs: swing.Component*): swing.BoxPanel = new swing.BoxPanel(swing.Orientation.Horizontal) {
+    if (textStyle) background = java.awt.SystemColor.text
     contents ++= xs
   }
-  def HBox(vAlignment: Float, xs: swing.Component*): swing.BoxPanel = new swing.BoxPanel(swing.Orientation.Horizontal) {
+  def HBox(textStyle: Boolean, vAlignment: Float, xs: swing.Component*): swing.BoxPanel = new swing.BoxPanel(swing.Orientation.Horizontal) {
+    if (textStyle) background = java.awt.SystemColor.text
     xs.foreach { _.peer.setAlignmentY(vAlignment)}
     contents ++= xs
   }
-  def VBox(xs: swing.Component*): swing.BoxPanel = new swing.BoxPanel(swing.Orientation.Vertical) {
+  def HBoxT(xs: swing.Component*) = HBox(true, xs:_*)
+  def HBoxD(xs: swing.Component*) = HBox(false, xs:_*)
+  def HBoxT(vAlignment: Float, xs: swing.Component*) = HBox(true, vAlignment, xs:_*)
+  def HBoxD(vAlignment: Float, xs: swing.Component*) = HBox(false, vAlignment, xs:_*)
+  def VBox(textStyle: Boolean, xs: swing.Component*): swing.BoxPanel = new swing.BoxPanel(swing.Orientation.Vertical) {
+    if (textStyle) background = java.awt.SystemColor.text
     contents ++= xs
   }
-  def VBox(hAlignment: Float, xs: swing.Component*): swing.BoxPanel = new swing.BoxPanel(swing.Orientation.Vertical) {
+  def VBox(textStyle: Boolean, hAlignment: Float, xs: swing.Component*): swing.BoxPanel = new swing.BoxPanel(swing.Orientation.Vertical) {
+    if (textStyle) background = java.awt.SystemColor.text
     xs.foreach { _.peer.setAlignmentX(hAlignment)}
     contents ++= xs
   }
+  def VBoxT(xs: swing.Component*) = VBox(true, xs:_*)
+  def VBoxD(xs: swing.Component*) = VBox(false, xs:_*)
+  def VBoxT(hAlignment: Float, xs: swing.Component*) = VBox(true, hAlignment, xs:_*)
+  def VBoxD(hAlignment: Float, xs: swing.Component*) = VBox(false, hAlignment, xs:_*)
 }

@@ -31,7 +31,7 @@ class File(fn0: String) {
     /* TODO either we clear the undo queue when saving, or we need to add a dummy save event */
     undoManager.canUndo()
   }
-  /** event that fires when the value of modified changes, proabably a lot more often */
+  /** event that fires when the value of modified changes, probably a lot more often */
   val onModifiednessChange: qq.util.binding.Event[Boolean] = new qq.util.binding.Event()
 
   /**
@@ -69,8 +69,14 @@ class File(fn0: String) {
   val deletedObjects: mutable.HashSet[api.SkillObject] = new mutable.HashSet()
 
   /**
+   * When deleting causes null references in non-null restricted fields, we add
+   * the affected object to this list.
+   */
+  val validationErrorObjects: mutable.HashSet[api.SkillObject] = new mutable.HashSet()
+
+  /**
    * created objects do not have a SkillId; we give them temporary negative ones;
-   * item 0 hast ID -1 and so on
+   * item 0 has ID -1 and so on
    */
   val createdObjects: mutable.ListBuffer[api.SkillObject] = new mutable.ListBuffer()
   val createdObjectId: mutable.HashMap[api.SkillObject, Int] = new mutable.HashMap()

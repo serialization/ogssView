@@ -2,18 +2,22 @@ package qq.editor.types
 
 import de.ust.skill.common.scala.api;
 import de.ust.skill.common.scala.internal;
-import qq.util.Swing.VBox
-import qq.util.Swing.HBox
+import qq.util.Swing.VBoxT
+import qq.util.Swing.HBoxT
 import swing.Swing.HGlue
 import swing.Swing.RigidBox
 import scala.swing.Dimension
 
-/** show the fields of one type and edit their profile settings. */
+/** show the fields of one type and edit their profile settings. If page != null make hyperlinks to other types*/
 class TypeEdit(val page: qq.editor.types.TypePage,
+               val file: qq.editor.File,
                val skillType: api.Access[_ <: api.SkillObject]) extends qq.util.VScrollPane {
+
+  background = java.awt.SystemColor.text
 
   /** displays one field. the field properties can be shown and hidden */
   class Field(val page: qq.editor.types.TypePage,
+              val file: qq.editor.File,
               val skillType: api.Access[_ <: api.SkillObject],
               val field: api.FieldDeclaration[_])
       extends qq.util.ExpandableNode({
@@ -26,21 +30,20 @@ class TypeEdit(val page: qq.editor.types.TypePage,
           case _                                  ⇒ "" /* non-constants don't */
         }
         /* main part is type and name; FieldTypeControl makes user types in the type clickable */
-        val ftc = new FieldTypeControl(page, field.t)
+        val ftc = new FieldTypeControl(page, file, field.t)
         val ftcw = ftc.preferredSize.width
         var typeAndName = if (ftcw > 40) {
-        VBox(
-            HBox( ftc,HGlue),
-          HBox(RigidBox(new Dimension(40,0)),
-              new swing.Label(" " + field.name + constantValuePart),
-          HGlue)
-)          
+          VBoxT(
+            HBoxT(ftc, HGlue),
+            HBoxT(RigidBox(new Dimension(40, 0)),
+              new qq.util.PlainLabel(" " + field.name + constantValuePart),
+              HGlue))
         } else {
-        HBox(
-          ftc,
-          RigidBox(new Dimension(40 - ftcw, 0)),
-          new swing.Label(" " + field.name + constantValuePart),
-          HGlue)
+          HBoxT(
+            ftc,
+            RigidBox(new Dimension(40 - ftcw, 0)),
+            new qq.util.PlainLabel(" " + field.name + constantValuePart),
+            HGlue)
         }
         /* when there are field restrictions, make a vbox with restrictions followed by type and name */
         var f2 = field.asInstanceOf[internal.FieldDeclaration[_, _]]
@@ -48,9 +51,10 @@ class TypeEdit(val page: qq.editor.types.TypePage,
           typeAndName
         } else {
           new swing.BoxPanel(swing.Orientation.Vertical) {
+            background = java.awt.SystemColor.text
             contents ++= f2.restrictions.map { x ⇒
-              HBox(
-                new swing.Label(
+              HBoxT(
+                new qq.util.PlainLabel(
                   /* non-null has no nice toString */
                   if (x.isInstanceOf[internal.restrictions.NonNull[_]]) {
                     "@NonNull"
@@ -63,53 +67,57 @@ class TypeEdit(val page: qq.editor.types.TypePage,
           }
         }
       },
-        new FieldSettingsEdit(page.file, skillType, field)) {
+        new FieldSettingsEdit(file, skillType, field) {
+        border = swing.Swing.BeveledBorder(swing.Swing.Raised)
+      }, true) {
   }
 
   private val inner = new swing.BoxPanel(swing.Orientation.Vertical) {
+    background = java.awt.SystemColor.text
     def addFieldsOfType(τ: api.Access[_ <: api.SkillObject]): Unit = {
-      if (page.file.parentType.contains(τ)) {
-        addFieldsOfType(page.file.parentType(τ))
+      if (file.parentType.contains(τ)) {
+        addFieldsOfType(file.parentType(τ))
       }
       contents += new qq.util.ExpandableNode(
-        HBox(
-          new swing.Label("" + τ.fields.length + " fields from "),
+        HBoxT(
+          new qq.util.PlainLabel("" + τ.fields.length + " fields from "),
           new TypeNameControl(page, τ),
-          HGlue)) {
+          HGlue), true) {
 
         if (τ.fields.length > 0) {
           subPart = new swing.BoxPanel(swing.Orientation.Vertical) {
-            contents ++= τ.fields.map(x ⇒ new Field(page, skillType, x))
+            background = java.awt.SystemColor.text
+            contents ++= τ.fields.map(x ⇒ new Field(page, file, skillType, x))
           }
           if (τ == skillType) expand
         }
       }
     }
     for (
-      rs ← empty.api.internal.FileParser.typeRestrictions.get(skillType.asInstanceOf[de.ust.skill.common.scala.internal.StoragePool[_,_]]);
+      rs ← empty.api.internal.FileParser.typeRestrictions.get(skillType.asInstanceOf[de.ust.skill.common.scala.internal.StoragePool[_, _]]);
       r ← rs
     ) {
-      contents += HBox(
-        new swing.Label("@" + r.toString()) { foreground = java.awt.Color.red },
+      contents += HBoxT(
+        new qq.util.PlainLabel("@" + r.toString()) { foreground = java.awt.Color.red },
         HGlue)
     }
-    page.file.parentType.get(skillType) match {
+    file.parentType.get(skillType) match {
       case Some(parentType) ⇒
-        contents += HBox(
+        contents += HBoxT(
           new TypeNameControl(page, skillType),
-          new swing.Label(" : "),
+          new qq.util.PlainLabel(" : "),
           new TypeNameControl(page, parentType),
-          new swing.Label(" {"),
+          new qq.util.PlainLabel(" {"),
           HGlue)
       case None ⇒
-        contents += HBox(
+        contents += HBoxT(
           new TypeNameControl(page, skillType),
-          new swing.Label(" {"),
+          new qq.util.PlainLabel(" {"),
           HGlue)
     }
     addFieldsOfType(skillType)
-    contents += HBox(
-      new swing.Label("}"),
+    contents += HBoxT(
+      new qq.util.PlainLabel("}"),
       HGlue)
 
   }

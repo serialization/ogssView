@@ -13,6 +13,7 @@ class ObjectGraph[O <: api.SkillObject](
   peer.setMinimumSize(new swing.Dimension(50, 50))
   peer.setPreferredSize(new swing.Dimension(50, 50))
   peer.setSize(new swing.Dimension(50, 50))
+  background = java.awt.SystemColor.text
 
   private var graph = new qq.graph.Graph(page.file, this, page.settings.graphLayout)
 
@@ -98,6 +99,12 @@ class ObjectGraph[O <: api.SkillObject](
     val t2 = System.nanoTime()
     graph = new qq.graph.Graph(page.file, this, page.settings.graphLayout)
 
+    if (page.settings.graphLayout.rootAtCentre()) {
+      // clamp root to centre
+      graph.addNode(root)
+      graph.nodes(root).clampedAt = Some(qq.util.Vector(size) / 2)
+      graph.nodes(root).move(0.0f)
+    }
     for (node ← visibleNodes) graph.addNode(node)
     for (node ← expandedNodes) {
       node.getOutEdge(page.file).foreach { e ⇒
@@ -120,15 +127,14 @@ class ObjectGraph[O <: api.SkillObject](
     }
 
     val t3 = System.nanoTime()
-    if (page.settings.graphLayout.rootAtCentre()) {
-      // clamp root to centre
-      graph.nodes(root).clampedAt = Some(qq.util.Vector(size) / 2)
-    }
     graph.placeNodes(size)
     val t4 = System.nanoTime()
     peer.removeAll()
     graph.nodes.values.foreach { x ⇒
-      x.edgesOut.values.foreach { y ⇒ peer.add(y.uiElement.peer) }
+      x.edgesOut.values.foreach { y ⇒ 
+        peer.add(y.uiElementAtFrom.peer)
+        peer.add(y.uiElementAtTo.peer)
+        }
       peer.add(x.uiElement.peer)
     }
     val t5 = System.nanoTime()
@@ -137,34 +143,30 @@ class ObjectGraph[O <: api.SkillObject](
   }
 
   override def paintComponent(g: swing.Graphics2D) {
+    super.paintComponent(g)
 
     // Start by erasing this Canvas
-    g.setColor(javax.swing.UIManager.getColor("Panel.background"))
+    g.setColor(java.awt.SystemColor.text)
     g.clearRect(0, 0, bounds.width, bounds.height)
     g.fillRect(0, 0, bounds.width, bounds.height)
-    g.setColor(javax.swing.UIManager.getColor("Label.foreground"))
+    g.setColor(java.awt.SystemColor.textText)
 
     for (c ← graph.nodes.values) {
       c.uiElement.peer.setSize(c.uiElement.preferredSize)
       c.uiElement.peer.setLocation(c.left, c.top)
-      c.uiElement.repaint()
-      g.drawString((c.energy / c.degree).toString(), c.pos.x.toInt, c.pos.y.toInt - 10)
+      c.uiElement.peer.revalidate()
+      //g.drawString((c.energy / c.degree).toString(), c.pos.x.toInt, c.pos.y.toInt - 10)
       for (e ← c.edgesOut.values) {
         e.draw(g)
         e.updateToolTop
-        e.uiElement.peer.setSize(e.uiElement.preferredSize)
-        val x = (c.pos + e.to.pos) / 2
-        e.uiElement.peer.setLocation(x.x.toInt, x.y.toInt)
-        e.uiElement.repaint()
       }
     }
-    for (i ← 0.until(graph.energyOfStep.size)) {
-      g.drawString("x", 10 + i, 10 + 10 * graph.energyOfStep(i) / graph.nodes.size)
-    }
-    for (i ← 0.until(graph.stepOfStep.size)) {
-      g.drawString("o", 10 + i, 10 + graph.stepOfStep(i))
-    }
-
+   // for (i ← 0.until(graph.energyOfStep.size)) {
+   //   g.drawString("x", 10 + i, 10 + 10 * graph.energyOfStep(i) / graph.nodes.size)
+   // }
+   // for (i ← 0.until(graph.stepOfStep.size)) {
+   //   g.drawString("o", 10 + i, 10 + graph.stepOfStep(i))
+   // }
   }
 
   listenTo(this)
