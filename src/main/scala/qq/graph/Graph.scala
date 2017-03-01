@@ -62,10 +62,8 @@ class Graph(
     }
   }
 
-  /** components of the graph that should keep their layout */
-  val rigidSubgraphs: HashSet[RigidSubGraph] = HashSet()
-
   def energy: Float = nodes.values.map(_.energy).sum
+  def energyHu: Float = nodes.values.map(x ⇒ x.force * x.force).sum
 
   def resetAccumulators: Unit = nodes.values.foreach(_.resetAccumulators)
   private def calculateForce(overlapAvoidance: Float, size: java.awt.Dimension, stepSize: Float): Unit = {
@@ -80,23 +78,12 @@ class Graph(
     }
   }
   def move(stepSize: Float): Unit = {
-      nodes.values.foreach(_.move(stepSize))
+    nodes.values.foreach(_.move(stepSize))
     //  rigidSubgraphs.foreach(_.move(maxDist))
   }
-  /**
-   * freeze current layout, i.e. add all nodes to one rigid sub-graph
-   *  and TODO tell file about it
-   */
-  def freeze: Unit = {
-    val r = new RigidSubGraph(this)
-    r.nodes ++= nodes.values
-    nodes.values.foreach(_.rigidSubGraph = Some(r))
-    rigidSubgraphs.clear()
-    rigidSubgraphs += r
-  }
 
-  val energyOfStep = new ArrayBuffer[Float]()
-  val stepOfStep = new ArrayBuffer[Float]()
+  val graphInfo = new GraphInfo
+
   /**
    * place nodes in a rectangle of the given size
    */
@@ -117,8 +104,10 @@ class Graph(
           ay * (x.pos.y - y0) + size.height / 2)
       }
     }
-    energyOfStep.clear()
-    stepOfStep.clear()
+    graphInfo.energyOfStep.clear()
+    graphInfo.energyHuOfStep.clear()
+    graphInfo.stepOfStep.clear()
+    graphInfo.saveDirections(this)
     var stepsize: Float = 10
     var energyPreviousStep = Float.PositiveInfinity
     var stepsWithProgress = 0
@@ -129,10 +118,10 @@ class Graph(
       resetAccumulators
       calculateForce(((step - initialIterations).toFloat / phaseInIterations).max(0).min(1), size, stepsize)
       move(stepsize)
-      // TODO this is not the energy of Hu
-      energyOfStep += energy
-      stepOfStep += stepsize
-      if (energy <= energyPreviousStep) {
+      graphInfo.energyOfStep += energy
+      graphInfo.energyHuOfStep += energyHu
+      graphInfo.stepOfStep += stepsize
+      if (energyHu <= energyPreviousStep) {
         stepsWithProgress += 1
         if (stepsWithProgress >= 5) {
           stepsize /= 0.95f
@@ -142,11 +131,12 @@ class Graph(
         stepsize *= 0.95f
         stepsWithProgress = 0
       }
-      energyPreviousStep = energy
+      energyPreviousStep = energyHu
     }
     if (!cluttered) {
       updateIdealEdgeDirections
     }
+    graphInfo.saveEnergy(energy, energyHu)
   }
   def cluttered: Boolean = energy / nodes.size > properties.cluttered()
   private def updateIdealEdgeDirections = {
@@ -159,11 +149,77 @@ class Graph(
     for ((f, x) ← dirByAbsEdge if (x.isFinite())) {
       val d = file.fieldSettings(f).prefEdgeDirection
       val d0 = d()
-      if (d0.abs < 1.0) {
+      if (!file.fieldSettings(f).prefFixedEdgeDirection()) {
         val d1 = d0 * d0.abs + x * (1 - d0.abs)
         println(s"${f.name} $d1 $d0 $x ${d1.abs}")
-        d := d1.min(0.95f)
+        d := d1.min(0.99f)
       }
     }
+  }
+
+  // info about the parameters of the layout, for comment in psexport
+  class GraphInfo() {
+    val edgeDirections = new HashMap[api.FieldDeclaration[_], Vector]
+    var energy: Float = 0
+    var energyHu: Float = 0
+    val energyOfStep = new ArrayBuffer[Float]()
+    val energyHuOfStep = new ArrayBuffer[Float]()
+    val stepOfStep = new ArrayBuffer[Float]()
+
+    def saveDirections(g: Graph) = {
+      edgeDirections.clear()
+      val fields = (for (
+        v ← g.nodes.values;
+        e ← v.edgesOut.values;
+        e2 ← e.data ++ e.reverseData if e2.isInstanceOf[SkillFieldEdge[_]]
+      ) yield e2.asInstanceOf[SkillFieldEdge[_]].field).toSet
+      edgeDirections ++= fields.map(x ⇒ (x -> g.file.fieldSettings(x).prefEdgeDirection()))
+    }
+    def saveEnergy(e: Float, e2: Float) = {
+      energy = e
+      energyHu = e2
+    }
+    def toPs: String = {
+      s"% energy = $energy hu's energy: $energyHu\n"
+      "% edge directions\n" +
+        edgeDirections.map(x ⇒ s"% ${x._1.name}  ${x._2}\n").mkString("")
+
+    }
+  }
+  // not nice, but better then screenshots
+  def toPs(size: java.awt.Dimension): String = {
+    "%!PS-Adobe-3.0 EPSF-3.0\n" + // TODO ps versions?
+      "%%BoundingBox: 0 0 " + size.width + " " + size.height + "\n" +
+      "%%EndComments\n" +
+      graphInfo.toPs +
+      "/Helvetica findfont\n" +
+      "12 scalefont setfont\n" +
+      "/top {" + size.height + "} def\n" +
+      "/fontheight { % (font -- n_height) get height of font\n" +
+      "  currentfont dup /FontBBox get 3 get exch /FontMatrix get 3 get mul\n" +
+      "} def\n" +
+      "/fontdepth { % (font -- n_depth) get depth of font\n" +
+      "  currentfont dup /FontBBox get 1 get neg exch /FontMatrix get 3 get mul\n" +
+      "} def\n" +
+      "/showc { % (s --) show centred\n" +
+      "  dup stringwidth exch 2 div neg exch pop fontdepth fontheight sub 2 div rmoveto show\n" +
+      "} def\n" +
+      "/showbl { % (s --) show with bottom left a current pos and some extra margin\n" +
+      "  1 fontdepth 1 add rmoveto show\n" +
+      "} def\n" +
+      "/showbr { % (s --) show with bottom right a current pos and some extra margin\n" +
+      "  dup stringwidth exch neg 1 sub exch pop fontdepth 1 add rmoveto show\n" +
+      "} def\n" +
+      "/showtl { % (s --) show with top left a current pos and some extra margin\n" +
+      "  dup stringwidth exch pop 1 exch pop fontheight 1 add neg rmoveto show\n" +
+      "} def\n" +
+      "/showtr { % (s --) show with bottom right a current pos and some extra margin\n" +
+      "  dup stringwidth exch neg 1 sub exch pop fontheight 1 add neg rmoveto show\n" +
+      "} def\n" +
+      nodes.values.map(
+        x ⇒ x.toPs(this) +
+          x.edgesOut.values
+          .map(e ⇒ e.toPs()).mkString("\n")).mkString("\n") +
+        " showpage \n"
   }
 }

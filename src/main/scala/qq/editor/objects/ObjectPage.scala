@@ -46,6 +46,9 @@ class ObjectPage(file0: qq.editor.File, settings0: qq.editor.Settings) extends q
   /** Title for object selection */
   val objectSelectionTitle: String = ""
 
+  /** the graph panel */
+  var graph: ObjectGraph[_] = null
+  
   /** show an object (internal, for goTo, goBack, goForward) */
   private def _goTo(v: View): Unit = {
     currentView = v
@@ -55,8 +58,8 @@ class ObjectPage(file0: qq.editor.File, settings0: qq.editor.Settings) extends q
     objEdit.contents += new TopObjectEdit(this, v.obj)
 
     objGraph.contents.clear()
-    val og = new ObjectGraph(this, v.obj)
-    objGraph.contents += og
+    graph = new ObjectGraph(this, v.obj)
+    objGraph.contents += graph
     
     goBack.enabled = previousView.length > 0
     goForward.enabled = nextView.length > 0
@@ -167,7 +170,20 @@ val showTypeOfThisObject = new swing.Action("Show Type of Current Object") {
       action = toggleGraphVisible
       peer.setModel(graphVisibleModel)
     },
-    scala.swing.Swing.HGlue)
+    new swing.Button(swing.Action("Redraw") {
+      if (graph != null) {
+        graph.clampedNodes.clear()
+        graph.updateLayout
+        graph.repaint()
+      }
+    }),
+    scala.swing.Swing.HGlue,
+new swing.Button(swing.Action("ps to clipboard") {
+  if (graph != null){
+      val clipboard = java.awt.Toolkit.getDefaultToolkit.getSystemClipboard
+      val sel = new java.awt.datatransfer.StringSelection(graph.graph.toPs(graph.size))
+      clipboard.setContents(sel, sel)
+  }})    )
   val objSearch = new SearchResults(this)
   val objEdit = qq.util.Swing.HBoxD()
   val objGraph = qq.util.Swing.HBoxT()

@@ -7,14 +7,13 @@ import de.ust.skill.common.scala.api;
 
 object Main extends SimpleSwingApplication {
 
-  
   // ugh, buttons have background again with sys UI. And font is very small.
   // And the ugly anti-aliased fonts are still there
   // javax.swing.UIManager.setLookAndFeel(javax.swing.UIManager.getSystemLookAndFeelClassName())
-  
+
   /** user settings */
   val settings = new Settings()
-  
+
   /** the current file */
   var file: File = null
 
@@ -46,7 +45,7 @@ object Main extends SimpleSwingApplication {
     if (o != null) page.goTo(new page.View(o))
     page.show()
   }
-   
+
   /** add a new tab showing all objects of type τ */
   def newObjectTab(τ: api.Access[_]): Unit = {
     val page = new qq.editor.objects.ObjectPage(file, settings)
@@ -54,8 +53,7 @@ object Main extends SimpleSwingApplication {
     if (τ != null) page.find(s"'${τ.name}'")
     page.show()
   }
- 
-  
+
   private def closeFile: Unit = {
     if (file != null) {
       if (file.isModified) {
@@ -73,24 +71,52 @@ object Main extends SimpleSwingApplication {
     }
   }
 
+  /** what to show after file is opened*/
+  private def showDefault(): Unit = {
+    /* open the first object in a pool with one object */
+    try {
+      newObjectTab(file.s.filter(_.size == 1).head.head)
+    } catch {
+      case _: Exception ⇒
+        /* from the first non-empty pool?*/
+        try {
+          newObjectTab(file.s.filter(_.size >= 1).head.head)
+        } catch {
+          case _: Exception ⇒
+            /* first type?*/
+            try {
+              newTypeTab(file.s.head)
+            } catch {
+              case _: Exception ⇒
+              /* oh well, start empty*/
+            }
+
+        }
+    }
+  }
+  /** open a file */
+  private def open_(fileName: String) = {
+    file = new File(fileName)
+    undoMenuItem.action = file.undoManager.undoAction
+    redoMenuItem.action = file.undoManager.redoAction
+    onFileChange.fire(file)
+    showDefault()
+  }
   private val actOpen = new Action("Open") {
     accelerator = Some(javax.swing.KeyStroke.getKeyStroke("ctrl O"))
     mnemonic = swing.event.Key.O.id
     override def apply() {
       closeFile
       val fc = new FileChooser()
-      fc.fileFilter = new javax.swing.filechooser.FileNameExtensionFilter("SKilL Files","sf")
+      fc.fileFilter = new javax.swing.filechooser.FileNameExtensionFilter("SKilL Files", "sf")
       val result = fc.showOpenDialog(null)
       if (result == FileChooser.Result.Approve) {
-        file = new File(fc.selectedFile.toString())
-        undoMenuItem.action = file.undoManager.undoAction
-        redoMenuItem.action = file.undoManager.redoAction
-        onFileChange.fire(file)
+        open_(fc.selectedFile.toString())
       }
     }
   }
   private def save_() {
-    file.deletedObjects.foreach(file.s.delete(_)) 
+    file.deletedObjects.foreach(file.s.delete(_))
     file.s.changePath(java.nio.file.Paths.get(file.fileName + "~"))
     file.s.flush()
     file.deletedObjects.clear()
@@ -194,15 +220,14 @@ object Main extends SimpleSwingApplication {
   }
   private val newTypePageMenuItem = new MenuItem(newTypePageAction)
   private val defaultTypeMenuItems = Seq(
-      newTypePageMenuItem,
-      new qq.util.TodoMenuItem("Profiles")
-      )
+    newTypePageMenuItem,
+    new qq.util.TodoMenuItem("Profiles"))
   private val typeMenu = new Menu("Type") {
     mnemonic = swing.event.Key.T
     onFileChange.strong += { file ⇒
       contents.clear()
       enabled = file != null
-      if (enabled) contents ++= defaultTypeMenuItems 
+      if (enabled) contents ++= defaultTypeMenuItems
 
     }
     tabs.onPageChanged.strong += { page ⇒
@@ -230,7 +255,7 @@ object Main extends SimpleSwingApplication {
       new Menu("Edit") {
         mnemonic = swing.event.Key.E
         contents ++= Seq(undoMenuItem, redoMenuItem)
-        contents += new MenuItem(Action("Properties") {settings.prefEdit.visible = true})
+        contents += new MenuItem(Action("Properties") { settings.prefEdit.visible = true })
       },
       viewMenu, objectMenu, typeMenu)
   }
@@ -242,19 +267,16 @@ object Main extends SimpleSwingApplication {
       title = if (file != null)
         file.windowTitle
       else
-        "SKilL Editor"} 
+        "SKilL Editor"
+    }
     onFileChange.strong += updateTitle
-    onFileChange.strong += (file => if (file != null) file.onModifiednessChange.strong +=  (_ => updateTitle(file)))
+    onFileChange.strong += (file ⇒ if (file != null) file.onModifiednessChange.strong += (_ ⇒ updateTitle(file)))
 
     onFileChange.fire(file)
     size = new java.awt.Dimension(640, 480)
   }
 
-  
-  // TODO delete
-  file = new File("C:\\Users\\m\\stud\\dt\\testinp\\time.iml.sf")
-  undoMenuItem.action = file.undoManager.undoAction
-  redoMenuItem.action = file.undoManager.redoAction
-  onFileChange.fire(file)
+  // TODO argv[1]
+  open_("C:\\Users\\m\\stud\\dt\\testinp\\time.iml.sf")
 
 }

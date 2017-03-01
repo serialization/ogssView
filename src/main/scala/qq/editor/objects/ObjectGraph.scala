@@ -3,6 +3,7 @@ package qq.editor.objects
 import de.ust.skill.common.scala.api
 import scala.collection.mutable.HashSet
 import scala.collection.mutable.HashMap
+import qq.util.Vector
 
 /** Show obj and neighbourhood as graph */
 class ObjectGraph[O <: api.SkillObject](
@@ -15,13 +16,16 @@ class ObjectGraph[O <: api.SkillObject](
   peer.setSize(new swing.Dimension(50, 50))
   background = java.awt.SystemColor.text
 
-  private var graph = new qq.graph.Graph(page.file, this, page.settings.graphLayout)
+  var graph = new qq.graph.Graph(page.file, this, page.settings.graphLayout)
 
   val root = new qq.graph.SkillObjectNode(obj)
   val visibleNodes = new HashSet[qq.graph.AbstractNode]
   val expandedNodes = new HashSet[qq.graph.AbstractNode]
   private val pathsToNode = new HashMap[qq.graph.AbstractNode, Set[Seq[api.FieldDeclaration[_]]]]
 
+  // once shown, nodes stay at their position
+  val clampedNodes = new HashMap[qq.graph.AbstractNode, Vector]
+  
   // TODO save at the type the field belongs to
   private def expandPrefs = page.file.typeSettings(page.file.s(obj.getTypeName)).expanded
   def expandCollapse(n: qq.graph.AbstractNode) {
@@ -98,14 +102,21 @@ class ObjectGraph[O <: api.SkillObject](
     // go to fields of expanded nodes
     val t2 = System.nanoTime()
     graph = new qq.graph.Graph(page.file, this, page.settings.graphLayout)
-
+    // fix the position of clamped nodes first, then other nodes can get a better inital position
     if (page.settings.graphLayout.rootAtCentre()) {
       // clamp root to centre
+      clampedNodes(root) = qq.util.Vector(size) / 2
       graph.addNode(root)
-      graph.nodes(root).clampedAt = Some(qq.util.Vector(size) / 2)
+      graph.nodes(root).clampedAt = Some(clampedNodes(root) )
       graph.nodes(root).move(0.0f)
     }
-    for (node ← visibleNodes) graph.addNode(node)
+    for (node ← visibleNodes) {
+      graph.addNode(node)
+      if (clampedNodes.contains(node)) {
+        graph.nodes(node).clampedAt = Some(clampedNodes(node))
+        graph.nodes(node).move(0.0f)
+      }
+    }
     for (node ← expandedNodes) {
       node.getOutEdge(page.file).foreach { e ⇒
         graph.addEdge(e)
@@ -116,6 +127,12 @@ class ObjectGraph[O <: api.SkillObject](
             pathsToNode(to) ++= pathsToNode(node).map(_ :+ e.field)
           case _ ⇒ println("huh?" + e)
         }
+      }
+    }
+    // clamp rest
+    for (v <- graph.nodes.keys) {
+      if (clampedNodes.contains(v)) {
+        graph.nodes(v).clampedAt = Some(clampedNodes(v)) 
       }
     }
 
@@ -129,6 +146,8 @@ class ObjectGraph[O <: api.SkillObject](
     val t3 = System.nanoTime()
     graph.placeNodes(size)
     val t4 = System.nanoTime()
+    // add UI elements and store positions
+    clampedNodes.clear()
     peer.removeAll()
     graph.nodes.values.foreach { x ⇒
       x.edgesOut.values.foreach { y ⇒ 
@@ -136,9 +155,10 @@ class ObjectGraph[O <: api.SkillObject](
         peer.add(y.uiElementAtTo.peer)
         }
       peer.add(x.uiElement.peer)
+      clampedNodes(x.data) = x.pos
     }
     val t5 = System.nanoTime()
-    println(s"${graph.nodes.size} nodes ${graph.nodes.values.map(_.edgesOut.size).sum} edges follow paths: ${t2 - t1} ns, place: ${(t4 - t3)/1E6} ms, total ${(t5 - t0)/1E6} ms E=${graph.energyOfStep.last} stepsize=${graph.stepOfStep.last}")
+    println(s"${graph.nodes.size} nodes ${graph.nodes.values.map(_.edgesOut.size).sum} edges follow paths: ${t2 - t1} ns, place: ${(t4 - t3)/1E6} ms, total ${(t5 - t0)/1E6} ms E=${graph.energy} E2=${graph.energyHu} stepsize=${graph.graphInfo.stepOfStep.last}")
 
   }
 
@@ -161,17 +181,17 @@ class ObjectGraph[O <: api.SkillObject](
         e.updateToolTop
       }
     }
-   // for (i ← 0.until(graph.energyOfStep.size)) {
-   //   g.drawString("x", 10 + i, 10 + 10 * graph.energyOfStep(i) / graph.nodes.size)
-   // }
-   // for (i ← 0.until(graph.stepOfStep.size)) {
-   //   g.drawString("o", 10 + i, 10 + graph.stepOfStep(i))
-   // }
+    for (i ← 0.until(graph.graphInfo.energyOfStep.size)) {
+      g.drawString("x", 10 + i, 10 + 10 * graph.graphInfo.energyOfStep(i) / graph.nodes.size)
+      g.drawString("o", 10 + i, 10 + graph.graphInfo.stepOfStep(i))
+      g.drawString("-", 10 + i, 10 + 10 * graph.graphInfo.energyHuOfStep(i))
+    }
   }
 
   listenTo(this)
   reactions += {
     case e: swing.event.UIElementResized ⇒
+      clampedNodes.clear()
       updateLayout
       repaint
 

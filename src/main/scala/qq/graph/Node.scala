@@ -65,13 +65,13 @@ class Node(val graph: Graph,
     if (r == this) {
       // distance to border
       val (dl, dr, dt, db) = (left, bounds.width - left - width, top, bounds.height - height - top)
-      def Fᵣ(x: Int) = { val xx = (x- 10).toFloat.max(p.ε()); p.c3() / xx / xx / xx }
+      def Fᵣ(x: Int) = { val xx = (x- 10).toFloat.max(p.ε()); p.c3() / xx / xx }
       val F = new Vector(Fᵣ(dl) - Fᵣ(dr), Fᵣ(dt) - Fᵣ(db))
       force += F
       energy += F * F
     } else {
       val deg = (degree.min{r.degree})
-      val l = p.c2() * math.sqrt(deg)//if (deg <= 5) p.c2() else p.c2() * math.sqrt(deg / 5)
+      val l = if (deg <= 3) p.c2() else p.c2() * math.sqrt(deg / 3)
       val δ = (r.pos - pos).max(p.ε())
       val δ2 = {
         val δ2 = δ - (toBorder(δ) - r.toBorder(-δ)) * overlapRemoval
@@ -88,6 +88,17 @@ class Node(val graph: Graph,
       r.energy += F * F
 
     }
+  }
+  
+  
+  def toPs(g: Graph): String = {
+    " "+(pos.x - width / 2)+" top " + (pos.y - height / 2) + " sub moveto\n" +
+    " "+(pos.x + width / 2)+" top " + (pos.y - height / 2) + " sub lineto\n" +
+    " "+(pos.x + width / 2)+" top " + (pos.y + height / 2) + " sub lineto\n" +
+    " "+(pos.x - width / 2)+" top " + (pos.y + height / 2) + " sub lineto\n" +
+    " "+(pos.x - width / 2)+" top " + (pos.y - height / 2) + " sub lineto\n" +
+    " stroke\n" +
+    " "+pos.x+" top " + pos.y + " sub moveto (" + data.name(g) + ") showc\n"
   }
 
 }

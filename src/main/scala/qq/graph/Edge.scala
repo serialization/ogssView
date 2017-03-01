@@ -204,5 +204,47 @@ class Edge(
     }
     g.setTransform(t)
   }
+  
+  def toPs(): String = {
+    val fromLabels = reverseData.iterator.map(_.textLabel).toSeq
+    val fromDecorations = reverseData.iterator.map(_.toDecoration).toSeq.distinct
+    val toLabels = data.iterator.map(_.textLabel).toSeq
+    val toDecorations = data.iterator.map(_.toDecoration).toSeq.distinct
+
+    " matrix currentmatrix\n" +
+      (if (from == to) {
+        " " + (from.pos.x.toInt + from.width / 2) + " top " + from.pos.y.toInt + " sub translate\n" +
+          "                           0.0 -10.0 moveto\n" +
+          "   5.0 -20.0  30.0 -20.0  30.0   0.0 curveto\n" +
+          "  30.0  20.0   5.0  20.0   0.0  10.0 curveto\n" +
+          " stroke\n" +
+          fromLabels.map("  33.0 0.0 moveto (" + _ + ") show\n").mkString("") +
+          toLabels.map("  33.0 0.0 moveto (" + _ + ") show\n").mkString("")
+      } else {
+        val f = from.pos + from.toBorder(to.pos - from.pos)
+        val t = to.pos + to.toBorder(from.pos - to.pos)
+        val d = t - f
+        val fromBelow = from.intersectsTopOrBottom(d) ^ (d.y < 0)
+        val toBelow = to.intersectsTopOrBottom(d) ^ (d.y > 0)
+        val φ = -d.direction
+        " " + f.x + " top " + f.y + " sub translate\n" +
+          (if (φ.abs <= math.Pi / 2) {
+            // write in direction of edge
+            " " + φ.toDegrees + " rotate\n" +
+            toLabels.map(" " + d.abs + " 0 moveto ("+ _ +") "+(if (toBelow) "showtr" else "showbr")+"\n").mkString("")+ 
+            fromLabels.map(" 0 0 moveto ("+ _ +") "+(if (fromBelow) "showtl" else "showbl")+"\n").mkString("")+ 
+            " 0 0 moveto " + d.abs + " 0 lineto stroke\n"
+          } else {
+            // write in opposite direction
+            " " + (φ + math.Pi).toDegrees + " rotate\n" +
+            toLabels.map(" " + (-d.abs) + " 0 moveto ("+ _ +") "+(if (toBelow) "showtl" else "showbl")+"\n").mkString("")+ 
+            fromLabels.map(" 0 0 moveto ("+ _ +") "+(if (fromBelow) "showtr" else "showbr")+"\n").mkString("")+ 
+            " 0 0 moveto " + (-d.abs) + " 0 lineto stroke\n"
+          })
+      }) +
+      " setmatrix "
+
+  }  
+  
 
 }

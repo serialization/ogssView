@@ -43,13 +43,21 @@ class TypeTree(val page: qq.editor.types.TypePage)
     contents = typeTree
   }
 
+  var selected: TypeTreeNode = null
   def select(τ: api.Access[_ <: api.SkillObject]): Unit = {
+    if (selected != null) {
+      selected.node.background = java.awt.SystemColor.text
+    }
+    
     /* expand all parents */
     for (x <- page.file.superTypes(τ)) nodes(x).expand
     
     val node = nodes(τ).node.peer
     val nodePos = javax.swing.SwingUtilities.convertRectangle(node.getParent, node.getBounds, typeTree.peer)
     typeTree.peer.scrollRectToVisible(nodePos)
+    selected = nodes(τ)
+      selected.node.background = java.awt.SystemColor.textHighlight
+    
   }
 
   contents += scrollContainer
