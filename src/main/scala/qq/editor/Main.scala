@@ -24,34 +24,38 @@ object Main extends SimpleSwingApplication {
   private val tabs = new qq.util.TabbedPane()
 
   /** add a new tab showing type τ. τ == null allowed*/
-  def newTypeTab(τ: api.Access[_ <: api.SkillObject]): Unit = {
+  def newTypeTab(τ: api.Access[_ <: api.SkillObject]): qq.editor.types.TypePage = {
     val page = new qq.editor.types.TypePage(file, settings)
     tabs.addPage(page)
     if (τ != null) page.goTo(τ)
     page.show()
+    page
   }
 
   /** add a new tab for showing objects*/
-  def newObjectTab(): Unit = {
+  def newObjectTab(): qq.editor.objects.ObjectPage = {
     val page = new qq.editor.objects.ObjectPage(file, settings)
     tabs.addPage(page)
     page.show()
+    page
   }
 
   /** add a new tab showing object o. o == null allowed*/
-  def newObjectTab(o: api.SkillObject): Unit = {
+  def newObjectTab(o: api.SkillObject): qq.editor.objects.ObjectPage = {
     val page = new qq.editor.objects.ObjectPage(file, settings)
     tabs.addPage(page)
     if (o != null) page.goTo(new page.View(o))
     page.show()
+    page
   }
 
   /** add a new tab showing all objects of type τ */
-  def newObjectTab(τ: api.Access[_]): Unit = {
+  def newObjectTab(τ: api.Access[_]): qq.editor.objects.ObjectPage = {
     val page = new qq.editor.objects.ObjectPage(file, settings)
     tabs.addPage(page)
     if (τ != null) page.find(s"'${τ.name}'")
     page.show()
+    page
   }
 
   private def closeFile: Unit = {
@@ -73,14 +77,14 @@ object Main extends SimpleSwingApplication {
 
   /** what to show after file is opened*/
   private def showDefault(): Unit = {
-    /* open the first object in a pool with one object */
+    /* open the first object in the smallest root pool */
     try {
-      newObjectTab(file.s.filter(_.size == 1).head.head)
+      newObjectTab(file.rootTypes.filter(_.size >= 1).toSeq.sortBy(_.size).head)
     } catch {
       case _: Exception ⇒
         /* from the first non-empty pool?*/
         try {
-          newObjectTab(file.s.filter(_.size >= 1).head.head)
+          newObjectTab(file.s.filter(_.size >= 1).head)
         } catch {
           case _: Exception ⇒
             /* first type?*/

@@ -19,7 +19,7 @@ object ObjectContextMenu {
             contents = new qq.editor.types.TypeEdit(null, page.file, τ)
           }
           frame.visible = true
-        })
+        }) 
       )
     }
   }

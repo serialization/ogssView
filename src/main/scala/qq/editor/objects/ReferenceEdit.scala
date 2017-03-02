@@ -26,7 +26,23 @@ class ReferenceEdit(val p: Property[api.SkillObject], val page: ObjectPage, val 
     if (x != null) {
       exn.lazySubPart = { x ⇒ new ObjectEdit(page, p()) }
       exn.collapse()
-      setAllPopupMenus(qq.editor.objects.ObjectContextMenu(x, page))
+      
+      val popupMenu = qq.editor.objects.ObjectContextMenu(x, page)
+      popupMenu.contents += new swing.MenuItem(swing.Action("Select object") {
+          val selection = qq.editor.Main.newObjectTab()
+          // TODO property needs to publish ground type
+          selection.select(s"change ${p.name}",
+              {o =>
+                p := o           
+                page.tabbedPane.addPage(page)
+              },
+              {o =>
+                page.tabbedPane.addPage(page)
+              })
+          page.tabbedPane.removePage(page.index)
+        })
+      
+      setAllPopupMenus(popupMenu)
     } else {
       exn.lazySubPart = null
       setAllPopupMenus(null)

@@ -3,6 +3,12 @@ package qq.editor.objects
 import de.ust.skill.common.scala.api;
 import scala.collection.mutable;
 import scala.swing;
+import qq.util.Swing.HBoxD;
+import qq.util.Swing.HBoxT;
+import scala.swing.Swing.HGlue
+import scala.swing.Label
+import scala.swing.Action
+import scala.swing.Button
 
 /**
  * A page displaying data about a (set of) object, with an optional search results page on the
@@ -43,6 +49,7 @@ class ObjectPage(file0: qq.editor.File, settings0: qq.editor.Settings) extends q
    * this continuation to be called with the current object
    */
   val objectSelectionContinuation: api.SkillObject ⇒ Unit = null
+  val objectSelectionCancelContinuation: api.SkillObject ⇒ Unit = null
   /** Title for object selection */
   val objectSelectionTitle: String = ""
 
@@ -78,7 +85,7 @@ class ObjectPage(file0: qq.editor.File, settings0: qq.editor.Settings) extends q
   }
   /** show an object */
   def goTo(o: api.SkillObject): Unit = {
-    goTo(new View(o))
+    find(file.idOfObj(o))
   }
   /** show previously shown type */
   val goBack = new swing.Action("Back") {
@@ -185,10 +192,10 @@ new swing.Button(swing.Action("ps to clipboard") {
       clipboard.setContents(sel, sel)
   }})    )
   val objSearch = new SearchResults(this)
-  val objEdit = qq.util.Swing.HBoxD()
-  val objGraph = qq.util.Swing.HBoxT()
+  val objEdit = HBoxD()
+  val objGraph = HBoxT()
 
-  val mainContent = qq.util.Swing.HBoxD()
+  val mainContent = HBoxD()
 
   def updateVisibility: Unit = {
     mainContent.contents.clear()
@@ -215,7 +222,34 @@ new swing.Button(swing.Action("ps to clipboard") {
     }
     mainContent.revalidate()
   }
+  val objSelectTitle = HBoxD()
+  val objSelectButtons = HBoxD()
+  objSelectTitle.visible = false
+  objSelectButtons.visible = false
+
+  /** use this page to select an object. Show title on top, buttons on bottom. When
+   *  the user presses the button, the on… handler is called and the page is closed */
+  def select(title: String,
+      onAccept: api.SkillObject => Unit,
+      onCancel: api.SkillObject => Unit): Unit = {
+    val accept = Action("Ok") {
+      onAccept(currentView.obj)
+      tabbedPane.removePage(index)
+    }
+    val cancel = Action("Cancel") {
+      onCancel(currentView.obj)
+      tabbedPane.removePage(index)
+    }
+    objSelectTitle.contents.clear()
+    objSelectTitle.contents ++= Seq(HGlue, new Label(title), HGlue)
+    objSelectTitle.visible = true
+    objSelectButtons.contents.clear()
+    objSelectButtons.contents ++= Seq(HGlue, new Button(accept), new Button(cancel))
+    objSelectButtons.visible = true
+  }
+  
+  
   updateVisibility
   title = "Types"
-  content = qq.util.Swing.VBoxD(toolBar, mainContent)
+  content = qq.util.Swing.VBoxD(toolBar, objSelectTitle, mainContent, objSelectButtons)
 }

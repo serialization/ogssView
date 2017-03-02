@@ -130,7 +130,7 @@ class File(fn0: String) {
   }
 
   def objOfId(x: String): api.SkillObject = {
-    if (x.trim().equals("null")) return null
+    if (x.trim().equals("(null)")) return null
     import qq.editor.queries.parser._;
 
     val tokens = try { Lexer(x) } catch {
@@ -147,7 +147,7 @@ class File(fn0: String) {
 
   def idOfObj(o: api.SkillObject): String = {
     if (o == null) {
-      "null"
+      "(null)"
     } else if (de.ust.skill.common.scala.hacks.GetSkillId(o) == -1) {
       s"${o.getTypeName}#${createdObjectId(o)}"
     } else {
