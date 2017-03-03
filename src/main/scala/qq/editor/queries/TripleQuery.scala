@@ -22,7 +22,7 @@ object TripleQuery {
     case s: VarTerm ⇒
       o match {
         case o: VarTerm ⇒ new VarVarTripleQuery(file0, s, p, o)
-        //   case _          ⇒ new VarConstTripleQuery(file0, s, p, o)
+        case o: ConstTerm ⇒ new VarConstTripleQuery(file0, s, p, o)
       }
     case s: ConstTerm ⇒
       o match {

@@ -37,5 +37,15 @@ class TypeQuery(val file0: qq.editor.File,
       (1.0, 0.1)
     }
   }
+}
 
+object TypeQuery {
+  def apply(file: qq.editor.File,
+            s: Term,
+            pool: api.Access[_ <: api.SkillObject]) = { 
+    s match {
+      case v: VarTerm => new TypeQuery(file, v.variable, pool)
+      case _ => throw new Exception("Variable expected")
+    }
+  }
 }

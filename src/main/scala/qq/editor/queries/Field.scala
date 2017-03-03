@@ -26,7 +26,7 @@ class UnspecificField(
   }
 
   def apply(o: api.SkillObject) = {
-    val relevantTypes = file.superTypes(file.s(o.getTypeName))
+    val relevantTypes = file.s(o.getTypeName) +: file.superTypes(file.s(o.getTypeName))
     this().filter(x ⇒ relevantTypes.contains(x._1))
   }
 }  

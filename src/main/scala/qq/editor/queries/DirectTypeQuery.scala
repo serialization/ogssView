@@ -38,3 +38,15 @@ class DirectTypeQuery(val file0: qq.editor.File,
   }
 
 }
+
+
+object DirectTypeQuery {
+  def apply(file: qq.editor.File,
+            s: Term,
+            pool: api.Access[_ <: api.SkillObject]) = { 
+    s match {
+      case v: VarTerm => new DirectTypeQuery(file, v.variable, pool)
+      case _ => throw new Exception("Variable expected")
+    }
+  }
+}

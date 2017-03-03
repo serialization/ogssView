@@ -34,20 +34,7 @@ object Query {
   /* preliminary */
   def parse(file: qq.editor.File, x: String): Query = {
     import qq.editor.queries.parser._;
-    val tokens = Lexer(x)
-    if (tokens.size != 1) throw new Exception("ObjId or type name")
-    tokens.head match {
-      case ObjLit(poolName, id) ⇒
-        var pool = file.s(poolName)
-        new IdQuery(file, "'1", file.objOfId(pool, id))
-      case Ident(poolName) ⇒
-        var pool = file.s(poolName)
-        new TypeQuery(file, "'1", pool)
-      case _ ⇒
-        throw new Exception("ObjId or type name ")
-
-    }
-
+    Parser(file, x)
   }
 
 }
