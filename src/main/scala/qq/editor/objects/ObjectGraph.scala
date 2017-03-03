@@ -22,19 +22,29 @@ class ObjectGraph[O <: api.SkillObject](
   val visibleNodes = new HashSet[qq.graph.AbstractNode]
   val expandedNodes = new HashSet[qq.graph.AbstractNode]
   private val pathsToNode = new HashMap[qq.graph.AbstractNode, Set[Seq[api.FieldDeclaration[_]]]]
+  val expandWithoutPath = new HashSet[qq.graph.AbstractNode]
 
   // once shown, nodes stay at their position
   val clampedNodes = new HashMap[qq.graph.AbstractNode, Vector]
-  
+
   // TODO save at the type the field belongs to
   private def expandPrefs = page.file.typeSettings(page.file.s(obj.getTypeName)).expanded
   def expandCollapse(n: qq.graph.AbstractNode) {
-    if (expandedNodes.contains(n)) {
-      expandPrefs.retain(!pathsToNode(n).contains(_))
+    if (!pathsToNode.contains(n) || pathsToNode(n).size == 0) {
+      // members of containers have no path
+      if (expandWithoutPath.contains(n)) {
+        expandWithoutPath -= n
+      } else {
+        expandWithoutPath += n
+      }
     } else {
-      val spl = pathsToNode(n).map(_.size).min
-      expandPrefs ++= pathsToNode(n).filter(_.size == spl)
-      println(expandPrefs)
+      if (expandedNodes.contains(n)) {
+        expandPrefs.retain(!pathsToNode(n).contains(_))
+        expandWithoutPath -= n
+      } else {
+        val spl = pathsToNode(n).map(_.size).min
+        expandPrefs ++= pathsToNode(n).filter(_.size == spl)
+      }
     }
     updateLayout
     repaint
@@ -99,6 +109,7 @@ class ObjectGraph[O <: api.SkillObject](
       }
       expandPath(obj, Seq(), path)
     }
+    expandedNodes ++= expandWithoutPath
     // go to fields of expanded nodes
     val t2 = System.nanoTime()
     graph = new qq.graph.Graph(page.file, this, page.settings.graphLayout)
@@ -107,7 +118,7 @@ class ObjectGraph[O <: api.SkillObject](
       // clamp root to centre
       clampedNodes(root) = qq.util.Vector(size) / 2
       graph.addNode(root)
-      graph.nodes(root).clampedAt = Some(clampedNodes(root) )
+      graph.nodes(root).clampedAt = Some(clampedNodes(root))
       graph.nodes(root).move(0.0f)
     }
     for (node ← visibleNodes) {
@@ -130,9 +141,9 @@ class ObjectGraph[O <: api.SkillObject](
       }
     }
     // clamp rest
-    for (v <- graph.nodes.keys) {
+    for (v ← graph.nodes.keys) {
       if (clampedNodes.contains(v)) {
-        graph.nodes(v).clampedAt = Some(clampedNodes(v)) 
+        graph.nodes(v).clampedAt = Some(clampedNodes(v))
       }
     }
 
@@ -150,15 +161,15 @@ class ObjectGraph[O <: api.SkillObject](
     clampedNodes.clear()
     peer.removeAll()
     graph.nodes.values.foreach { x ⇒
-      x.edgesOut.values.foreach { y ⇒ 
+      x.edgesOut.values.foreach { y ⇒
         peer.add(y.uiElementAtFrom.peer)
         peer.add(y.uiElementAtTo.peer)
-        }
+      }
       peer.add(x.uiElement.peer)
       clampedNodes(x.data) = x.pos
     }
     val t5 = System.nanoTime()
-    println(s"${graph.nodes.size} nodes ${graph.nodes.values.map(_.edgesOut.size).sum} edges follow paths: ${t2 - t1} ns, place: ${(t4 - t3)/1E6} ms, total ${(t5 - t0)/1E6} ms E=${graph.energy} E2=${graph.energyHu} stepsize=${graph.graphInfo.stepOfStep.last}")
+    println(s"${graph.nodes.size} nodes ${graph.nodes.values.map(_.edgesOut.size).sum} edges follow paths: ${t2 - t1} ns, place: ${(t4 - t3) / 1E6} ms, total ${(t5 - t0) / 1E6} ms E=${graph.energy} E2=${graph.energyHu} stepsize=${graph.graphInfo.stepOfStep.last}")
 
   }
 
@@ -175,7 +186,7 @@ class ObjectGraph[O <: api.SkillObject](
       c.uiElement.peer.setSize(c.uiElement.preferredSize)
       c.uiElement.peer.setLocation(c.left, c.top)
       c.uiElement.peer.revalidate()
-      //g.drawString((c.energy / c.degree).toString(), c.pos.x.toInt, c.pos.y.toInt - 10)
+      //g.drawString((c.force).toString(), c.pos.x.toInt, c.pos.y.toInt - 10)
       for (e ← c.edgesOut.values) {
         e.draw(g)
         e.updateToolTop
@@ -195,14 +206,16 @@ class ObjectGraph[O <: api.SkillObject](
       updateLayout
       repaint
 
-  }  
-  
+  }
+
   // simple solution to dealing with edits: rebuilt when any object we show changes 
-  val onEdit = (ed: qq.editor.Edit[_]) => { if (visibleNodes.contains(new qq.graph.SkillObjectNode(ed.obj.asInstanceOf[api.SkillObject]))) {
-    updateLayout
-    repaint
-  }}
-  
+  val onEdit = (ed: qq.editor.Edit[_]) ⇒ {
+    if (visibleNodes.contains(new qq.graph.SkillObjectNode(ed.obj.asInstanceOf[api.SkillObject]))) {
+      updateLayout
+      repaint
+    }
+  }
+
   page.file.onEdit.weak += onEdit
 
   // don't updateLayout when created, it is done in resize, when the size is known

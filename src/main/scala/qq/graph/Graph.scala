@@ -66,7 +66,7 @@ class Graph(
   def energyHu: Float = nodes.values.map(x ⇒ x.force * x.force).sum
 
   def resetAccumulators: Unit = nodes.values.foreach(_.resetAccumulators)
-  private def calculateForce(overlapAvoidance: Float, size: java.awt.Dimension, stepSize: Float): Unit = {
+  private def calculateForce(overlapAvoidance: Float, size: java.awt.Dimension): Unit = {
     val nvis = nodes.values.toIndexedSeq
     for (i ← 0 until nvis.size) {
       for (j ← i until nvis.size) {
@@ -79,7 +79,6 @@ class Graph(
   }
   def move(stepSize: Float): Unit = {
     nodes.values.foreach(_.move(stepSize))
-    //  rigidSubgraphs.foreach(_.move(maxDist))
   }
 
   val graphInfo = new GraphInfo
@@ -116,7 +115,7 @@ class Graph(
     val phaseInIterations = properties.phaseInIterations()
     for (step ← 0.until(properties.iterations)) {
       resetAccumulators
-      calculateForce(((step - initialIterations).toFloat / phaseInIterations).max(0).min(1), size, stepsize)
+      calculateForce(((step - initialIterations).toFloat / phaseInIterations).max(0).min(1), size)
       move(stepsize)
       graphInfo.energyOfStep += energy
       graphInfo.energyHuOfStep += energyHu

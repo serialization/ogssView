@@ -2,6 +2,8 @@ package qq.editor.objects
 
 import de.ust.skill.common.scala.api
 import de.ust.skill.common.scala.internal.fieldTypes._
+import qq.util.Swing.HBoxD
+import swing.Swing.HGlue
 
 /** display a value of ground type; references get a expandable pane that shows their referent */
 class GroundValueLabel(
@@ -29,7 +31,7 @@ class GroundValueLabel(
         new swing.Label(value.toString)
       }
   }
-  val en = new qq.util.ExpandableNode(labelField, false)
+  val en = new qq.util.ExpandableNode(HBoxD(labelField, HGlue), false)
 
   typ match {
     case _: AnnotationType

@@ -19,7 +19,6 @@ class Node(val graph: Graph,
   def height: Int = uiElement.peer.getPreferredSize.getHeight.toInt
   def left: Int = (pos.x - width / 2).toInt
   def top: Int = (pos.y - height / 2).toInt
-  var rigidSubGraph: Option[RigidSubGraph] = None
   var clampedAt: Option[Vector] = None
   
   var energy: Float = 0
@@ -30,10 +29,9 @@ class Node(val graph: Graph,
     force = new Vector(0f, 0f)
   }
   def move(stepSize: Float): Unit = {
-    // rigid subgraphs are moved as a whole elsewhere
     clampedAt match {
       case Some(x) => pos = x
-      case None => if (rigidSubGraph.isEmpty && force.isFinite() && !force.isZero()) pos += force.norm * stepSize
+      case None => if (force.isFinite() && !force.isZero()) pos += force.norm * stepSize
     }
   }
   
@@ -65,7 +63,7 @@ class Node(val graph: Graph,
     if (r == this) {
       // distance to border
       val (dl, dr, dt, db) = (left, bounds.width - left - width, top, bounds.height - height - top)
-      def Fᵣ(x: Int) = { val xx = (x- 10).toFloat.max(p.ε()); p.c3() / xx / xx }
+      def Fᵣ(x: Int) = { val xx = x.toFloat.max(p.ε()); p.c3() / xx / xx }
       val F = new Vector(Fᵣ(dl) - Fᵣ(dr), Fᵣ(dt) - Fᵣ(db))
       force += F
       energy += F * F
@@ -74,8 +72,10 @@ class Node(val graph: Graph,
       val l = if (deg <= 3) p.c2() else p.c2() * math.sqrt(deg / 3)
       val δ = (r.pos - pos).max(p.ε())
       val δ2 = {
+        // distance not covered by labels
         val δ2 = δ - (toBorder(δ) - r.toBorder(-δ)) * overlapRemoval
-        if (δ2 * δ < p.ε()*p.ε()) δ.max(p.ε()) else δ2
+        // use epsilon when small or negative
+        if (δ2 * δ < 0 || δ2.abs < p.ε()) δ.max(p.ε()) else δ2
       }
       val F = if (connectedTo(r)) {
         δ.norm * p.c1() * math.log(δ2.abs / l).toFloat
