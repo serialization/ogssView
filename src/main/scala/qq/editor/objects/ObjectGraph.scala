@@ -21,16 +21,59 @@ class ObjectGraph[O <: api.SkillObject](
   val root = new qq.graph.SkillObjectNode(obj)
   val visibleNodes = new HashSet[qq.graph.AbstractNode]
   val expandedNodes = new HashSet[qq.graph.AbstractNode]
-  private val pathsToNode = new HashMap[qq.graph.AbstractNode, Set[Seq[api.FieldDeclaration[_]]]]
-  val expandWithoutPath = new HashSet[qq.graph.AbstractNode]
+  /** paths through which a node is expanded. must be complete for collapsing */
+  private val epathsToNode = new HashMap[qq.graph.AbstractNode, Set[Seq[api.FieldDeclaration[_]]]]
+  /** paths through which a node is visible. only five shortest paths */
+  private val vpathsToNode = new HashMap[qq.graph.AbstractNode, Set[Seq[api.FieldDeclaration[_]]]]
+  /** app π to vpaths for node n if it is shortest, remove longer paths if possible*/
+  private def addVpath(n: qq.graph.AbstractNode, π: Seq[api.FieldDeclaration[_]]): Unit = {
+    vpathsToNode.getOrElseUpdate(n, Set())
+    if (vpathsToNode(n).size == 0) {
+        vpathsToNode(n) += π
+    } else {
+      if (π.size < vpathsToNode(n).head.size) {
+        vpathsToNode(n) = Set(π)
+      } else if (π.size == vpathsToNode(n).head.size) {
+        if (vpathsToNode(n).size < 5) {
+          vpathsToNode(n) += π        
+        }
+      }
+    }
+  }
+  private def addEpath(n: qq.graph.AbstractNode, π: Seq[api.FieldDeclaration[_]]): Unit = {
+    epathsToNode.getOrElseUpdate(n, Set())
+    epathsToNode(n) += π
+    addVpath(n, π)
+  }
+    
+    val expandWithoutPath = new HashSet[qq.graph.AbstractNode]
 
   // once shown, nodes stay at their position
   val clampedNodes = new HashMap[qq.graph.AbstractNode, Vector]
 
-  // TODO save at the type the field belongs to
-  private def expandPrefs = page.file.typeSettings(page.file.s(obj.getTypeName)).expanded
+  /** paths to expanded nodes. Only those which start with fields of obj are releavan and got from
+   *  the settings of the type of obj and super types */
+  private def expandPrefs(): Set[Seq[api.FieldDeclaration[_]]] = {
+    val τ = page.file.s(obj.getTypeName)
+    (for (τ2  <- τ +: page.file.superTypes(τ);
+       path <- page.file.typeSettings(τ2).expanded) yield path).toSet
+  }
+  /** add paths to expanded nodes. Store at the type that contains the first field */
+  private def expandPrefs_add(πs: Set[Seq[api.FieldDeclaration[_]]]): Unit = {
+    for (π <- πs if π.size > 0) {
+      val typeSettings = page.file.fieldSettings(π.head).containingType
+      typeSettings.expanded += π
+    }
+  }
+  /** remove paths to expanded nodes. Tehy are stores at the type that contains the first field */
+  private def expandPrefs_remove(πs: Set[Seq[api.FieldDeclaration[_]]]): Unit = {
+    for (π <- πs if π.size > 0) {
+      val typeSettings = page.file.fieldSettings(π.head).containingType
+      typeSettings.expanded.remove(π)
+    }
+  }
   def expandCollapse(n: qq.graph.AbstractNode) {
-    if (!pathsToNode.contains(n) || pathsToNode(n).size == 0) {
+    if (!vpathsToNode.contains(n) || vpathsToNode(n).size == 0) {
       // members of containers have no path
       if (expandWithoutPath.contains(n)) {
         expandWithoutPath -= n
@@ -39,11 +82,10 @@ class ObjectGraph[O <: api.SkillObject](
       }
     } else {
       if (expandedNodes.contains(n)) {
-        expandPrefs.retain(!pathsToNode(n).contains(_))
+        expandPrefs_remove(epathsToNode(n))
         expandWithoutPath -= n
       } else {
-        val spl = pathsToNode(n).map(_.size).min
-        expandPrefs ++= pathsToNode(n).filter(_.size == spl)
+        expandPrefs_add(vpathsToNode(n).take(5)) // prevent exponential growth
       }
     }
     updateLayout
@@ -54,10 +96,11 @@ class ObjectGraph[O <: api.SkillObject](
     val t0 = System.nanoTime()
     visibleNodes.clear()
     expandedNodes.clear()
-    pathsToNode.clear()
+    vpathsToNode.clear()
+    epathsToNode.clear()
     visibleNodes += root
     expandedNodes += root
-    pathsToNode(root) = Set(Seq())
+    addEpath(root, Seq())
     val t1 = System.nanoTime()
     // follow paths to expanded nodes
     for (path ← expandPrefs) {
@@ -69,8 +112,7 @@ class ObjectGraph[O <: api.SkillObject](
             val node = new qq.graph.SkillObjectNode(o)
             visibleNodes += node
             expandedNodes += node
-            pathsToNode.getOrElseUpdate(node, Set())
-            pathsToNode(node) += pathToO
+            addEpath(node, pathToO)
             true
           } else {
             val field = pathToDo.head
@@ -82,8 +124,7 @@ class ObjectGraph[O <: api.SkillObject](
                   case qq.graph.SkillObjectNode(p) ⇒
                     if (expandPath(p, pathToO :+ field, pathToDo.tail)) {
                       visibleNodes += node
-                      pathsToNode.getOrElseUpdate(node, Set())
-                      pathsToNode(node) += pathToO
+                      addVpath(node, pathToO)
                       true
                     } else {
                       false
@@ -91,12 +132,10 @@ class ObjectGraph[O <: api.SkillObject](
                   case next ⇒
                     // last step can lead to a collections (size == 1)
                     visibleNodes += node
-                    pathsToNode.getOrElseUpdate(node, Set())
-                    pathsToNode(node) += pathToO
+                    addVpath(node, pathToO)
                     visibleNodes += next
                     expandedNodes += next
-                    pathsToNode.getOrElseUpdate(next, Set())
-                    pathsToNode(next) += pathToO :+ field
+                    addEpath(next, pathToO :+ field)
                     true
 
                 }
@@ -134,9 +173,10 @@ class ObjectGraph[O <: api.SkillObject](
         e match {
           case e: qq.graph.SkillFieldEdge[_] ⇒
             val to = e.getTo
-            pathsToNode.getOrElseUpdate(to, Set())
-            pathsToNode(to) ++= pathsToNode(node).map(_ :+ e.field)
-          case _ ⇒ println("huh?" + e)
+            if (vpathsToNode.contains(node)) {
+              vpathsToNode(node).foreach(path => addVpath(to, path :+ e.field))
+            }
+          case _ ⇒ () // no paths for container members
         }
       }
     }
