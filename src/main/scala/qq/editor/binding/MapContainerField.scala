@@ -1,7 +1,7 @@
 package qq.editor.binding
 
 import de.ust.skill.common.scala.api;
-import de.ust.skill.common.scala.internal.fieldTypes.SingleBaseTypeContainer;
+import de.ust.skill.common.scala.internal.fieldTypes.MapType;
 import de.ust.skill.common.scala.internal.fieldTypes.FieldType;
 import scala.collection.mutable.HashMap;
 
@@ -12,10 +12,12 @@ class MapContainerField[O <: api.SkillObject, K, V, C[K,V] <: HashMap[K,V], G](
   val obj: O,
   val field: api.FieldDeclaration[C[K,V]],
   val index: Seq[Any], 
-  val groundType: api.FieldType[G],
+  val groundType0: api.FieldType[G],
   val initValue: G)
-    extends qq.util.binding.Property[G](owner0, index.toString(), initValue) {
+    extends SkillFieldProperty[G](owner0, index.toString(), initValue) {
 
+  def groundType = groundType0
+  
   description = s"element $index of ${field.name} in ${file.idOfObj(obj)}"  
   // TODO restrictions ++= Restrictions(field)
   restrictions ++= Restrictions(file, groundType)

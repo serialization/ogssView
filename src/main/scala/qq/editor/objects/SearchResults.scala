@@ -59,20 +59,24 @@ class SearchResults(val page: ObjectPage)
       queryError.revalidate()
     }
   }
+  queryEdit.property.onChange.strong += (_ ⇒ searchAction())
+
+  val lblPagePos = new swing.Label("-")
+
   def showPage: Unit = {
     readResults
     if (resultsTable != null) { deafTo(resultsTable.selection) }
 
+    val visibleData = resultsRetrieved
+      .drop(displayOffset)
+      .take(pageLength)
     resultsTable = new swing.Table(
-      resultsRetrieved
-        .drop(displayOffset)
-        .take(pageLength)
+      visibleData
         .map { x ⇒
           x.values.map { x ⇒
             if (x.isInstanceOf[api.SkillObject])
               page.file.idOfObj(x.asInstanceOf[api.SkillObject])
-            else
-              x
+            else if (x == null) "(null)" else x.toString().asInstanceOf[Any] // no boolean checkbox magic
           }.toArray
         }.toArray,
       query.variables) {
@@ -85,6 +89,9 @@ class SearchResults(val page: ObjectPage)
     resultsPart.contents.clear()
     resultsPart.contents += new swing.ScrollPane(resultsTable)
 
+    lblPagePos.text = s"$displayOffset to ${displayOffset + visibleData.size - 1}"
+    pgUpAct.enabled = displayOffset > 0
+    pgDnAct.enabled = displayOffset + pageLength <= resultsRetrieved.size || resultsIterator.hasNext
   }
 
   reactions += {
@@ -98,9 +105,43 @@ class SearchResults(val page: ObjectPage)
         page.goTo(new page.View(row.head, row.drop(1)))
       }
   }
+
+  private val pgDnAct = new swing.Action("Next Page") {
+    icon = new qq.icons.ForwardIcon(true, false)
+    override def apply() {
+      if (resultsIterator.hasNext) {
+        displayOffset += pageLength
+        showPage
+      }
+    }
+  }
+  private val pgUpAct = new swing.Action("Previous Page") {
+    icon = new qq.icons.BackIcon(true, false)
+    override def apply() {
+      if (displayOffset > 0) {
+        displayOffset -= displayOffset min pageLength
+        showPage
+      }
+    }
+  }
+
+  private val pgUpBtn = new qq.util.PlainButton(pgUpAct) {
+    text = ""
+    this.disabledIcon = new qq.icons.BackIcon(false, false)
+  }
+  private val pgDnBtn = new qq.util.PlainButton(pgDnAct) {
+    text = ""
+    this.disabledIcon = new qq.icons.ForwardIcon(false, false)
+  }
+
+  pgUpAct.enabled = false
+  pgUpAct.enabled = false
+
   import qq.util.Swing._;
+  import swing.Swing.HGlue
   contents += VBoxD(
     HBoxD(queryEdit, new swing.Button(searchAction)),
     queryError,
+    HBoxD(HGlue, lblPagePos, HGlue, pgUpBtn, pgDnBtn),
     resultsPart)
 }

@@ -73,7 +73,7 @@ object Lexer extends RegexParsers {
         { m ⇒ Integer.parseInt(m.matched.substring(2), 16).toChar.toString() }))
     }) |
     ("'[^']+'".r ^^ { x ⇒ new Ident(x.substring(1, x.length - 1)) })
-  def strLit: Parser[StrLit] = "\"[^\"]*(\"\"[^\"]*)*\"".r ^^ { x ⇒ new StrLit(x.substring(1, x.length - 1).replace("\"\"", "\"")) }
+  def strLit: Parser[StrLit] = "\"([^\"\\\\]|\\\\.)*\"".r ^^ { x ⇒ new StrLit(StringContext.treatEscapes(x.substring(1, x.length - 1))) }
   def intLit: Parser[IntLit] = "[-+]?[0-9]+".r ^^ { x ⇒ new IntLit(x.toInt) }
   def fltLit: Parser[FltLit] = "[-+]?[0-9]+\\.[0-9]+((?i)E[-+]?[0-9]+)?".r ^^ { x ⇒ new FltLit(x.toDouble) }
   def variable: Parser[Variable] = "[?$]".r ~ ident ^^ { case _ ~ x ⇒ new Variable(x.name) }

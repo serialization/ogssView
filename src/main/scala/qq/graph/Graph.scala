@@ -149,8 +149,8 @@ class Graph(
       val d = file.fieldSettings(f).prefEdgeDirection
       val d0 = d()
       if (!file.fieldSettings(f).prefFixedEdgeDirection()) {
-        val d1 = d0 * d0.abs + x * (1 - d0.abs)
-        println(s"${f.name} $d1 $d0 $x ${d1.abs}")
+        val c = properties.c5().min(d0.abs)
+        val d1 = d0 * c + x * (1 - c)
         d := d1.min(0.99f)
       }
     }

@@ -1,9 +1,9 @@
 package qq.editor.objects
 
-import qq.util.binding.Property
+import qq.editor.binding.SkillFieldProperty
 import de.ust.skill.common.scala.api
 
-class ReferenceEdit(val p: Property[api.SkillObject], val page: ObjectPage, val addLabel: Boolean = true)
+class ReferenceEdit(val p: SkillFieldProperty[api.SkillObject], val page: ObjectPage, val addLabel: Boolean = true)
     extends swing.BoxPanel(swing.Orientation.Vertical) {
 
   val editField = new qq.util.binding.TextEdit(p,
@@ -14,6 +14,19 @@ class ReferenceEdit(val p: Property[api.SkillObject], val page: ObjectPage, val 
 
   val exn = new qq.util.ExpandableNode(if (addLabel) labeledField else editField, false)
 
+  val mnuSelect = new swing.MenuItem(swing.Action("Select object") {
+          val selection = qq.editor.Main.newObjectTab(p.groundType.asInstanceOf[api.Access[_]])
+          selection.select(s"change ${p.name}",
+              {o =>
+                p := o           
+                page.tabbedPane.addPage(page)
+              },
+              {o =>
+                page.tabbedPane.addPage(page)
+              })
+          page.tabbedPane.removePage(page.index)
+        })
+  
   def onValueChange(x: api.SkillObject): Unit = {
     def setAllPopupMenus(x: swing.PopupMenu): Unit = {
       val peer = if (x == null) null else x.peer
@@ -28,24 +41,12 @@ class ReferenceEdit(val p: Property[api.SkillObject], val page: ObjectPage, val 
       exn.collapse()
       
       val popupMenu = qq.editor.objects.ObjectContextMenu(x, page)
-      popupMenu.contents += new swing.MenuItem(swing.Action("Select object") {
-          val selection = qq.editor.Main.newObjectTab()
-          // TODO property needs to publish ground type
-          selection.select(s"change ${p.name}",
-              {o =>
-                p := o           
-                page.tabbedPane.addPage(page)
-              },
-              {o =>
-                page.tabbedPane.addPage(page)
-              })
-          page.tabbedPane.removePage(page.index)
-        })
+      popupMenu.contents += mnuSelect 
       
       setAllPopupMenus(popupMenu)
     } else {
       exn.lazySubPart = null
-      setAllPopupMenus(null)
+      setAllPopupMenus(new swing.PopupMenu() {contents += mnuSelect})
     }
   }
 

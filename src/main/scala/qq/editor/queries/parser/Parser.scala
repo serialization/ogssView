@@ -43,7 +43,16 @@ object Parser extends Parsers {
       case i: Ident => new UnspecificField(file, i.name) 
         })
   }
-  def field(file: qq.editor.File): Parser[Field] = anyfield(file)
+  def certainfield(file: qq.editor.File): Parser[Field] = {
+    accept("identifier (type name)", {
+      case i: Ident => i.name 
+        }) ~
+    accept("dot", {case _: Dot => ()}) ~
+    accept("identifier (field name)", {
+      case i: Ident => i.name
+        }) ^^ {case t~_~f => new SpecificTypeField(file, t, f)}
+  }
+  def field(file: qq.editor.File): Parser[Field] = certainfield(file) | anyfield(file) 
   
   def typeId(file: qq.editor.File): Parser[api.Access[_ <: api.SkillObject]] = 
     accept("identifier (type)", {case i: Ident => file.s(i.name.toLowerCase())})
@@ -55,8 +64,8 @@ object Parser extends Parsers {
   }
 
   def normalQuery(file: qq.editor.File): Parser[Query] = {
-    triple(file) ~ rep(accept("dot", {case _: Dot => ()}) ~ triple(file) ^^  {case _ ~ r => r}) ^^
-           {case l ~ rs => rs.fold(l)(new JoinQuery(file, _, _))}
+    triple(file) ~ rep(accept("dot", {case _: Dot => ()}) ~ triple(file) ^^  {case _ ~ r => r}) ~ opt(accept("dot", {case _: Dot => ()})) ^^
+           {case l ~ rs ~ _ => rs.fold(l)(new JoinQuery(file, _, _))}
  
   } 
   

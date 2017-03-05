@@ -12,8 +12,10 @@ class IndexedContainerField[O <: api.SkillObject, C[F] <: Buffer[F], F](
   val obj: O,
   val field: api.FieldDeclaration[C[F]],
   val index: Int)
-    extends qq.util.binding.Property[F](owner0, index.toString(), obj.get(field)(index)) {
+    extends SkillFieldProperty[F](owner0, index.toString(), obj.get(field)(index)) {
 
+  
+  def groundType = field.t.asInstanceOf[SingleBaseTypeContainer[C[F],F]].groundType
   description = s"element $index of ${field.name} in ${file.idOfObj(obj)}"  
   // TODO restrictions ++= Restrictions(field)
   restrictions ++= Restrictions(file, field.t.asInstanceOf[SingleBaseTypeContainer[_,_]].groundType.asInstanceOf[FieldType[F]]) 

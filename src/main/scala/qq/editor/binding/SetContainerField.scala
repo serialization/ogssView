@@ -12,8 +12,10 @@ class SetContainerField[O <: api.SkillObject, C[F] <: HashSet[F], F](
   val obj: O,
   val field: api.FieldDeclaration[C[F]],
   val key: F)
-    extends qq.util.binding.Property[F](owner0, "", key) {
+    extends SkillFieldProperty[F](owner0, "", key) {
 
+  def groundType = field.t.asInstanceOf[SingleBaseTypeContainer[C[F],F]].groundType
+  
   var key_ = key
   // TODO restrictions ++= Restrictions(field)
   restrictions ++= Restrictions(file, field.t.asInstanceOf[SingleBaseTypeContainer[_,_]].groundType.asInstanceOf[FieldType[F]]) 

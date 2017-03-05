@@ -13,7 +13,7 @@ import qq.util.FlattenedMap
 abstract class AbstractEdge {
   def getTo: AbstractNode
   def getFrom: AbstractNode
-  def textLabel: String
+  def textLabel(file: File): String
   def idealDirection(file: File): Vector
   def toDecoration: EdgeDecoration = SmallArrowDecoration
 }
@@ -46,7 +46,7 @@ case class SkillFieldEdge[T](
     case ConstantI8(_) | ConstantI16(_) | ConstantI32(_) | ConstantI64(_) | ConstantV64(_) =>
       throw new Exception("Constant values are not path of the graph, this edge should have never been created.")
   }
-  override def textLabel = field.name
+  override def textLabel(file: File) = field.name
   
   override def idealDirection(file: File) = file.fieldSettings(field).prefEdgeDirection()
   
@@ -72,7 +72,7 @@ case class ListMemberEdge[E, C[E] <: Buffer[E]](
   }
     
     
-  override def textLabel = index.toString()
+  override def textLabel(file: File) = index.toString()
   
   // TODO do collection members share the ideal direction?
   override def idealDirection(file: File) = file.fieldSettings(field).prefEdgeDirection()
@@ -95,7 +95,7 @@ case class SetMemberEdge[E, C[E] <: HashSet[E]](
     case ConstantI8(_) | ConstantI16(_) | ConstantI32(_) | ConstantI64(_) | ConstantV64(_) =>
       throw new Exception("Constant values are not path of the graph, this edge should have never been created.")
   }
-  override def textLabel = ""
+  override def textLabel(file: File) = ""
   
   // TODO do collection members share the ideal direction?
   override def idealDirection(file: File) = file.fieldSettings(field).prefEdgeDirection()
@@ -122,7 +122,10 @@ case class MapMemberEdge[K, V, C[K,V] <: HashMap[K,V]](
     case ConstantI8(_) | ConstantI16(_) | ConstantI32(_) | ConstantI64(_) | ConstantV64(_) =>
       throw new Exception("Constant values are not path of the graph, this edge should have never been created.")
   }
-  override def textLabel = index.mkString(", ")
+  override def textLabel(file: File) = index.map {
+    case o: api.SkillObject => file.idOfObj(o)
+    case x => x
+         }.mkString(", ")
   
   // TODO do collection members share the ideal direction?
   override def idealDirection(file: File) = file.fieldSettings(field).prefEdgeDirection()

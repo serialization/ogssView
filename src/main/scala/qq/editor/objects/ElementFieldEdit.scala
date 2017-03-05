@@ -3,19 +3,19 @@ package qq.editor.objects
 import de.ust.skill.common.scala.api
 import de.ust.skill.common.scala.internal.fieldTypes._
 import scala.collection.mutable.Buffer
-import qq.util.binding.Property
+import qq.editor.binding.SkillFieldProperty
 
 class ElementFieldEdit[E, O <: api.SkillObject](
   val page: ObjectPage,
   val typ: FieldType[_],
-  val fieldProperty: Property[E],
+  val fieldProperty: SkillFieldProperty[E],
   val addLabel: Boolean = true)
     extends swing.BoxPanel(swing.Orientation.Vertical) {
 
   val (editField: qq.util.binding.EditControl[E], wholeComponent) = (typ match {
     case _: AnnotationType
       | _: UserType[_] ⇒
-      val ed = new ReferenceEdit(fieldProperty.asInstanceOf[Property[api.SkillObject]], page, addLabel)
+      val ed = new ReferenceEdit(fieldProperty.asInstanceOf[SkillFieldProperty[api.SkillObject]], page, addLabel)
       (ed.editField, ed)    
     case _: ListType[_]
       | _: VariableLengthArray[_]

@@ -21,20 +21,20 @@ class Edge(
 
   val uiElementAtFrom = new swing.Label("  ")
   val uiElementAtTo = new swing.Label("  ")
-  def updateToolTop: Unit = {
+  def updateToolTip: Unit = {
     // two tool tips with all edges neatly on top of each other
     uiElementAtFrom.tooltip = s"""<html><table><tr>
       <td valign="middle">${from.data.name(graph)}</td>
       <td valign="middle"><center>${
-      (data.map(x ⇒ x.textLabel + " " + x.toDecoration.symbol) ++
-        reverseData.map(x ⇒ x.toDecoration.reverseSymbol + " " + x.textLabel)).mkString("<br>")
+      (data.map(x ⇒ x.textLabel(graph.file) + " " + x.toDecoration.symbol) ++
+        reverseData.map(x ⇒ x.toDecoration.reverseSymbol + " " + x.textLabel(graph.file))).mkString("<br>")
     }</center></td>
       <td valign="middle">${to.data.name(graph)}</td></tr></html>"""
     uiElementAtTo.tooltip = s"""<html><table><tr>
       <td valign="middle">${to.data.name(graph)}</td>
       <td valign="middle"><center>${
-      (reverseData.map(x ⇒ x.textLabel + " " + x.toDecoration.symbol) ++
-        data.map(x ⇒ x.toDecoration.reverseSymbol + " " + x.textLabel)).mkString("<br>")
+      (reverseData.map(x ⇒ x.textLabel(graph.file) + " " + x.toDecoration.symbol) ++
+        data.map(x ⇒ x.toDecoration.reverseSymbol + " " + x.textLabel(graph.file))).mkString("<br>")
     }</center></td>
       <td valign="middle">${from.data.name(graph)}</td></tr></html>"""
     uiElementAtFrom.peer.setSize(uiElementAtFrom.preferredSize)
@@ -75,13 +75,21 @@ class Edge(
     }
     /* number of edges from source that represent the same field as e */
     def sameSourceEdgeCount(source: Node, e: AbstractEdge) = {
-      source.edgesOut.values.count(_.data.exists(sameField(e, _))) +
-        source.edgesIn.values.count(_.reverseData.exists(sameField(e, _)))
+      if (graph.properties.scaleDirectionWhenConflict()) {
+        source.edgesOut.values.count(_.data.exists(sameField(e, _))) +
+          source.edgesIn.values.count(_.reverseData.exists(sameField(e, _)))
+      } else {
+        1
+      }
     }
     /* number of edges to target that represent the same field as e */
     def sameTargetEdgeCount(target: Node, e: AbstractEdge) = {
-      target.edgesOut.values.count(_.reverseData.exists(sameField(e, _))) +
-        target.edgesIn.values.count(_.data.exists(sameField(e, _)))
+      if (graph.properties.scaleDirectionWhenConflict()) {
+        target.edgesOut.values.count(_.reverseData.exists(sameField(e, _))) +
+          target.edgesIn.values.count(_.data.exists(sameField(e, _)))
+      } else {
+        1
+      }
     }
 
     for (e ← data) {
@@ -143,9 +151,9 @@ class Edge(
    */
   def draw(g: swing.Graphics2D) {
     val t = g.getTransform
-    val fromLabels = reverseData.iterator.map(_.textLabel).toSeq
+    val fromLabels = reverseData.iterator.map(_.textLabel(graph.file)).toSeq
     val fromDecorations = reverseData.iterator.map(_.toDecoration).toSeq.distinct
-    val toLabels = data.iterator.map(_.textLabel).toSeq
+    val toLabels = data.iterator.map(_.textLabel(graph.file)).toSeq
     val toDecorations = data.iterator.map(_.toDecoration).toSeq.distinct
     if (from == to) {
       g.translate(from.pos.x.toInt + from.width / 2, from.pos.y.toInt)
@@ -204,11 +212,11 @@ class Edge(
     }
     g.setTransform(t)
   }
-  
+
   def toPs(): String = {
-    val fromLabels = reverseData.iterator.map(_.textLabel).toSeq
+    val fromLabels = reverseData.iterator.map(_.textLabel(graph.file)).toSeq
     val fromDecorations = reverseData.iterator.map(_.toDecoration).toSeq.distinct
-    val toLabels = data.iterator.map(_.textLabel).toSeq
+    val toLabels = data.iterator.map(_.textLabel(graph.file)).toSeq
     val toDecorations = data.iterator.map(_.toDecoration).toSeq.distinct
 
     " matrix currentmatrix\n" +
@@ -231,20 +239,19 @@ class Edge(
           (if (φ.abs <= math.Pi / 2) {
             // write in direction of edge
             " " + φ.toDegrees + " rotate\n" +
-            toLabels.map(" " + d.abs + " 0 moveto ("+ _ +") "+(if (toBelow) "showtr" else "showbr")+"\n").mkString("")+ 
-            fromLabels.map(" 0 0 moveto ("+ _ +") "+(if (fromBelow) "showtl" else "showbl")+"\n").mkString("")+ 
-            " 0 0 moveto " + d.abs + " 0 lineto stroke\n"
+              toLabels.map(" " + d.abs + " 0 moveto (" + _ + ") " + (if (toBelow) "showtr" else "showbr") + "\n").mkString("") +
+              fromLabels.map(" 0 0 moveto (" + _ + ") " + (if (fromBelow) "showtl" else "showbl") + "\n").mkString("") +
+              " 0 0 moveto " + d.abs + " 0 lineto stroke\n"
           } else {
             // write in opposite direction
             " " + (φ + math.Pi).toDegrees + " rotate\n" +
-            toLabels.map(" " + (-d.abs) + " 0 moveto ("+ _ +") "+(if (toBelow) "showtl" else "showbl")+"\n").mkString("")+ 
-            fromLabels.map(" 0 0 moveto ("+ _ +") "+(if (fromBelow) "showtr" else "showbr")+"\n").mkString("")+ 
-            " 0 0 moveto " + (-d.abs) + " 0 lineto stroke\n"
+              toLabels.map(" " + (-d.abs) + " 0 moveto (" + _ + ") " + (if (toBelow) "showtl" else "showbl") + "\n").mkString("") +
+              fromLabels.map(" 0 0 moveto (" + _ + ") " + (if (fromBelow) "showtr" else "showbr") + "\n").mkString("") +
+              " 0 0 moveto " + (-d.abs) + " 0 lineto stroke\n"
           })
       }) +
       " setmatrix "
 
-  }  
-  
+  }
 
 }

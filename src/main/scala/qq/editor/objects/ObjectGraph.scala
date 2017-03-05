@@ -51,7 +51,7 @@ class ObjectGraph[O <: api.SkillObject](
   // once shown, nodes stay at their position
   val clampedNodes = new HashMap[qq.graph.AbstractNode, Vector]
 
-  /** paths to expanded nodes. Only those which start with fields of obj are releavan and got from
+  /** paths to expanded nodes. Only those which start with fields of obj are releavant and got from
    *  the settings of the type of obj and super types */
   private def expandPrefs(): Set[Seq[api.FieldDeclaration[_]]] = {
     val τ = page.file.s(obj.getTypeName)
@@ -65,7 +65,7 @@ class ObjectGraph[O <: api.SkillObject](
       typeSettings.expanded += π
     }
   }
-  /** remove paths to expanded nodes. Tehy are stores at the type that contains the first field */
+  /** remove paths to expanded nodes. They are stored at the type that contains the first field */
   private def expandPrefs_remove(πs: Set[Seq[api.FieldDeclaration[_]]]): Unit = {
     for (π <- πs if π.size > 0) {
       val typeSettings = page.file.fieldSettings(π.head).containingType
@@ -223,14 +223,14 @@ class ObjectGraph[O <: api.SkillObject](
     g.setColor(java.awt.SystemColor.textText)
 
     for (c ← graph.nodes.values) {
-      c.uiElement.peer.setSize(c.uiElement.preferredSize)
-      c.uiElement.peer.setLocation(c.left, c.top)
-      c.uiElement.peer.revalidate()
       //g.drawString((c.force).toString(), c.pos.x.toInt, c.pos.y.toInt - 10)
       for (e ← c.edgesOut.values) {
         e.draw(g)
-        e.updateToolTop
+        e.updateToolTip
       }
+      c.uiElement.peer.setSize(c.uiElement.preferredSize)
+      c.uiElement.peer.setLocation(c.left, c.top)
+      c.uiElement.peer.revalidate()
     }
     for (i ← 0.until(graph.graphInfo.energyOfStep.size)) {
       g.drawString("x", 10 + i, 10 + 10 * graph.graphInfo.energyOfStep(i) / graph.nodes.size)

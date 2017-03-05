@@ -53,8 +53,12 @@ class VarVarTripleQuery(
               so.asInstanceOf[api.SkillObject].get(field).asInstanceOf[c]
                 .map(elem ⇒ Map(subj.variable -> so, obj.variable -> elem))
             }
-          case m: MapType[c, e] ⇒
-            Iterator() // TODO
+          case m: MapType[k, v] ⇒
+            import qq.util.FlattenedMap._
+            pool.flatMap { so => 
+              val map = so.asInstanceOf[api.SkillObject].get(field).asInstanceOf[scala.collection.mutable.HashMap[k,v]]
+              keys(map, m ).map(key => Map(subj.variable -> so, obj.variable -> get(map, m, key)))
+            }
         }
     }
   }
@@ -105,8 +109,19 @@ class VarVarTripleQuery(
                 } else {
                   c.map(elem ⇒ assignment + (obj.variable -> elem))
                 }
-              case m: MapType[c, e] ⇒
-                Iterator() // TODO
+          case m: MapType[k, v] ⇒
+            import qq.util.FlattenedMap._
+              val map = s.asInstanceOf[api.SkillObject].get(field).asInstanceOf[scala.collection.mutable.HashMap[k,v]]
+
+                if (assignment.contains(obj.variable)) {
+                  if (keys(map, m).map(key => get(map, m, key)).filter(_ == assignment(obj.variable)).size != 0) {
+                    Iterator(assignment)
+                  } else {
+                    Iterator()
+                  }
+                } else {
+                  keys(map, m).map(key ⇒ assignment + (obj.variable -> get(map, m, key)))
+                }
             }
         }
       case _ ⇒ Iterator()

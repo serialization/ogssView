@@ -6,7 +6,7 @@ import scala.collection.mutable.ListBuffer
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.mutable.HashSet
 import scala.collection.mutable.HashMap
-import qq.util.binding.Property
+import qq.editor.binding.PromptSkillFieldProperty
 
 /**
  * Functions to create a new value of a ground type; either default or ask the user
@@ -48,16 +48,16 @@ object NewValue {
   def prompt[T](τ: api.FieldType[T], prompt: String, page: ObjectPage): T = {
     // special case for references TODO
     val p = τ.asInstanceOf[FieldType[T]] match {
-      case BoolType  ⇒ new Property(null, prompt, false)
-      case I8        ⇒ new Property(null, prompt, 0.toByte)
-      case I16       ⇒ new Property(null, prompt, 0.toShort)
-      case I32       ⇒ new Property(null, prompt, 0)
-      case I64 | V64 ⇒ new Property(null, prompt, 0L)
-      case F64       ⇒ new Property(null, prompt, 0.0)
-      case F32       ⇒ new Property(null, prompt, 0.0f)
+      case BoolType  ⇒ new PromptSkillFieldProperty(null, prompt, false, τ)
+      case I8        ⇒ new PromptSkillFieldProperty(null, prompt, 0.toByte, τ)
+      case I16       ⇒ new PromptSkillFieldProperty(null, prompt, 0.toShort, τ)
+      case I32       ⇒ new PromptSkillFieldProperty(null, prompt, 0, τ)
+      case I64 | V64 ⇒ new PromptSkillFieldProperty(null, prompt, 0L, τ)
+      case F64       ⇒ new PromptSkillFieldProperty(null, prompt, 0.0, τ)
+      case F32       ⇒ new PromptSkillFieldProperty(null, prompt, 0.0f, τ)
       case _: AnnotationType | _: UserType[_] ⇒
-        new Property(null, prompt, null.asInstanceOf[T])
-      case _: StringType ⇒ new Property(null, prompt, "")
+        new PromptSkillFieldProperty[T](null, prompt, null.asInstanceOf, τ)
+      case _: StringType ⇒ new PromptSkillFieldProperty(null, prompt, "", τ)
       case _: ConstantLengthArray[_] | _: ListType[_] | _: VariableLengthArray[_]
         | _: SetType[_] | _: MapType[_, _] ⇒
         throw new Exception(s"non-ground field type $τ does not have prompt")

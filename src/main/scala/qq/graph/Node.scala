@@ -20,7 +20,7 @@ class Node(val graph: Graph,
   def left: Int = (pos.x - width / 2).toInt
   def top: Int = (pos.y - height / 2).toInt
   var clampedAt: Option[Vector] = None
-  
+
   var energy: Float = 0
   var force: Vector = new Vector(0f, 0f)
 
@@ -30,11 +30,11 @@ class Node(val graph: Graph,
   }
   def move(stepSize: Float): Unit = {
     clampedAt match {
-      case Some(x) => pos = x
-      case None => if (force.isFinite() && !force.isZero()) pos += force.norm * stepSize
+      case Some(x) ⇒ pos = x
+      case None    ⇒ if (force.isFinite() && !force.isZero()) pos += force.norm * stepSize
     }
   }
-  
+
   /** @retval true if line though centre in direction @c d intersects top or bottom edge of bounds. */
   def intersectsTopOrBottom(d: Vector): Boolean = {
     d.x.abs * height < width * d.y.abs
@@ -63,12 +63,12 @@ class Node(val graph: Graph,
     if (r == this) {
       // distance to border
       val (dl, dr, dt, db) = (left, bounds.width - left - width, top, bounds.height - height - top)
-      def Fᵣ(x: Int) = { val xx = x.toFloat.max(p.ε()); p.c3() / xx / xx }
+      def Fᵣ(x: Int) = { val xx = (x.toFloat - p.margin()).max(p.ε()); p.c3() / xx / xx }
       val F = new Vector(Fᵣ(dl) - Fᵣ(dr), Fᵣ(dt) - Fᵣ(db))
       force += F
       energy += F * F
     } else {
-      val deg = (degree.min{r.degree})
+      val deg = (degree.min { r.degree })
       val l = if (deg <= 3) p.c2() else p.c2() * math.sqrt(deg / 3)
       val δ = (r.pos - pos).max(p.ε())
       val δ2 = {
@@ -89,16 +89,15 @@ class Node(val graph: Graph,
 
     }
   }
-  
-  
+
   def toPs(g: Graph): String = {
-    " "+(pos.x - width / 2)+" top " + (pos.y - height / 2) + " sub moveto\n" +
-    " "+(pos.x + width / 2)+" top " + (pos.y - height / 2) + " sub lineto\n" +
-    " "+(pos.x + width / 2)+" top " + (pos.y + height / 2) + " sub lineto\n" +
-    " "+(pos.x - width / 2)+" top " + (pos.y + height / 2) + " sub lineto\n" +
-    " "+(pos.x - width / 2)+" top " + (pos.y - height / 2) + " sub lineto\n" +
-    " stroke\n" +
-    " "+pos.x+" top " + pos.y + " sub moveto (" + data.name(g) + ") showc\n"
+    " " + (pos.x - width / 2) + " top " + (pos.y - height / 2) + " sub moveto\n" +
+      " " + (pos.x + width / 2) + " top " + (pos.y - height / 2) + " sub lineto\n" +
+      " " + (pos.x + width / 2) + " top " + (pos.y + height / 2) + " sub lineto\n" +
+      " " + (pos.x - width / 2) + " top " + (pos.y + height / 2) + " sub lineto\n" +
+      " " + (pos.x - width / 2) + " top " + (pos.y - height / 2) + " sub lineto\n" +
+      " stroke\n" +
+      " " + pos.x + " top " + pos.y + " sub moveto (" + data.name(g) + ") showc\n"
   }
 
 }

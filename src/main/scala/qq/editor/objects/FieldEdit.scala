@@ -6,7 +6,7 @@ import de.ust.skill.common.scala.internal.fieldTypes._;
 import scala.collection.mutable.Buffer
 import scala.collection.mutable.HashSet
 import scala.collection.mutable.HashMap
-import qq.util.binding.Property
+import qq.editor.binding.SkillFieldProperty
 
 class FieldEdit[F, O <: api.SkillObject](
   val page: ObjectPage,
@@ -19,7 +19,7 @@ class FieldEdit[F, O <: api.SkillObject](
     case _: AnnotationType
       | _: UserType[_] ⇒
       val p = new qq.editor.binding.SimpleField(null, page.file, pool, obj, field)
-      contents += new ReferenceEdit(p.asInstanceOf[Property[api.SkillObject]], page)
+      contents += new ReferenceEdit(p.asInstanceOf[SkillFieldProperty[api.SkillObject]], page)
     case c: ListType[f] ⇒
       contents += new IndexedContainerEdit(page, pool, obj,
         field.asInstanceOf[api.FieldDeclaration[Buffer[f]]],

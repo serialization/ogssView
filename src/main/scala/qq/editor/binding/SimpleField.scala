@@ -9,7 +9,9 @@ class SimpleField[O <: api.SkillObject, F](
   val pool: api.Access[O],
   val obj: O,
   val field: api.FieldDeclaration[F])
-    extends qq.util.binding.Property[F](owner0, field.name, obj.get(field)) {
+    extends SkillFieldProperty[F](owner0, field.name, obj.get(field)) {
+
+  def groundType = field.t
 
   description = s"${field.name} in ${file.idOfObj(obj)}"
 

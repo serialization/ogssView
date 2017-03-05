@@ -17,7 +17,8 @@ class TypeQuery(val file0: qq.editor.File,
   override def find(assigment: Map[String, Any]) = {
     /* we must ensure (outside) that b contains variable: we want to disallow the generation of full cartesian products */
     if (assigment(variable).isInstanceOf[api.SkillObject]
-      && file.superTypes(file.s(assigment(variable).asInstanceOf[api.SkillObject].getTypeName)).contains(pool)) {
+      && (file.superTypes(file.s(assigment(variable).asInstanceOf[api.SkillObject].getTypeName)).contains(pool))
+        || file.s(assigment(variable).asInstanceOf[api.SkillObject].getTypeName) == pool) {
       Iterator(assigment)
     } else {
       Iterator()

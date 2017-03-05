@@ -29,5 +29,23 @@ class UnspecificField(
     val relevantTypes = file.s(o.getTypeName) +: file.superTypes(file.s(o.getTypeName))
     this().filter(x ⇒ relevantTypes.contains(x._1))
   }
+}
+
+class SpecificTypeField(
+  val file: qq.editor.File,
+  val typeName: String,
+  val name: String)
+    extends Field {
+
+  override def apply() = {
+    val pool = file.s(typeName).asInstanceOf[api.Access[_<:api.SkillObject]]
+    val field = pool.fields.find(_.name == name).get
+    Iterator((pool, field))
+  }
+
+  def apply(o: api.SkillObject) = {
+    val relevantTypes = file.s(o.getTypeName) +: file.superTypes(file.s(o.getTypeName))
+    this().filter(x ⇒ relevantTypes.contains(x._1))
+  }
 }  
   
