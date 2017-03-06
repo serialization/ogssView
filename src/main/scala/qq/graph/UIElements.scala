@@ -65,14 +65,28 @@ object UIElements {
       button
     }
   }
-  private def container(g: Graph, node: AbstractNode) = {
+  private def container(g: Graph, node: AbstractNode, o: api.SkillObject, f: api.FieldDeclaration[_], small: Boolean) = {
 
+    val lm = new swing.Action("list members") {
+      override def apply() {
+        val page = qq.editor.Main.newObjectTab()
+        page.find(g.file.idOfObj(o)+" "+f.name + " ?member")
+        page.show()
+        }
+    }
+    
     val button = new qq.util.PlainButton(
       new swing.Action(node.name(g)) {
         override def apply() = {
+          if (small) {
           g.viewer.expandCollapse(node)
+          } else {
+            lm()
+          }
         }
-      })
+      }) {
+      peer.setComponentPopupMenu(new swing.PopupMenu(){contents += new swing.MenuItem(lm)}.peer)
+    }
 
     button.border = CompoundBorder(
       LineBorder(java.awt.SystemColor.textText),
@@ -86,17 +100,18 @@ object UIElements {
   }
 
   def list[E, C[E] <: Buffer[E]](g: Graph, node: AbstractNode, o: api.SkillObject, f: api.FieldDeclaration[C[E]]) = {
-    val base = container(g, node)
+    val base = container(g, node, o, f, o.get(f).size <= g.viewer.page.settings.graphCollectionSmall())
     /* TODO context menu */
     base
   }
   def set[E, C[E] <: HashSet[E]](g: Graph, node: AbstractNode, o: api.SkillObject, f: api.FieldDeclaration[C[E]]) = {
-    val base = container(g, node)
+    val base = container(g, node, o, f, o.get(f).size <= g.viewer.page.settings.graphCollectionSmall())
     /* TODO context menu */
     base
   }
   def map[K, V, C[K, V] <: HashMap[K, V]](g: Graph, node: AbstractNode, o: api.SkillObject, f: api.FieldDeclaration[C[K, V]]) = {
-    val base = container(g, node)
+    import qq.util.FlattenedMap.size
+    val base = container(g, node, o, f, size(o.get(f), f.t.asInstanceOf[de.ust.skill.common.scala.internal.fieldTypes.MapType[K,V]]) <= g.viewer.page.settings.graphCollectionSmall())
     /* TODO context menu */
     base
   }

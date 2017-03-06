@@ -115,7 +115,7 @@ class Graph(
     val phaseInIterations = properties.phaseInIterations()
     for (step ← 0.until(properties.iterations)) {
       resetAccumulators
-      calculateForce(((step - initialIterations).toFloat / phaseInIterations).max(0).min(1), size)
+      calculateForce((((step - initialIterations + 9) / 10 * 10).toFloat / phaseInIterations).max(0).min(1), size)
       move(stepsize)
       graphInfo.energyOfStep += energy
       graphInfo.energyHuOfStep += energyHu

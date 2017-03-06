@@ -73,10 +73,10 @@ class SearchResults(val page: ObjectPage)
     resultsTable = new swing.Table(
       visibleData
         .map { x ⇒
-          x.values.map { x ⇒
-            if (x.isInstanceOf[api.SkillObject])
-              page.file.idOfObj(x.asInstanceOf[api.SkillObject])
-            else if (x == null) "(null)" else x.toString().asInstanceOf[Any] // no boolean checkbox magic
+          query.variables.map { v ⇒
+            if (x(v).isInstanceOf[api.SkillObject])
+              page.file.idOfObj(x(v).asInstanceOf[api.SkillObject])
+            else if (x(v) == null) "(null)" else x(v).toString().asInstanceOf[Any] // no boolean checkbox magic
           }.toArray
         }.toArray,
       query.variables) {
