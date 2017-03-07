@@ -70,9 +70,9 @@ class File(fn0: String) {
 
   /**
    * When deleting causes null references in non-null restricted fields, we add
-   * the affected object to this list.
+   * the affected field to this list.
    */
-  val validationErrorObjects: mutable.HashSet[api.SkillObject] = new mutable.HashSet()
+  val validationErrors: mutable.HashSet[Tuple2[api.SkillObject, api.FieldDeclaration[_]]] = new mutable.HashSet()
 
   /**
    * created objects do not have a SkillId; we give them temporary negative ones;

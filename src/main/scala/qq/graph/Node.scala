@@ -69,7 +69,7 @@ class Node(val graph: Graph,
       energy += F * F
     } else {
       val deg = (degree.min { r.degree })
-      val l = if (deg <= 3) p.c2() else p.c2() * math.sqrt(deg / 3)
+      val l = p.c2()// does not really work well: if (deg <= 3) p.c2() else p.c2() * math.sqrt(deg / 3)
       val δ = (r.pos - pos).max(p.ε())
       val δ2 = {
         // distance not covered by labels

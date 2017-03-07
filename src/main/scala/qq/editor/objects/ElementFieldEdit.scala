@@ -26,9 +26,20 @@ class ElementFieldEdit[E, O <: api.SkillObject](
     case ConstantI8(_) | ConstantI16(_) | ConstantI32(_) | ConstantI64(_) | ConstantV64(_) ⇒
       throw new Exception(s"required ground type, found constannt ${typ}")
     case I8 | I16 | I32 | I64 | V64 | F32 | F64 | BoolType | _: StringType ⇒
-      val editField = fieldProperty.defaultEditor
+      val editField = if (typ.isInstanceOf[StringType]) 
+        new qq.util.binding.TextEdit(fieldProperty.asInstanceOf[SkillFieldProperty[String]],
+        {x ⇒ val s = x.trim()
+            if (s == "(null)") null 
+            else if (s.head == '"' && s.last == '"')
+              scala.StringContext.treatEscapes(s.tail.dropRight(1))
+            else throw new qq.util.binding.RestrictionException("expected string in double quotation marks")
+        },
+        {(x:String)  ⇒ if (x == null) "(null)"
+           else ""+scala.reflect.runtime.universe.Literal(scala.reflect.runtime.universe.Constant(x))
+        })
+      else fieldProperty.defaultEditor
       val optLabel = if (addLabel) new qq.util.binding.LabeledEdit(editField) else editField
-      (editField, new qq.util.ExpandableNode(optLabel, true))
+      (editField, new qq.util.ExpandableNode(optLabel, false))
   })
 
   contents += wholeComponent

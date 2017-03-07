@@ -81,4 +81,5 @@ class TextEdit[T](p: Property[T],
       propertyToComponent(p())
   }
 
+  editValue.doOnChange(editValue()) // check restrictions 
 }

@@ -82,7 +82,7 @@ class ExpandableNode(val node: swing.Component, textStyle: Boolean)
 
   private val erbtn = new swing.Button() {
     this.border = swing.Swing.EmptyBorder(0)
-    this.contentAreaFilled = true
+    this.contentAreaFilled = false
     if (textStyle) background = java.awt.SystemColor.text
     this.preferredSize = new java.awt.Dimension(15, 15)
     this.focusable = false

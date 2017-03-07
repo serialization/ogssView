@@ -45,8 +45,21 @@ class FieldEdit[F, O <: api.SkillObject](
       ()
     case BoolType | _: StringType | I8 | I16 | I32 | I64 | V64 | F32 | F64 ⇒
       val p = new qq.editor.binding.SimpleField(null, page.file, pool, obj, field)
-      val ed = new qq.util.binding.LabeledEdit(p.defaultEditor)
+      val editField = if ( field.t.asInstanceOf[FieldType[_]].isInstanceOf[StringType]) 
+        new qq.util.binding.TextEdit(p.asInstanceOf[SkillFieldProperty[String]],
+        {x ⇒ val s = x.trim()
+            if (s == "(null)") null 
+            else if (s.head == '"' && s.last == '"')
+              scala.StringContext.treatEscapes(s.tail.dropRight(1))
+            else throw new qq.util.binding.RestrictionException("expected string in double quotation marks")
+        },
+        {(x:String)  ⇒ if (x == null) "(null)"
+           else ""+scala.reflect.runtime.universe.Literal(scala.reflect.runtime.universe.Constant(x))
+        })
+      else p.defaultEditor
+      val ed = new qq.util.binding.LabeledEdit(editField)
       contents += new qq.util.ExpandableNode(ed, false)
+    
   }
 
 }

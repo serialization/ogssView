@@ -188,11 +188,11 @@ class ObjectGraph[O <: api.SkillObject](
     }
 
     // fill in all edges
-    for (node ← graph.nodes.keys) {
+    /*for (node ← graph.nodes.keys) {
       for (edge ← node.getOutEdge(page.file)) {
         if (graph.nodes.contains(edge.getTo)) graph.addEdge(edge)
       }
-    }
+    }*/
 
     val t3 = System.nanoTime()
     graph.placeNodes(size)

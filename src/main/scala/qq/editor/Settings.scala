@@ -30,6 +30,11 @@ class Settings extends PropertyOwner {
     prefs.getInt("graphMaxStringLength", 21))
   graphMaxStringLength.onChange.strong += (prefs.putInt("graphMaxStringLength", _))
   
+  val typeColumnWidth = new Property(this,
+    "Width of type column in type viewer",
+    prefs.getInt("typeColumnWidth", 60))
+  graphMaxStringLength.onChange.strong += (prefs.putInt("typeColumnWidth", _))
+
   
   def prefEdit = {
     

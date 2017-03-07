@@ -16,13 +16,16 @@ class TypeTree(val page: qq.editor.types.TypePage)
 
   class TypeTreeNode(τ: api.Access[_ <: api.SkillObject])
       extends qq.util.ExpandableNode(
-        HBoxT(
-          new TypeNameControl(page, τ),
-          swing.Swing.HGlue,
-          new qq.util.PlainLabel(" " + τ.asInstanceOf[internal.StoragePool[_, _]].staticInstances.size + " (" + τ.size + ")") {
-            tooltip = "objects in this pool (including subpools)"
-          }), true) {
+        HBoxT(), true) {
 
+    val nameLabel = new TypeNameControl(page, τ)
+    val countsLabel = new qq.util.PlainLabel(" " + τ.asInstanceOf[internal.StoragePool[_, _]].staticInstances.size + " (" + τ.size + ")") {
+            tooltip = "objects in this pool (including subpools)"
+          }
+    
+    node.asInstanceOf[swing.BoxPanel].contents ++= Seq(
+          nameLabel, swing.Swing.HGlue, countsLabel)
+    
     nodes(τ) = this
 
     if (page.file.childTypes.contains(τ)) {
@@ -31,6 +34,14 @@ class TypeTree(val page: qq.editor.types.TypePage)
         contents ++= page.file.childTypes(τ).map(new TypeTreeNode(_))
       }
     }
+    
+    def highlight_=(l: Boolean) = {
+      val colour = if (l) java.awt.SystemColor.textHighlight else java.awt.SystemColor.text
+      node.background = colour
+      nameLabel.background = colour
+      countsLabel.background = colour
+    }
+    
   }
   val typeTree = new swing.BoxPanel(swing.Orientation.Vertical) {
     /* toSeq keeps the order stable; there's probably some concurrency going on in the
@@ -46,7 +57,7 @@ class TypeTree(val page: qq.editor.types.TypePage)
   var selected: TypeTreeNode = null
   def select(τ: api.Access[_ <: api.SkillObject]): Unit = {
     if (selected != null) {
-      selected.node.background = java.awt.SystemColor.text
+      selected.highlight_=(false)
     }
     
     /* expand all parents */
@@ -56,7 +67,7 @@ class TypeTree(val page: qq.editor.types.TypePage)
     val nodePos = javax.swing.SwingUtilities.convertRectangle(node.getParent, node.getBounds, typeTree.peer)
     typeTree.peer.scrollRectToVisible(nodePos)
     selected = nodes(τ)
-      selected.node.background = java.awt.SystemColor.textHighlight
+      selected.highlight_=(true)
     
   }
 

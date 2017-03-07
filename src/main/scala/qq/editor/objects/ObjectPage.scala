@@ -133,14 +133,24 @@ class ObjectPage(file0: qq.editor.File, settings0: qq.editor.Settings) extends q
     }
   }
   
-val showTypeOfThisObject = new swing.Action("Show Type of Current Object") {
+  val showTypeOfThisObject = new swing.Action("Show Type of Current Object") {
     accelerator = Some(javax.swing.KeyStroke.getKeyStroke("ctrl T"))
     mnemonic = swing.event.Key.T.id
     override def apply() = {
       qq.editor.Main.newTypeTab(file.s(currentView.obj.getTypeName))
     }  
   }  
-  
+ 
+  val deleteThisObject = new swing.Action("Delete Current Object") {
+    accelerator = Some(javax.swing.KeyStroke.getKeyStroke("ctrl D"))
+    mnemonic = swing.event.Key.D.id
+    override def apply() = {
+      new qq.editor.UserDeleteObject(
+          file, file.s(currentView.obj.getTypeName).asInstanceOf[api.Access[api.SkillObject]],currentView.obj)
+    }  
+  }  
+ 
+ 
   /* menu entries for the main window */
   override def viewMenuItems = Seq(
     new swing.MenuItem(goBack),
@@ -156,7 +166,7 @@ val showTypeOfThisObject = new swing.Action("Show Type of Current Object") {
   override def typeMenuItems = Seq(
     new swing.MenuItem(showTypeOfThisObject))
   override def objectMenuItems = Seq(
-    new qq.util.TodoMenuItem("…"))
+    new swing.MenuItem(deleteThisObject))
   /* the layout */
   val toolBar = qq.util.Swing.HBoxD(
     new swing.Button(goBack) {
@@ -190,7 +200,27 @@ new swing.Button(swing.Action("ps to clipboard") {
       val clipboard = java.awt.Toolkit.getDefaultToolkit.getSystemClipboard
       val sel = new java.awt.datatransfer.StringSelection(graph.graph.toPs(graph.size))
       clipboard.setContents(sel, sel)
-  }})    )
+  }}),
+new swing.Button(swing.Action("random obj") {
+  /* pick random object, expand all neighbours */  
+  import de.ust.skill.common.scala.internal.StoragePool
+    val nobj = file.s.map { x => x.asInstanceOf[StoragePool[_,_]].staticInstances.size }.sum
+    var pick = math.floor(math.random * nobj).toInt
+    for (pool <- file.s) {
+      val p = pool.asInstanceOf[StoragePool[_,_]]
+      if (0 <= pick && pick < p.staticInstances.size) {
+        file.typeSettings(pool).expanded ++= pool.fields.map(Seq(_))
+        for (s <- file.superTypes(pool)) {
+          file.typeSettings(s).expanded ++= s.fields.map(Seq(_))
+        }
+        goTo(p.staticInstances.take(pick).next.asInstanceOf[api.SkillObject])
+        pick -= 1 //
+      }
+      pick -= p.staticInstances.size
+    }
+
+  })
+  )
   val objSearch = new SearchResults(this)
   val objEdit = HBoxD()
   val objGraph = HBoxT()

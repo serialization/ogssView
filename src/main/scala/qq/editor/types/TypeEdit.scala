@@ -32,16 +32,17 @@ class TypeEdit(val page: qq.editor.types.TypePage,
         /* main part is type and name; FieldTypeControl makes user types in the type clickable */
         val ftc = new FieldTypeControl(page, file, field.t)
         val ftcw = ftc.preferredSize.width
-        var typeAndName = if (ftcw > 40) {
+        val colWidth = qq.editor.Main.settings.typeColumnWidth()
+        var typeAndName = if (ftcw > colWidth) {
           VBoxT(
             HBoxT(ftc, HGlue),
-            HBoxT(RigidBox(new Dimension(40, 0)),
+            HBoxT(RigidBox(new Dimension(colWidth, 0)),
               new qq.util.PlainLabel(" " + field.name + constantValuePart),
               HGlue))
         } else {
           HBoxT(
             ftc,
-            RigidBox(new Dimension(40 - ftcw, 0)),
+            RigidBox(new Dimension(colWidth - ftcw, 0)),
             new qq.util.PlainLabel(" " + field.name + constantValuePart),
             HGlue)
         }

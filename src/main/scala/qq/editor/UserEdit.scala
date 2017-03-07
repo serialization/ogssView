@@ -78,6 +78,8 @@ final case class UserDeleteObject[T <: api.SkillObject](
   o: T)
     extends UserEdit[T](f, p, o) {
 
+  val refdBy = getRefdBy
+
   /* no merge */
   override def addEdit(x: UndoableEdit) = false
   override def replaceEdit(x: UndoableEdit) = false
@@ -89,6 +91,21 @@ final case class UserDeleteObject[T <: api.SkillObject](
   }
   override def undo = {
     file.modify_(new CreateObject(file, pool, obj))
+    // restore references
+    for ((o, f) ← refdBy) {
+      file.modify_(new SimpleFieldEdit(file, file.s(o.getTypeName).asInstanceOf[api.Access[api.SkillObject]], o, f, null.asInstanceOf[T], obj))
+      val rs = f.asInstanceOf[internal.FieldDeclaration[_, _]].restrictions
+      import de.ust.skill.common.scala.internal.restrictions._
+      val crs = rs.filter(_.isInstanceOf[CheckableFieldRestriction[_]]).map(_.asInstanceOf[CheckableFieldRestriction[T]])
+      for (cr ← crs) {
+        try {
+          cr.check(o.get(f))
+          file.validationErrors -= ((o, f))
+        } catch {
+          case _: Exception ⇒ ()
+        }
+      }
+    }
   }
   override def getPresentationName = s"deleted object ${file.idOfObj(obj)}"
   override def getRedoPresentationName = s"delete object ${file.idOfObj(obj)}"
@@ -96,9 +113,62 @@ final case class UserDeleteObject[T <: api.SkillObject](
   override def isSignificant = true
   override def die() = {}
 
-  override def toEdit = new DeleteObject(file, pool, obj)
+  override def toEdit = {
+    // ungy side effect… set all refs to this to null so that they do not have to be considered always when
+    // ref fields are shown
+    for ((o, f) ← refdBy) {
+      file.modify_(new SimpleFieldEdit(file, file.s(o.getTypeName).asInstanceOf[api.Access[api.SkillObject]], o, f, o.get(f), null.asInstanceOf[T]))
+      val rs = f.asInstanceOf[internal.FieldDeclaration[_, _]].restrictions
+      import de.ust.skill.common.scala.internal.restrictions._
+      val crs = rs.filter(_.isInstanceOf[CheckableFieldRestriction[_]]).map(_.asInstanceOf[CheckableFieldRestriction[T]])
+      for (cr ← crs) {
+        try {
+          cr.check(o.get(f))
+        } catch {
+          case _: Exception ⇒
+            file.validationErrors += ((o, f))
+        }
+      }
+    }
 
-  file.modify(this)
+    new DeleteObject(file, pool, obj)
+  }
+
+  /* check references */
+  private def getRefdBy: ListBuffer[Tuple2[api.SkillObject, api.FieldDeclaration[T]]] = {
+    import de.ust.skill.common.scala.internal.fieldTypes._
+    val result = new ListBuffer[Tuple2[api.SkillObject, api.FieldDeclaration[T]]]()
+    def fieldCanRefToO(field: api.FieldDeclaration[_]): Boolean = {
+      field.t.isInstanceOf[AnnotationType] || (
+        field.t.isInstanceOf[api.Access[_]] && (
+          field.t.asInstanceOf[api.Access[_]] == file.s(o.getTypeName) ||
+          file.superTypes(file.s(o.getTypeName)).contains(field.t.asInstanceOf[api.Access[_]])))
+
+    }
+    for (
+      fields ← f.fieldsByName.values;
+      (pool, field) ← fields if fieldCanRefToO(field);
+      ob ← pool.all if ob.asInstanceOf[api.SkillObject].get(field) == obj
+    ) {
+      result += ((ob.asInstanceOf[api.SkillObject], field.asInstanceOf[api.FieldDeclaration[T]]))
+    }
+    result
+  }
+  if (refdBy.size > 0) {
+    import swing.Dialog
+    val x = Dialog.showConfirmation(null,
+      "Object " + file.idOfObj(obj) + " is referenced by " + refdBy.size + " objects. Delete anyway?",
+      "Confirm delete",
+      Dialog.Options.YesNo,
+      Dialog.Message.Question, null)
+
+    if (x == Dialog.Result.Yes) {
+      file.modify(this)
+    }
+  } else {
+    // no references, no confirm
+    file.modify(this)
+  }
 }
 
 /** modification of a simple field */
@@ -420,7 +490,7 @@ final case class UserSetReplace[T <: api.SkillObject, C <: HashSet[F], F](
 }
 
 /** edits maps as lists indexed by  key sequence */
-sealed abstract class UserMapEdit[T <: api.SkillObject, K, V, C[K,V] <: HashMap[K,V]](
+sealed abstract class UserMapEdit[T <: api.SkillObject, K, V, C[K, V] <: HashMap[K, V]](
   /** The file this belongs to */
   f: qq.editor.File,
   /** The type of the modified object*/
@@ -428,7 +498,7 @@ sealed abstract class UserMapEdit[T <: api.SkillObject, K, V, C[K,V] <: HashMap[
   /** The object that is modified */
   o: T,
   /** The field (collection) that is modified */
-  val field: api.FieldDeclaration[C[K,V]],
+  val field: api.FieldDeclaration[C[K, V]],
   /** The index of the modified member of the collection */
   val index: Seq[Any])
     extends UserEdit[T](f, p, o) {
@@ -436,7 +506,7 @@ sealed abstract class UserMapEdit[T <: api.SkillObject, K, V, C[K,V] <: HashMap[
 }
 
 /** insertion of a new value into a map */
-final case class UserMapInsert[T <: api.SkillObject, K, V, C[K,V] <: HashMap[K,V]](
+final case class UserMapInsert[T <: api.SkillObject, K, V, C[K, V] <: HashMap[K, V]](
   /** The file this belongs to */
   f: qq.editor.File,
   /** The type of the modified object*/
@@ -444,7 +514,7 @@ final case class UserMapInsert[T <: api.SkillObject, K, V, C[K,V] <: HashMap[K,V
   /** The object that is modified */
   o: T,
   /** The field (collection) that is modified */
-  fd: api.FieldDeclaration[C[K,V]],
+  fd: api.FieldDeclaration[C[K, V]],
   /** The index of the modified member of the collection */
   i: Seq[Any],
   /** the value of the new member */
@@ -481,7 +551,7 @@ final case class UserMapInsert[T <: api.SkillObject, K, V, C[K,V] <: HashMap[K,V
 }
 
 /** insertion of a new value into an indexed container */
-final case class UserMapRemove[T <: api.SkillObject, K, V, C[K,V] <: HashMap[K,V]](
+final case class UserMapRemove[T <: api.SkillObject, K, V, C[K, V] <: HashMap[K, V]](
   /** The file this belongs to */
   f: qq.editor.File,
   /** The type of the modified object*/
@@ -489,7 +559,7 @@ final case class UserMapRemove[T <: api.SkillObject, K, V, C[K,V] <: HashMap[K,V
   /** The object that is modified */
   o: T,
   /** The field (collection) that is modified */
-  fd: api.FieldDeclaration[C[K,V]],
+  fd: api.FieldDeclaration[C[K, V]],
   /** The index of the modified member of the collection */
   i: Seq[Any])
     extends UserMapEdit[T, K, V, C](f, p, o, fd, i) {
@@ -528,7 +598,7 @@ final case class UserMapRemove[T <: api.SkillObject, K, V, C[K,V] <: HashMap[K,V
 }
 
 /** change of the value of a member of an indexed container */
-final case class UserMapModify[T <: api.SkillObject, K, V, C[K,V] <: HashMap[K,V]](
+final case class UserMapModify[T <: api.SkillObject, K, V, C[K, V] <: HashMap[K, V]](
   /** The file this belongs to */
   f: qq.editor.File,
   /** The type of the modified object*/
@@ -536,7 +606,7 @@ final case class UserMapModify[T <: api.SkillObject, K, V, C[K,V] <: HashMap[K,V
   /** The object that is modified */
   o: T,
   /** The field (collection) that is modified */
-  fd: api.FieldDeclaration[C[K,V]],
+  fd: api.FieldDeclaration[C[K, V]],
   /** The index of the modified member of the collection */
   i: Seq[Any],
   /** Value after modification */

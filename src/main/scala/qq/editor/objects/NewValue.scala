@@ -56,7 +56,7 @@ object NewValue {
       case F64       ⇒ new PromptSkillFieldProperty(null, prompt, 0.0, τ)
       case F32       ⇒ new PromptSkillFieldProperty(null, prompt, 0.0f, τ)
       case _: AnnotationType | _: UserType[_] ⇒
-        new PromptSkillFieldProperty[T](null, prompt, null.asInstanceOf, τ)
+        new PromptSkillFieldProperty[T](null, prompt, null.asInstanceOf[T], τ)
       case _: StringType ⇒ new PromptSkillFieldProperty(null, prompt, "", τ)
       case _: ConstantLengthArray[_] | _: ListType[_] | _: VariableLengthArray[_]
         | _: SetType[_] | _: MapType[_, _] ⇒

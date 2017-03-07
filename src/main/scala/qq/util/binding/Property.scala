@@ -61,8 +61,6 @@ class Property[T](val owner: PropertyOwner, val name: String, var value: T)
       case _: Double  ⇒ new TextEdit(this.asInstanceOf[Property[Double]], _.toDouble).asInstanceOf[EditControl[T]]
       case _: String ⇒ new TextEdit(this.asInstanceOf[Property[String]],
         x ⇒ (if (x == "(null)") null else x), (x: String) ⇒ (if (x == null) "(null)" else x)).asInstanceOf[EditControl[T]]
-      // TODO strings must go outside (fieldtype match) for they can be null
-      // collections are handled on the skill types
     }
   }
 }
