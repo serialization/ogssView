@@ -103,6 +103,7 @@ class ObjectGraph[O <: api.SkillObject](
     addEpath(root, Seq())
     val t1 = System.nanoTime()
     // follow paths to expanded nodes
+    val edgesOnPaths = new HashSet[qq.graph.AbstractEdge]()
     for (path ← expandPrefs) {
       def expandPath(o: api.SkillObject,
                      pathToO: Seq[api.FieldDeclaration[_]],
@@ -125,6 +126,7 @@ class ObjectGraph[O <: api.SkillObject](
                     if (expandPath(p, pathToO :+ field, pathToDo.tail)) {
                       visibleNodes += node
                       addVpath(node, pathToO)
+                      edgesOnPaths += edge
                       true
                     } else {
                       false
@@ -136,6 +138,7 @@ class ObjectGraph[O <: api.SkillObject](
                     visibleNodes += next
                     expandedNodes += next
                     addEpath(next, pathToO :+ field)
+                    edgesOnPaths += edge
                     true
 
                 }
@@ -187,12 +190,15 @@ class ObjectGraph[O <: api.SkillObject](
       }
     }
 
-    // fill in all edges
+    // fill in all edges – is too much :)
     /*for (node ← graph.nodes.keys) {
       for (edge ← node.getOutEdge(page.file)) {
         if (graph.nodes.contains(edge.getTo)) graph.addEdge(edge)
       }
     }*/
+    for (e<- edgesOnPaths) {
+      graph.addEdge(e)
+    }
 
     val t3 = System.nanoTime()
     graph.placeNodes(size)
@@ -232,11 +238,11 @@ class ObjectGraph[O <: api.SkillObject](
       c.uiElement.peer.setLocation(c.left, c.top)
       c.uiElement.peer.revalidate()
     }
-    for (i ← 0.until(graph.graphInfo.energyOfStep.size)) {
+   /* for (i ← 0.until(graph.graphInfo.energyOfStep.size)) {
       g.drawString("x", 10 + i, 10 + 10 * graph.graphInfo.energyOfStep(i) / graph.nodes.size)
       g.drawString("o", 10 + i, 10 + graph.graphInfo.stepOfStep(i))
       g.drawString("-", 10 + i, 10 + 10 * graph.graphInfo.energyHuOfStep(i))
-    }
+    }*/
   }
 
   listenTo(this)
