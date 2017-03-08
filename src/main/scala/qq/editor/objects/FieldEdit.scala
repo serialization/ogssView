@@ -15,6 +15,7 @@ class FieldEdit[F, O <: api.SkillObject](
   val field: api.FieldDeclaration[F])
     extends swing.BoxPanel(swing.Orientation.Vertical) {
 
+  val restrictions = field.asInstanceOf[internal.FieldDeclaration[F,O]].restrictions
   field.t.asInstanceOf[FieldType[_]] match {
     case _: AnnotationType
       | _: UserType[_] ⇒
@@ -23,15 +24,15 @@ class FieldEdit[F, O <: api.SkillObject](
     case c: ListType[f] ⇒
       contents += new IndexedContainerEdit(page, pool, obj,
         field.asInstanceOf[api.FieldDeclaration[Buffer[f]]],
-        () ⇒ NewValue.default(c.groundType))
+        () ⇒ NewValue.default(c.groundType, restrictions))
     case c: VariableLengthArray[f] ⇒
       contents += new IndexedContainerEdit(page, pool, obj,
         field.asInstanceOf[api.FieldDeclaration[Buffer[f]]],
-        () ⇒ NewValue.default(c.groundType))
+        () ⇒ NewValue.default(c.groundType, restrictions))
     case c: SetType[e] ⇒ 
       contents += new SetContainerEdit(page, pool, obj,
         field.asInstanceOf[api.FieldDeclaration[HashSet[e]]],
-        () ⇒ NewValue.prompt(c.groundType,"New entry:",page))       
+        () ⇒ NewValue.prompt(c.groundType,"New entry:",page, restrictions))       
     case c: ConstantLengthArray[f] ⇒
       contents += new IndexedContainerEdit(page, pool, obj,
         field.asInstanceOf[api.FieldDeclaration[Buffer[f]]],

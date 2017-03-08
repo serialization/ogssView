@@ -59,8 +59,8 @@ final case class UserCreateObject[T <: api.SkillObject](
 
   file.registerCreatedObject(obj)
   /* initialise fields */
-  private def fieldInitialisation[T](f: api.FieldDeclaration[T]): Unit = {
-    obj.set(f, qq.editor.objects.NewValue.default(f.t))
+  private def fieldInitialisation[F](f: api.FieldDeclaration[F]): Unit = {
+    obj.set(f, qq.editor.objects.NewValue.default(f.t, f.asInstanceOf[internal.FieldDeclaration[F, T]].restrictions))
   }
   for (f ← p.allFields if !f.isInstanceOf[internal.fieldTypes.ConstantInteger[_]]) {
     fieldInitialisation(f)

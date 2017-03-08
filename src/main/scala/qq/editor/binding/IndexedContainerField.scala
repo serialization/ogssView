@@ -17,7 +17,7 @@ class IndexedContainerField[O <: api.SkillObject, C[F] <: Buffer[F], F](
   
   def groundType = field.t.asInstanceOf[SingleBaseTypeContainer[C[F],F]].groundType
   description = s"element $index of ${field.name} in ${file.idOfObj(obj)}"  
-  // TODO restrictions ++= Restrictions(field)
+  restrictions ++= Restrictions(field)
   restrictions ++= Restrictions(file, field.t.asInstanceOf[SingleBaseTypeContainer[_,_]].groundType.asInstanceOf[FieldType[F]]) 
 
   /**

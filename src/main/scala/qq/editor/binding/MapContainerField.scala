@@ -19,7 +19,7 @@ class MapContainerField[O <: api.SkillObject, K, V, C[K,V] <: HashMap[K,V], G](
   def groundType = groundType0
   
   description = s"element $index of ${field.name} in ${file.idOfObj(obj)}"  
-  // TODO restrictions ++= Restrictions(field)
+  // no field restrictions: restrictions ++= Restrictions(field)
   restrictions ++= Restrictions(file, groundType)
 
   /**

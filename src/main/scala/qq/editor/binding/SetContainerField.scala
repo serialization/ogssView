@@ -17,7 +17,7 @@ class SetContainerField[O <: api.SkillObject, C[F] <: HashSet[F], F](
   def groundType = field.t.asInstanceOf[SingleBaseTypeContainer[C[F],F]].groundType
   
   var key_ = key
-  // TODO restrictions ++= Restrictions(field)
+  restrictions ++= Restrictions(field)
   restrictions ++= Restrictions(file, field.t.asInstanceOf[SingleBaseTypeContainer[_,_]].groundType.asInstanceOf[FieldType[F]]) 
   restrictions += qq.util.binding.Restriction(x => x == this() || !obj.get(field).contains(x), "New value is already contained in set")
   

@@ -142,8 +142,8 @@ class MapContainerEdit[K, V, C[K, V] <: HashMap[K, V], O <: api.SkillObject](
       icon = new qq.icons.AddListItemIcon(true)
       override def apply() {
         // TODO nicer
-        val keys = for(τ <- groundTypes.dropRight(1)) yield NewValue.prompt(τ, "key", page)
-        new qq.editor.UserMapInsert(page.file, pool, obj, field, keys, NewValue.default(groundTypes.last))
+        val keys = for(τ <- groundTypes.dropRight(1)) yield NewValue.prompt(τ, "key", page, scala.collection.mutable.HashSet())
+        new qq.editor.UserMapInsert(page.file, pool, obj, field, keys, NewValue.default(groundTypes.last, scala.collection.mutable.HashSet()))
       }
     }
     lowerPart.contents += qq.util.Swing.HBoxD(0.0f,
