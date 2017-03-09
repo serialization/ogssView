@@ -5,6 +5,8 @@ import de.ust.skill.common.scala.internal.fieldTypes.SingleBaseTypeContainer;
 import de.ust.skill.common.scala.internal.fieldTypes.FieldType;
 import scala.collection.mutable.HashSet;
 
+/** Property for an element of a set field for use by edit components.
+ *  Generates undoable UserEdit to update the file and monitors Edits to update its own state */
 class SetContainerField[O <: api.SkillObject, C[F] <: HashSet[F], F](
   owner0: qq.util.binding.PropertyOwner,
   val file: qq.editor.File,

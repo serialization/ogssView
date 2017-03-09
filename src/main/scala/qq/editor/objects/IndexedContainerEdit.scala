@@ -102,6 +102,7 @@ class IndexedContainerEdit[E, C[E] <: Buffer[E], O <: api.SkillObject](
     } else {
       head.contents += countLbl
     }
+    head.contents.foreach(_.tooltip = s"${field.t} ${field.name}")
   }
   private val en = new qq.util.ExpandableNode(head,false) {
     override def onCollapse() = { switchHeadStyle(false) }

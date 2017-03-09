@@ -95,24 +95,20 @@ object UIElements {
         CompoundBorder(
           LineBorder(java.awt.SystemColor.textText),
           EmptyBorder(0, 2, 0, 2))))
-    /* TODO context menu */
     button
   }
 
   def list[E, C[E] <: Buffer[E]](g: Graph, node: AbstractNode, o: api.SkillObject, f: api.FieldDeclaration[C[E]]) = {
     val base = container(g, node, o, f, o.get(f).size <= g.viewer.page.settings.graphCollectionSmall())
-    /* TODO context menu */
     base
   }
   def set[E, C[E] <: HashSet[E]](g: Graph, node: AbstractNode, o: api.SkillObject, f: api.FieldDeclaration[C[E]]) = {
     val base = container(g, node, o, f, o.get(f).size <= g.viewer.page.settings.graphCollectionSmall())
-    /* TODO context menu */
     base
   }
   def map[K, V, C[K, V] <: HashMap[K, V]](g: Graph, node: AbstractNode, o: api.SkillObject, f: api.FieldDeclaration[C[K, V]]) = {
     import qq.util.FlattenedMap.size
     val base = container(g, node, o, f, size(o.get(f), f.t.asInstanceOf[de.ust.skill.common.scala.internal.fieldTypes.MapType[K,V]]) <= g.viewer.page.settings.graphCollectionSmall())
-    /* TODO context menu */
     base
   }
 }

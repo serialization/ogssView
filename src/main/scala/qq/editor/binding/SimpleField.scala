@@ -3,6 +3,8 @@ package qq.editor.binding
 import de.ust.skill.common.scala.api;
 import de.ust.skill.common.scala.internal;
 
+/** Property for a ground type field for use by edit components.
+ *  Generates undoable UserEdit to update the file and monitors Edits to update its own state */
 class SimpleField[O <: api.SkillObject, F](
   owner0: qq.util.binding.PropertyOwner,
   val file: qq.editor.File,
@@ -13,7 +15,7 @@ class SimpleField[O <: api.SkillObject, F](
 
   def groundType = field.t
 
-  description = s"${field.name} in ${file.idOfObj(obj)}"
+  description = s"${field.t} ${field.name} in ${file.idOfObj(obj)}"
 
   restrictions ++= Restrictions(field)
   restrictions ++= Restrictions(file, field.t)

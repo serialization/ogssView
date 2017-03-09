@@ -5,6 +5,8 @@ import de.ust.skill.common.scala.internal.fieldTypes.SingleBaseTypeContainer;
 import de.ust.skill.common.scala.internal.fieldTypes.FieldType;
 import scala.collection.mutable.Buffer;
 
+/** Property for an element of a list &c. field for use by edit components.
+ *  Generates undoable UserEdit to update the file and monitors Edits to update its own state */
 class IndexedContainerField[O <: api.SkillObject, C[F] <: Buffer[F], F](
   owner0: qq.util.binding.PropertyOwner,
   val file: qq.editor.File,
@@ -14,9 +16,10 @@ class IndexedContainerField[O <: api.SkillObject, C[F] <: Buffer[F], F](
   val index: Int)
     extends SkillFieldProperty[F](owner0, index.toString(), obj.get(field)(index)) {
 
+  description = s"${field.t} ${field.name} [$index] in ${file.idOfObj(obj)}"  
   
   def groundType = field.t.asInstanceOf[SingleBaseTypeContainer[C[F],F]].groundType
-  description = s"element $index of ${field.name} in ${file.idOfObj(obj)}"  
+
   restrictions ++= Restrictions(field)
   restrictions ++= Restrictions(file, field.t.asInstanceOf[SingleBaseTypeContainer[_,_]].groundType.asInstanceOf[FieldType[F]]) 
 
