@@ -15,18 +15,21 @@ class ReferenceEdit(val p: SkillFieldProperty[api.SkillObject], val page: qq.edi
   val exn = new qq.util.ExpandableNode(if (addLabel) labeledField else editField, false)
 
   val mnuSelect = new swing.MenuItem(swing.Action("Select object") {
-          val selection = qq.editor.Main.newObjectTab(p.groundType.asInstanceOf[api.Access[_]])
-          selection.select(s"Select new ${p.description}",
-              {o =>
-                p := o           
-                page.tabbedPane.addPage(page)
-              },
-              {o =>
-                page.tabbedPane.addPage(page)
-              })
-          page.tabbedPane.removePage(page.index)
-        })
-  
+    val selection = p.groundType match {
+      case u: api.Access[_] ⇒ qq.editor.Main.newObjectTab(u)
+      case _                ⇒ qq.editor.Main.newObjectTab()
+    }
+    selection.select(s"Select new ${p.description}",
+      { o ⇒
+        p := o
+        page.tabbedPane.addPage(page)
+      },
+      { o ⇒
+        page.tabbedPane.addPage(page)
+      })
+    page.tabbedPane.removePage(page.index)
+  })
+
   def onValueChange(x: api.SkillObject): Unit = {
     def setAllPopupMenus(x: swing.PopupMenu): Unit = {
       val peer = if (x == null) null else x.peer
@@ -39,14 +42,14 @@ class ReferenceEdit(val p: SkillFieldProperty[api.SkillObject], val page: qq.edi
     if (x != null) {
       exn.lazySubPart = { x ⇒ new ObjectEdit(page, p()) }
       exn.collapse()
-      
+
       val popupMenu = qq.editor.objects.ObjectContextMenu(x, page)
-      popupMenu.contents += mnuSelect 
-      
+      popupMenu.contents += mnuSelect
+
       setAllPopupMenus(popupMenu)
     } else {
       exn.lazySubPart = null
-      setAllPopupMenus(new swing.PopupMenu() {contents += mnuSelect})
+      setAllPopupMenus(new swing.PopupMenu() { contents += mnuSelect })
     }
   }
 

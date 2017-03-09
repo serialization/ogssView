@@ -34,7 +34,8 @@ object Query {
   /* preliminary */
   def parse(file: qq.editor.File, x: String): Query = {
     import qq.editor.queries.parser._;
-    Parser(file, x)
+    if (x == "") new AllObjectQuery(file, "object")
+    else Parser(file, x)
   }
 
 }
