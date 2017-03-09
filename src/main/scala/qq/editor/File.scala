@@ -3,6 +3,8 @@ package qq.editor
 import de.ust.skill.common.scala.api;
 import de.ust.skill.common.scala.internal;
 import scala.collection.mutable;
+import scala.collection.mutable.HashMap;
+import scala.collection.mutable.HashSet;
 
 /** Represents a skill file while opened in the editor */
 class File(fn0: java.nio.file.Path) {
@@ -91,13 +93,25 @@ class File(fn0: java.nio.file.Path) {
   /* some auxiliary functions about types */
 
   /** parentType(a) = b if a is directly derived from b, a ∉ Dom(parentType) if a is a root type */
-  val parentType: Map[api.Access[_ <: api.SkillObject], api.Access[_ <: api.SkillObject]] =
-    (for (t ← s; sn ← t.superName) yield (t, s(sn).asInstanceOf[api.Access[_ <: api.SkillObject]])).toMap
+  val parentType: HashMap[api.Access[_ <: api.SkillObject], api.Access[_ <: api.SkillObject]] = new HashMap()
   /** a ∈ childTypes(b) if a is directly derived from b */
-  val childTypes: Map[api.Access[_ <: api.SkillObject], Seq[api.Access[_ <: api.SkillObject]]] =
-    s.groupBy(parentType.getOrElse(_, null))
+  val childTypes: HashMap[api.Access[_ <: api.SkillObject], Seq[api.Access[_ <: api.SkillObject]]] = new HashMap()
   /** a ∈ rootTypes if ~(∃x)(x = parentType(a)) */
-  val rootTypes: Set[api.Access[_ <: api.SkillObject]] = (for (t ← s if !(parentType contains t)) yield t).toSet
+  val rootTypes: HashSet[api.Access[_ <: api.SkillObject]] = new HashSet()
+
+  private def updateTables(): Unit = {
+    parentType.clear()
+    for (t ← s; sn ← t.superName) {
+      parentType(t) = s(sn).asInstanceOf[api.Access[_ <: api.SkillObject]]
+    }
+    childTypes.clear()
+    childTypes ++= s.groupBy(parentType.getOrElse(_, null))
+    rootTypes.clear()
+    for (t ← s if !(parentType contains t)) rootTypes += t
+  }
+  updateTables
+ 
+  
   /** baseType(a) = b if b ∈ parentType*(a) ∩ rootTypes */
   def baseType(a: api.Access[_ <: api.SkillObject]) = a.asInstanceOf[internal.StoragePool[_, _]].basePool.asInstanceOf[api.Access[_]]
   /** parentType+ */
@@ -109,7 +123,7 @@ class File(fn0: java.nio.file.Path) {
       Nil
     }
   }
-
+  
   def objOfId[T <: B, B <: api.SkillObject](pool: api.Access[T], id: Int): api.SkillObject = {
     var o = if (id > 0) {
       val bp = pool.asInstanceOf[internal.StoragePool[T, B]].basePool
@@ -159,10 +173,28 @@ class File(fn0: java.nio.file.Path) {
     (for (t ← s; f ← t.fields) yield (f.name, (t, f))).groupBy(_._1).mapValues(_.map(_._2))
 
   /* type and field settings */
-  val typeSettings: Map[api.Access[_], TypeSettings[_]] =
-    (for (t ← s) yield (t, new TypeSettings(t, this))).toMap
+  val typeSettings: HashMap[api.Access[_], TypeSettings[_]] = new HashMap() 
+  for (t ← s) typeSettings(t) = new TypeSettings(t, this)
 
   val fieldSettings: Map[api.FieldDeclaration[_], FieldSettings[_, _]] =
     (for (t ← typeSettings.values; fd ← t.typ.fields) yield (fd, t.fields(fd).asInstanceOf[FieldSettings[_, api.SkillObject]])).toMap
 
+  def flush(): Unit = {
+    deletedObjects.foreach(s.delete(_))
+    s.flush()
+    deletedObjects.clear()
+    createdObjectId.clear()
+    createdObjects.clear()   
+    // hash codes of Access[]es have changed
+    updateTables
+    val tss = new mutable.ListBuffer[TypeSettings[_]]()
+    for (t <- typeSettings.values) tss += t
+    typeSettings.clear()
+    for (ts <- tss) { println(ts.typ); typeSettings(ts.typ) = ts}
+    // find deleted objects and fields
+    for ((t,s) <- typeSettings) {
+      if (t.asInstanceOf[internal.StoragePool[_,_]].cachedSize == 0) s.isDeleted = true
+    }
+    for (fs <- fieldSettings.values) fs.checkDeleted()
+  }
 }

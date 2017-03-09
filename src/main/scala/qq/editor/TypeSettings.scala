@@ -27,4 +27,6 @@ class TypeSettings[T <: api.SkillObject](
       )
       
   val expanded: mutable.HashSet[Seq[api.FieldDeclaration[_]]] = mutable.HashSet()
+  
+  var isDeleted = false
 }

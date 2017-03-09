@@ -43,7 +43,7 @@ object UIElements {
     button.peer.setComponentPopupMenu(qq.editor.objects.ObjectContextMenu(o, g.viewer.page).peer)
     if (g.viewer.expandedNodes.contains(node)) {
       val τ = g.file.s(o.getTypeName)
-      val innerFields = for (f ← τ.allFields.toSeq if g.file.fieldSettings(f).visibilityIn(o).showInParent) yield {
+      val innerFields = for (f ← τ.allFields.toSeq if !g.file.fieldSettings(f).isDeleted && g.file.fieldSettings(f).visibilityIn(o).showInParent) yield {
         val text = valueShortString(o.get(f))
         qq.util.Swing.HBoxT(new qq.util.PlainLabel(f.name + " = " + text), swing.Swing.HGlue)
       }

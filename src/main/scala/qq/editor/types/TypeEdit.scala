@@ -88,7 +88,9 @@ class TypeEdit(val page: qq.editor.types.TypePage,
         if (τ.fields.length > 0) {
           subPart = new swing.BoxPanel(swing.Orientation.Vertical) {
             background = java.awt.SystemColor.text
-            contents ++= τ.fields.map(x ⇒ new Field(page, file, skillType, x))
+            contents ++= τ.fields.
+                  filter(!file.fieldSettings(_).isDeleted).
+                  map(x ⇒ new Field(page, file, skillType, x))
           }
           if (τ == skillType) expand
         }

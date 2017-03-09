@@ -95,5 +95,20 @@ class FieldSettings[T, U <: api.SkillObject](
       ShowAsNodeVisibility
     }
   }
+  
+  
+  // check whether it still exists after save
+  var isDeleted = false
+  def checkDeleted() : Unit = {
+    def typeIsDeleted[T](τ: fieldTypes.FieldType[T]): Boolean = {
+      τ match {
+        case u: fieldTypes.UserType[_] => containingType.containingFile.typeSettings(u).isDeleted
+        case c: fieldTypes.SingleBaseTypeContainer[_,_] => typeIsDeleted(c.groundType)
+        case m: fieldTypes.MapType[k,v] => typeIsDeleted(m.keyType) || typeIsDeleted(m.valueType)
+        case _ => false
+      }
+    }
+    isDeleted = typeIsDeleted(field.t.asInstanceOf[fieldTypes.FieldType[_]])
+  }
 
 }

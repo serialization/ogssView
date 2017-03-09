@@ -24,7 +24,7 @@ case class SkillObjectNode(val skillObject: api.SkillObject)
   override def getOutEdge(file: qq.editor.File) = {
     val τ = file.s(skillObject.getTypeName)
     for (
-      f ← τ.allFields if file.fieldSettings(f).visibilityIn(skillObject).showAsNode
+      f ← τ.allFields if !file.fieldSettings(f).isDeleted && file.fieldSettings(f).visibilityIn(skillObject).showAsNode
     ) yield new SkillFieldEdge(skillObject, f)
   }
   def edgeForField(file: qq.editor.File, field: api.FieldDeclaration[_]): Option[AbstractEdge] = {

@@ -133,9 +133,8 @@ object Main extends SimpleSwingApplication {
     }
   }
   private def save_() {
-    file.deletedObjects.foreach(file.s.delete(_))
-    file.s.flush() // if exception here, then problem with redo of delete :( 
-    file.deletedObjects.clear()
+    // if exception here, then problem with redo of delete :( 
+    file.flush()
     file.undoManager.discardAllEdits()
     /* there's no undo/redo after discardAllEdits, but the buttons are somehow not updated*/
     file.undoManager.undoAction.enabled = false
