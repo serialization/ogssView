@@ -343,7 +343,7 @@ object Main extends SimpleSwingApplication {
     size = new java.awt.Dimension(640, 480)
   }
 
-  // TODO argv[1]
-  open_(Paths.get("C:\\Users\\m\\stud\\dt\\testinp\\bc.iml.sf"))
+  // TODO argv[1]… not NOW
+  //open_(Paths.get(argv[1]))
 
 }

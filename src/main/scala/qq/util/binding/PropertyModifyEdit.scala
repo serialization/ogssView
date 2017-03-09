@@ -14,7 +14,7 @@ class PropertyModifyEdit[T](val property: Property[T], var oldValue: T, var newV
     val rr = r.asInstanceOf[PropertyModifyEdit[T]]
     if (ll.property != rr.property) return false
     if (ll.newValue != rr.oldValue) return false // WTF
-    // TODO can we completely remove this edit when ll.old == rr.new, i.e. when the compound edit is a noop?
+    // TODO✓ should not happen: can we completely remove this edit when ll.old == rr.new, i.e. when the compound edit is a noop?
     ll.newValue = rr.newValue
     rr.oldValue = ll.oldValue
     return true
@@ -41,21 +41,21 @@ class PropertyModifyEdit[T](val property: Property[T], var oldValue: T, var newV
   private def newValText: String = if (newValue == null) "(null)" else newValue.toString()
   override def getPresentationName(): String = {
     if (oldValue == newValue) {
-      "edited " + name + " but didn't change anything in the end" // TODO can a undoable edit commit suicide while sitting in the undo manager's queue
+      "edited " + name + " but didn't change anything in the end" // TODO✓ should not happen: can a undoable edit commit suicide while sitting in the undo manager's queue
     } else {
       "changed " + name + " from " + oldValText + " to " + newValText
     }
   }
   override def getRedoPresentationName(): String = {
     if (oldValue == newValue) {
-      "look at " + name + " but then decide to leave it unchanged" // TODO can a undoable edit commit suicide while sitting in the undo manager's queue
+      "look at " + name + " but then decide to leave it unchanged" // TODO✓  should not happen: can a undoable edit commit suicide while sitting in the undo manager's queue
     } else {
       "change " + name + " to " + newValText
     }
   }
   override def getUndoPresentationName(): String = {
     if (oldValue == newValue) {
-      "leave " + name + " unchanged" // TODO can a undoable edit commit suicide while sitting in the undo manager's queue
+      "leave " + name + " unchanged" // TODO✓ should not happen, prevented elsewhere@ can a undoable edit commit suicide while sitting in the undo manager's queue
     } else {
       "change " + name + " back to " + oldValText
     }

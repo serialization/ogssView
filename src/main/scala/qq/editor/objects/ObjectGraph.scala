@@ -215,7 +215,7 @@ class ObjectGraph[O <: api.SkillObject](
       clampedNodes(x.data) = x.pos
     }
     val t5 = System.nanoTime()
-    println(s"${graph.nodes.size} nodes ${graph.nodes.values.map(_.edgesOut.size).sum} edges follow paths: ${t2 - t1} ns, place: ${(t4 - t3) / 1E6} ms, total ${(t5 - t0) / 1E6} ms E=${graph.energy} E2=${graph.energyHu} stepsize=${graph.graphInfo.stepOfStep.last}")
+    //println(s"${graph.nodes.size} nodes ${graph.nodes.values.map(_.edgesOut.size).sum} edges follow paths: ${t2 - t1} ns, place: ${(t4 - t3) / 1E6} ms, total ${(t5 - t0) / 1E6} ms E=${graph.energy} E2=${graph.energyHu} stepsize=${graph.graphInfo.stepOfStep.last}")
 
   }
 
