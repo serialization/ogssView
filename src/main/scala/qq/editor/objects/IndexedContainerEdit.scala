@@ -6,7 +6,7 @@ import scala.collection.mutable.Buffer;
 import qq.util.Swing.HBoxD;
 
 class IndexedContainerEdit[E, C[E] <: Buffer[E], O <: api.SkillObject](
-  val page: ObjectPage,
+  val page: qq.editor.Page,
   val pool: api.Access[O],
   val obj: O,
   val field: api.FieldDeclaration[C[E]],

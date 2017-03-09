@@ -6,7 +6,7 @@ import de.ust.skill.common.scala.internal.fieldTypes;
 
 /** Edit the fields of \c obj. Can be used as the expandable pane below a reference field */
 class ObjectEdit[P <: api.SkillObject](
-  val page: ObjectPage,
+  val page: qq.editor.Page,
   val obj: P)
     extends swing.BoxPanel(swing.Orientation.Vertical) {
 

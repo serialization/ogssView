@@ -3,7 +3,7 @@ package qq.editor.objects
 import qq.editor.binding.SkillFieldProperty
 import de.ust.skill.common.scala.api
 
-class ReferenceEdit(val p: SkillFieldProperty[api.SkillObject], val page: ObjectPage, val addLabel: Boolean = true)
+class ReferenceEdit(val p: SkillFieldProperty[api.SkillObject], val page: qq.editor.Page, val addLabel: Boolean = true)
     extends swing.BoxPanel(swing.Orientation.Vertical) {
 
   val editField = new qq.util.binding.TextEdit(p,

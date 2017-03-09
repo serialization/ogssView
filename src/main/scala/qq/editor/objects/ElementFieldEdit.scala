@@ -6,7 +6,7 @@ import scala.collection.mutable.Buffer
 import qq.editor.binding.SkillFieldProperty
 
 class ElementFieldEdit[E, O <: api.SkillObject](
-  val page: ObjectPage,
+  val page: qq.editor.Page,
   val typ: FieldType[_],
   val fieldProperty: SkillFieldProperty[E],
   val addLabel: Boolean = true)

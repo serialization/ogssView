@@ -49,7 +49,7 @@ class ObjectPage(file0: qq.editor.File, settings0: qq.editor.Settings) extends q
    * this continuation to be called with the current object
    */
   val objectSelectionContinuation: api.SkillObject ⇒ Unit = null
-  val objectSelectionCancelContinuation: api.SkillObject ⇒ Unit = null
+  val objectSelectionCancelContinuation: Unit ⇒ Unit = null
   /** Title for object selection */
   val objectSelectionTitle: String = ""
 
@@ -263,7 +263,7 @@ class ObjectPage(file0: qq.editor.File, settings0: qq.editor.Settings) extends q
    */
   def select(title: String,
              onAccept: api.SkillObject ⇒ Unit,
-             onCancel: api.SkillObject ⇒ Unit): Unit = {
+             onCancel: Unit ⇒ Unit): Unit = {
     val accept = Action("Ok") {
       try {
         onAccept(currentView.obj)
@@ -276,7 +276,7 @@ class ObjectPage(file0: qq.editor.File, settings0: qq.editor.Settings) extends q
     }
     val cancel = Action("Cancel") {
       try {
-        onCancel(currentView.obj)
+        onCancel(())
         tabbedPane.removePage(index)
       } catch {
         case e: Exception ⇒
@@ -293,6 +293,6 @@ class ObjectPage(file0: qq.editor.File, settings0: qq.editor.Settings) extends q
   }
 
   updateVisibility
-  title = "Types"
+  title = "Objects"
   content = qq.util.Swing.VBoxD(toolBar, objSelectTitle, mainContent, objSelectButtons)
 }

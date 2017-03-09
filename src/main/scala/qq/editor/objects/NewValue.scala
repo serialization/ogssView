@@ -8,6 +8,14 @@ import scala.collection.mutable.ArrayBuffer
 import scala.collection.mutable.HashSet
 import scala.collection.mutable.HashMap
 import qq.editor.binding.PromptSkillFieldProperty
+import qq.editor.Page
+import swing.Action
+import swing.Label
+import swing.Button
+import swing.Swing.HGlue
+import swing.Swing.VGlue
+import qq.util.Swing.VBoxD
+import qq.util.Swing.HBoxD
 
 /**
  * Functions to create a new value of a ground type; either default or ask the user
@@ -15,9 +23,9 @@ import qq.editor.binding.PromptSkillFieldProperty
 object NewValue {
   def default[T](τ: api.FieldType[T], restrictions: HashSet[FieldRestriction]): T = {
     // default?
-    restrictions.find(_.isInstanceOf[DefaultRestriction[T]]) match {
-      case Some(r: DefaultRestriction[T]) => return r.value;
-      case None => ()
+    restrictions.foreach {
+      case r: DefaultRestriction[T] => return r.value;
+      case _ => ()
     }
     // range?
     restrictions.foreach { 
@@ -61,25 +69,76 @@ object NewValue {
     }
   }
 
-  def prompt[T](τ: api.FieldType[T], prompt: String, page: ObjectPage, restrictions: HashSet[FieldRestriction]): T = {
-    // special case for references TODO
-    val p = new PromptSkillFieldProperty(null, prompt,  default(τ, restrictions) , τ)
-    val dlg = new swing.Dialog()
-      val ed = new ElementFieldEdit(page, τ.asInstanceOf[FieldType[T]], p) 
-      dlg.contents = qq.util.Swing.VBoxD(
-           ed,
-           new swing.Button(swing.Action("Ok") {
-             ed.editField.componentToProperty()
-             dlg.close
-             }))
-      dlg.modal = true
-    dlg.open()
-    val result = p().asInstanceOf[T]
-    if (τ.isInstanceOf[StringType]) {
-      /* explicitly add strings to the string pool, otherwise serialisation
-       * fails when it is used as key of a map. */
-      page.file.s.String.add(result.asInstanceOf[String])
+
+
+  class PromptPage[T](file0: qq.editor.File,
+      settings0: qq.editor.Settings,
+      val prompt: String,
+      val τ: api.FieldType[T],
+      val restrictions: HashSet[FieldRestriction],
+      val onSelect: T=> Unit,
+      val onCancel: Unit => Unit
+      )
+  extends qq.editor.Page(file0, settings0) {
+      
+   def viewMenuItems = Seq() 
+   def typeMenuItems = Seq() 
+   def objectMenuItems = Seq() 
+    
+   val objSelectErrorLabel = new swing.Label("-") { foreground = java.awt.Color.red; visible = false }
+
+   val p = new PromptSkillFieldProperty(null, prompt,  default(τ, restrictions) , τ)
+   val ed = new ElementFieldEdit(this, τ.asInstanceOf[FieldType[T]], p) 
+    
+     val accept = Action("Ok") {
+      try {
+        ed.editField.componentToProperty()
+        onSelect(p())
+        tabbedPane.removePage(index)
+      } catch {
+        case e: Exception ⇒
+          objSelectErrorLabel.text = qq.util.binding.ValidationExceptionMessage(e)
+          objSelectErrorLabel.visible = true
+      }
     }
-    result
+    val cancel = Action("Cancel") {
+      try {
+        onCancel(())
+        tabbedPane.removePage(index)
+      } catch {
+        case e: Exception ⇒
+          objSelectErrorLabel.text = qq.util.binding.ValidationExceptionMessage(e)
+          objSelectErrorLabel.visible = true
+      }
+    }   
+    
+   title = "New Value"
+    content = VBoxD(
+        HBoxD(HGlue, new Label(s"<html><h1>$title</h1></html>"), HGlue),
+        VGlue,
+        HBoxD(HGlue, ed, HGlue),
+        VGlue,
+        HBoxD(HGlue, objSelectErrorLabel, HGlue, new Button(accept), new Button(cancel)))
   }
+  
+  def promptInPage[T](τ: api.FieldType[T],
+      prompt: String,
+      page: Page,
+      restrictions: HashSet[FieldRestriction],
+      onSelect: T=> Unit,
+      onCancel: Unit => Unit): Unit = {
+
+     τ.asInstanceOf[FieldType[T]] match {
+       case _: AnnotationType | _: UserType[_] ⇒
+         val sel = qq.editor.Main.newObjectTab(τ.asInstanceOf[api.Access[_]])
+         sel.select(prompt, onSelect, _ => onCancel(()))
+       case _ =>
+         val sel = new PromptPage(page.file, page.settings, prompt, τ, restrictions, onSelect, onCancel)  
+         page.tabbedPane.addPage(sel)
+         sel.show()
+     }
+    
+  }
+  
+  
 }

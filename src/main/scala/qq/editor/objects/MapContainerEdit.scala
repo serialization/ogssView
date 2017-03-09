@@ -10,7 +10,7 @@ import swing.Swing.HGlue
 import qq.util.FlattenedMap
 
 class MapContainerEdit[K, V, C[K, V] <: HashMap[K, V], O <: api.SkillObject](
-  val page: ObjectPage,
+  val page: qq.editor.Page,
   val pool: api.Access[O],
   val obj: O,
   val field: api.FieldDeclaration[C[K, V]])
@@ -142,9 +142,25 @@ class MapContainerEdit[K, V, C[K, V] <: HashMap[K, V], O <: api.SkillObject](
     val aa = new swing.Action("add") {
       icon = new qq.icons.AddListItemIcon(true)
       override def apply() {
-        // TODO nicer
-        val keys = for(τ <- groundTypes.dropRight(1)) yield NewValue.prompt(τ, "key", page, scala.collection.mutable.HashSet())
-        new qq.editor.UserMapInsert(page.file, pool, obj, field, keys, NewValue.default(groundTypes.last, scala.collection.mutable.HashSet()))
+        def selectKeys(todo: Seq[api.FieldType[_]], done: Seq[Any], onOk: Seq[Any] => Unit, onCancel: Unit => Unit): Unit = {
+           if (todo.size == 0) {
+             onOk(done)
+           } else {
+             NewValue.promptInPage[Any](todo.head.asInstanceOf[FieldType[Any]], s"Key ${done.size + 1} for new entry in $field",
+                 page, scala.collection.mutable.HashSet(),
+                 { case x: Any => selectKeys(todo.tail, done :+ x, onOk, onCancel)},
+                 onCancel)
+           }
+        }
+        selectKeys(groundTypes.dropRight(1), Seq(), 
+          keys => {
+            new qq.editor.UserMapInsert(page.file, pool, obj, field, keys, NewValue.default(groundTypes.last, scala.collection.mutable.HashSet()))
+            page.tabbedPane.addPage(page)
+          },
+          _ => page.tabbedPane.addPage(page)
+        )
+        page.tabbedPane.removePage(page.index)
+          
       }
     }
     lowerPart.contents += qq.util.Swing.HBoxD(0.0f,

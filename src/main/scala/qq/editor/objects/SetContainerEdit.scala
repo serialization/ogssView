@@ -1,17 +1,20 @@
 package qq.editor.objects
 
 import de.ust.skill.common.scala.api;
+import de.ust.skill.common.scala.internal.FieldDeclaration;
 import de.ust.skill.common.scala.internal.fieldTypes.SingleBaseTypeContainer;
+import de.ust.skill.common.scala.internal.fieldTypes.FieldType;
 import scala.collection.mutable.HashSet;
 
 class SetContainerEdit[E, C[E] <: HashSet[E], O <: api.SkillObject](
-  val page: ObjectPage,
+  val page: qq.editor.Page,
   val pool: api.Access[O],
   val obj: O,
-  val field: api.FieldDeclaration[C[E]],
-  val getNewElement: (() ⇒ E) = null)
+  val field: api.FieldDeclaration[C[E]])
     extends swing.BoxPanel(swing.Orientation.Vertical) {
 
+  private val groundType = field.t.asInstanceOf[SingleBaseTypeContainer[_, _]].groundType.asInstanceOf[FieldType[E]]
+  
   private var firstIndex = 0
   private val pageSize = qq.editor.Main.settings.editCollectionPageSize()
 
@@ -110,7 +113,7 @@ class SetContainerEdit[E, C[E] <: HashSet[E], O <: api.SkillObject](
       val fprop = new qq.editor.binding.SetContainerField(null, page.file, pool, obj, field, key)
       val fed = new ElementFieldEdit(
         page,
-        field.t.asInstanceOf[SingleBaseTypeContainer[_, _]].groundType,
+        groundType,
         fprop)
       val ra = new swing.Action("remove") {
         icon = new qq.icons.RemoveListItemIcon(true)
@@ -128,7 +131,14 @@ class SetContainerEdit[E, C[E] <: HashSet[E], O <: api.SkillObject](
     val aa = new swing.Action("add") {
       icon = new qq.icons.AddListItemIcon(true)
       override def apply() {
-        new qq.editor.UserSetInsert(page.file, pool, obj, field, getNewElement())
+        NewValue.promptInPage(groundType, s"New element for set ${field.name}",
+            page, field.asInstanceOf[FieldDeclaration[_,_]].restrictions,
+            (x : E) => { 
+              new qq.editor.UserSetInsert(page.file, pool, obj, field, x)
+              page.tabbedPane.addPage(page)
+            },
+            _ =>  page.tabbedPane.addPage(page))
+          page.tabbedPane.removePage(page.index)
       }
     }
     lowerPart.contents += qq.util.Swing.HBoxD(0.0f,

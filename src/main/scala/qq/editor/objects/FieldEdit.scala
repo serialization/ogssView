@@ -9,7 +9,7 @@ import scala.collection.mutable.HashMap
 import qq.editor.binding.SkillFieldProperty
 
 class FieldEdit[F, O <: api.SkillObject](
-  val page: ObjectPage,
+  val page: qq.editor.Page,
   val pool: api.Access[O],
   val obj: O,
   val field: api.FieldDeclaration[F])
@@ -31,8 +31,7 @@ class FieldEdit[F, O <: api.SkillObject](
         () ⇒ NewValue.default(c.groundType, restrictions))
     case c: SetType[e] ⇒ 
       contents += new SetContainerEdit(page, pool, obj,
-        field.asInstanceOf[api.FieldDeclaration[HashSet[e]]],
-        () ⇒ NewValue.prompt(c.groundType,"New entry:",page, restrictions))       
+        field.asInstanceOf[api.FieldDeclaration[HashSet[e]]])       
     case c: ConstantLengthArray[f] ⇒
       contents += new IndexedContainerEdit(page, pool, obj,
         field.asInstanceOf[api.FieldDeclaration[Buffer[f]]],

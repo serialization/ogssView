@@ -7,7 +7,7 @@ import swing.Swing.HGlue
 
 /** display a value of ground type; references get a expandable pane that shows their referent */
 class GroundValueLabel(
-  val page: ObjectPage,
+  val page: qq.editor.Page,
   val typ: api.FieldType[_],
   val value: Any)
     extends swing.BoxPanel(swing.Orientation.Vertical) {
