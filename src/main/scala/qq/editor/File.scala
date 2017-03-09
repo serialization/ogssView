@@ -114,35 +114,35 @@ class File(fn0: String) {
     var o = if (id > 0) {
       val bp = pool.asInstanceOf[internal.StoragePool[T, B]].basePool
       if (id > bp.size) {
-        throw new Exception(s"object does not exist: $pool#$id")
+        throw new qq.util.binding.RestrictionException(s"No such object: $pool#$id")
       }
       bp(id - 1)
     } else if (id < 0) {
       createdObjects(-1 - id)
     } else {
-      throw new Exception(s"object does not exist: $pool#$id")
+      throw new qq.util.binding.RestrictionException(s"No such object: $pool#$id")
     }
     if (s(o.getTypeName) == pool || superTypes(s(o.getTypeName)).contains(pool)) {
       o
     } else {
-      throw new Exception(s"object does not exist: $pool#$id")
+      throw new qq.util.binding.RestrictionException(s"No such object: $pool#$id")
     }
   }
 
   def objOfId(x: String): api.SkillObject = {
+    val xt = x.trim()
     if (x.trim().equals("(null)")) return null
-    import qq.editor.queries.parser._;
-
-    val tokens = try { Lexer(x) } catch {
-      case _: Exception ⇒ throw new Exception("format error, expected format type#number")
+    val xts = xt.split("#")
+    if (xts.size != 2) throw new qq.util.binding.RestrictionException("format error, expected format type#number")
+    val pn = xts(0)
+    val id = try Integer.parseInt(xts(1)) catch {
+      case _: java.lang.NumberFormatException ⇒ throw new qq.util.binding.RestrictionException("format error, expected format type#number")
     }
-    if (tokens.size != 1) throw new Exception("format error, expected format type#number")
-    tokens.head match {
-      case ObjLit(pn, id) ⇒
-        objOfId(s(pn), id)
-      case _ ⇒ throw new Exception("format error, expected format type#number")
+    val pool = try { s(pn) } catch {
+      case e: java.util.NoSuchElementException ⇒
+        throw new qq.util.binding.RestrictionException(s"Unknown type in $pn#$id")
     }
-
+    objOfId(s(pn), id)
   }
 
   def idOfObj(o: api.SkillObject): String = {

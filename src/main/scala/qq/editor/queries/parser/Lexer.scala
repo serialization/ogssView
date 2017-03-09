@@ -59,12 +59,12 @@ object Lexer extends RegexParsers {
   def gt: Parser[GT] = ">".r ^^ { _ ⇒ new GT() }
   def gte: Parser[GTE] = ">=".r ^^ { _ ⇒ new GTE() }
   def pound: Parser[Pound] = "#".r ^^ { _ ⇒ new Pound() }
-  def typeKwd: Parser[TypeKwd] = "type".r ^^ { _ ⇒ new TypeKwd() }
-  def directTypeKwd: Parser[DirectTypeKwd] = "(?i)directtype".r ^^ { _ ⇒ new DirectTypeKwd() }
-  def filterKwd: Parser[FilterKwd] = "(?i)filter".r ^^ { _ ⇒ new FilterKwd() }
-  def unionKwd: Parser[UnionKwd] = "(?i)union".r ^^ { _ ⇒ new UnionKwd() }
-  def trueKwd: Parser[TrueKwd] = "(?i)true".r ^^ { _ ⇒ new TrueKwd() }
-  def falseKwd: Parser[FalseKwd] = "(?i)false".r ^^ { _ ⇒ new FalseKwd() }
+  def typeKwd: Parser[TypeKwd] = "type\\b".r ^^ { _ ⇒ new TypeKwd() }
+  def directTypeKwd: Parser[DirectTypeKwd] = "(?i)directtype\\b".r ^^ { _ ⇒ new DirectTypeKwd() }
+  def filterKwd: Parser[FilterKwd] = "(?i)filter\\b".r ^^ { _ ⇒ new FilterKwd() }
+  def unionKwd: Parser[UnionKwd] = "(?i)union\\b".r ^^ { _ ⇒ new UnionKwd() }
+  def trueKwd: Parser[TrueKwd] = "(?i)true\\b".r ^^ { _ ⇒ new TrueKwd() }
+  def falseKwd: Parser[FalseKwd] = "(?i)false\\b".r ^^ { _ ⇒ new FalseKwd() }
 
   private def ucnre = "\\\\u[0-9a-fA-F]{4}|\\\\U[0-9a-fA-F]{8}"
   def ident: Parser[Ident] = (

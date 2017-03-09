@@ -53,8 +53,7 @@ class TextEdit[T](p: Property[T],
         }
       } catch {
         case e: Exception ⇒
-          // TODO better message for known cases
-          Left(List(e.toString() + " " + e.getMessage))
+          Left(List(ValidationExceptionMessage(e)))
       }
   }
 

@@ -11,7 +11,6 @@ import qq.editor.binding.PromptSkillFieldProperty
 
 /**
  * Functions to create a new value of a ground type; either default or ask the user
- * TODO restrictions
  */
 object NewValue {
   def default[T](τ: api.FieldType[T], restrictions: HashSet[FieldRestriction]): T = {

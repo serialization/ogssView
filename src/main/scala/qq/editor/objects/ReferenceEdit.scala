@@ -16,7 +16,7 @@ class ReferenceEdit(val p: SkillFieldProperty[api.SkillObject], val page: Object
 
   val mnuSelect = new swing.MenuItem(swing.Action("Select object") {
           val selection = qq.editor.Main.newObjectTab(p.groundType.asInstanceOf[api.Access[_]])
-          selection.select(s"change ${p.name}",
+          selection.select(s"Select new ${p.description}",
               {o =>
                 p := o           
                 page.tabbedPane.addPage(page)

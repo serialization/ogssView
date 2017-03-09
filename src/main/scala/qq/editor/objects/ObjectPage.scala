@@ -31,7 +31,7 @@ class ObjectPage(file0: qq.editor.File, settings0: qq.editor.Settings) extends q
       /** objects that are explicitly requested to be shown */
       val showAlso: mutable.HashSet[api.SkillObject] = new mutable.HashSet()) {
     def this(obj0: api.SkillObject, showAlso0: Iterable[api.SkillObject]) =
-      this(obj0, new mutable.HashSet[api.SkillObject]() { this ++= showAlso0})
+      this(obj0, new mutable.HashSet[api.SkillObject]() { this ++= showAlso0 })
   }
 
   /** the object that is currently shown */
@@ -55,7 +55,7 @@ class ObjectPage(file0: qq.editor.File, settings0: qq.editor.Settings) extends q
 
   /** the graph panel */
   var graph: ObjectGraph[_] = null
-  
+
   /** show an object (internal, for goTo, goBack, goForward) */
   private def _goTo(v: View): Unit = {
     currentView = v
@@ -67,7 +67,7 @@ class ObjectPage(file0: qq.editor.File, settings0: qq.editor.Settings) extends q
     objGraph.contents.clear()
     graph = new ObjectGraph(this, v.obj)
     objGraph.contents += graph
-    
+
     goBack.enabled = previousView.length > 0
     goForward.enabled = nextView.length > 0
   }
@@ -132,25 +132,24 @@ class ObjectPage(file0: qq.editor.File, settings0: qq.editor.Settings) extends q
       updateVisibility
     }
   }
-  
+
   val showTypeOfThisObject = new swing.Action("Show Type of Current Object") {
     accelerator = Some(javax.swing.KeyStroke.getKeyStroke("ctrl T"))
     mnemonic = swing.event.Key.T.id
     override def apply() = {
       qq.editor.Main.newTypeTab(file.s(currentView.obj.getTypeName))
-    }  
-  }  
- 
+    }
+  }
+
   val deleteThisObject = new swing.Action("Delete Current Object") {
     accelerator = Some(javax.swing.KeyStroke.getKeyStroke("ctrl D"))
     mnemonic = swing.event.Key.D.id
     override def apply() = {
       new qq.editor.UserDeleteObject(
-          file, file.s(currentView.obj.getTypeName).asInstanceOf[api.Access[api.SkillObject]],currentView.obj)
-    }  
-  }  
- 
- 
+        file, file.s(currentView.obj.getTypeName).asInstanceOf[api.Access[api.SkillObject]], currentView.obj)
+    }
+  }
+
   /* menu entries for the main window */
   override def viewMenuItems = Seq(
     new swing.MenuItem(goBack),
@@ -195,32 +194,32 @@ class ObjectPage(file0: qq.editor.File, settings0: qq.editor.Settings) extends q
       }
     }),
     scala.swing.Swing.HGlue,
-new swing.Button(swing.Action("ps to clipboard") {
-  if (graph != null){
-      val clipboard = java.awt.Toolkit.getDefaultToolkit.getSystemClipboard
-      val sel = new java.awt.datatransfer.StringSelection(graph.graph.toPs(graph.size))
-      clipboard.setContents(sel, sel)
-  }}),
-new swing.Button(swing.Action("random obj") {
-  /* pick random object, expand all neighbours */  
-  import de.ust.skill.common.scala.internal.StoragePool
-    val nobj = file.s.map { x => x.asInstanceOf[StoragePool[_,_]].staticInstances.size }.sum
-    var pick = math.floor(math.random * nobj).toInt
-    for (pool <- file.s) {
-      val p = pool.asInstanceOf[StoragePool[_,_]]
-      if (0 <= pick && pick < p.staticInstances.size) {
-        file.typeSettings(pool).expanded ++= pool.fields.map(Seq(_))
-        for (s <- file.superTypes(pool)) {
-          file.typeSettings(s).expanded ++= s.fields.map(Seq(_))
-        }
-        goTo(p.staticInstances.take(pick).next.asInstanceOf[api.SkillObject])
-        pick -= 1 //
+    new swing.Button(swing.Action("ps to clipboard") {
+      if (graph != null) {
+        val clipboard = java.awt.Toolkit.getDefaultToolkit.getSystemClipboard
+        val sel = new java.awt.datatransfer.StringSelection(graph.graph.toPs(graph.size))
+        clipboard.setContents(sel, sel)
       }
-      pick -= p.staticInstances.size
-    }
+    }),
+    new swing.Button(swing.Action("random obj") {
+      /* pick random object, expand all neighbours */
+      import de.ust.skill.common.scala.internal.StoragePool
+      val nobj = file.s.map { x ⇒ x.asInstanceOf[StoragePool[_, _]].staticInstances.size }.sum
+      var pick = math.floor(math.random * nobj).toInt
+      for (pool ← file.s) {
+        val p = pool.asInstanceOf[StoragePool[_, _]]
+        if (0 <= pick && pick < p.staticInstances.size) {
+          file.typeSettings(pool).expanded ++= pool.fields.map(Seq(_))
+          for (s ← file.superTypes(pool)) {
+            file.typeSettings(s).expanded ++= s.fields.map(Seq(_))
+          }
+          goTo(p.staticInstances.take(pick).next.asInstanceOf[api.SkillObject])
+          pick -= 1 //
+        }
+        pick -= p.staticInstances.size
+      }
 
-  })
-  )
+    }))
   val objSearch = new SearchResults(this)
   val objEdit = HBoxD()
   val objGraph = HBoxT()
@@ -256,29 +255,43 @@ new swing.Button(swing.Action("random obj") {
   val objSelectButtons = HBoxD()
   objSelectTitle.visible = false
   objSelectButtons.visible = false
+  val objSelectErrorLabel = new swing.Label("-") { foreground = java.awt.Color.red; visible = false }
 
-  /** use this page to select an object. Show title on top, buttons on bottom. When
-   *  the user presses the button, the on… handler is called and the page is closed */
+  /**
+   * use this page to select an object. Show title on top, buttons on bottom. When
+   *  the user presses the button, the on… handler is called and the page is closed
+   */
   def select(title: String,
-      onAccept: api.SkillObject => Unit,
-      onCancel: api.SkillObject => Unit): Unit = {
+             onAccept: api.SkillObject ⇒ Unit,
+             onCancel: api.SkillObject ⇒ Unit): Unit = {
     val accept = Action("Ok") {
-      onAccept(currentView.obj)
-      tabbedPane.removePage(index)
+      try {
+        onAccept(currentView.obj)
+        tabbedPane.removePage(index)
+      } catch {
+        case e: Exception ⇒
+          objSelectErrorLabel.text = qq.util.binding.ValidationExceptionMessage(e)
+          objSelectErrorLabel.visible = true
+      }
     }
     val cancel = Action("Cancel") {
-      onCancel(currentView.obj)
-      tabbedPane.removePage(index)
+      try {
+        onCancel(currentView.obj)
+        tabbedPane.removePage(index)
+      } catch {
+        case e: Exception ⇒
+          objSelectErrorLabel.text = qq.util.binding.ValidationExceptionMessage(e)
+          objSelectErrorLabel.visible = true
+      }
     }
     objSelectTitle.contents.clear()
-    objSelectTitle.contents ++= Seq(HGlue, new Label(title), HGlue)
+    objSelectTitle.contents ++= Seq(HGlue, new Label(s"<html><h1>$title</h1></html>"), HGlue)
     objSelectTitle.visible = true
     objSelectButtons.contents.clear()
-    objSelectButtons.contents ++= Seq(HGlue, new Button(accept), new Button(cancel))
+    objSelectButtons.contents ++= Seq(HGlue, objSelectErrorLabel, HGlue, new Button(accept), new Button(cancel))
     objSelectButtons.visible = true
   }
-  
-  
+
   updateVisibility
   title = "Types"
   content = qq.util.Swing.VBoxD(toolBar, objSelectTitle, mainContent, objSelectButtons)
