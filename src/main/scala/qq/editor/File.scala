@@ -5,13 +5,13 @@ import de.ust.skill.common.scala.internal;
 import scala.collection.mutable;
 
 /** Represents a skill file while opened in the editor */
-class File(fn0: String) {
+class File(fn0: java.nio.file.Path) {
   /** The name of the skill file this is about (may change with save as) */
   var fileName = fn0
 
   private def pathAndName = {
     val dirnamepattern = "^(?:(.*)[\\\\/])?([^\\\\/]+)$".r
-    fileName match { case dirnamepattern(d, n) ⇒ (d, n) }
+    fileName.toAbsolutePath().toString() match { case dirnamepattern(d, n) ⇒ (d, n) }
   }
 
   def fileNameOnly: String = pathAndName._2

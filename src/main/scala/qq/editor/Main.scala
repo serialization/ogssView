@@ -2,7 +2,9 @@ package qq.editor
 
 import swing._;
 import event._;
-
+import java.nio.file.Files
+import java.nio.file.Paths
+import java.nio.file.StandardCopyOption
 import de.ust.skill.common.scala.api;
 
 object Main extends SimpleSwingApplication {
@@ -70,6 +72,7 @@ object Main extends SimpleSwingApplication {
         if (x != Dialog.Result.Yes) throw new Exception()
       }
       while (tabs.pages.length > 0) tabs.removePage(0)
+      // no file.s.cles() because that will save the modification
       file = null
       onFileChange.fire(file)
     }
@@ -99,7 +102,7 @@ object Main extends SimpleSwingApplication {
     }
   }
   /** open a file */
-  private def open_(fileName: String) = {
+  private def open_(fileName: java.nio.file.Path) = {
     file = new File(fileName)
     undoMenuItem.action = file.undoManager.undoAction
     redoMenuItem.action = file.undoManager.redoAction
@@ -115,14 +118,23 @@ object Main extends SimpleSwingApplication {
       fc.fileFilter = new javax.swing.filechooser.FileNameExtensionFilter("SKilL Files", "sf")
       val result = fc.showOpenDialog(null)
       if (result == FileChooser.Result.Approve) {
-        open_(fc.selectedFile.toString())
+        try {
+          open_(Paths.get(fc.selectedFile.toURI()))
+        } catch {
+          case e: Exception ⇒
+            val x = Dialog.showConfirmation(null,
+              s"""Could not open ${file.fileNameOnly}\n
+              ${e.toString()}""",
+              "Error saving " + file.fileNameOnly,
+              Dialog.Options.Default,
+              Dialog.Message.Error, null)
+        }
       }
     }
   }
   private def save_() {
     file.deletedObjects.foreach(file.s.delete(_))
-    file.s.changePath(java.nio.file.Paths.get(file.fileName + "~"))
-    file.s.flush()
+    file.s.flush() // if exception here, then problem with redo of delete :( 
     file.deletedObjects.clear()
     file.undoManager.discardAllEdits()
     /* there's no undo/redo after discardAllEdits, but the buttons are somehow not updated*/
@@ -137,16 +149,67 @@ object Main extends SimpleSwingApplication {
       enabled = file != null && file.isModified
     }
     onFileChange.strong += (_ ⇒ setEnabled)
-    onFileChange.strong += (file ⇒ if (file != null) file.onEdit.strong += (_ ⇒ setEnabled))
+    onFileChange.strong += (file ⇒ if (file != null) file.onModifiednessChange.strong += (_ ⇒ setEnabled))
     override def apply() {
-      save_
+      // file is corrupted when truncate hits this problem: http://bugs.java.com/view_bug.do?bug_id=4724038
+      // also when the editor makes some errors (uninitialised fields? strings in map keys)
+      // therefore: at least make a backup and try to restore it (will not work in windows because the file is still locked)
+      var backupMade = false
+      var backupRestored = false
+      try {
+        val origPath = file.fileName
+        val backupPath = Paths.get(file.fileName.toString() + "~")
+        Files.copy(origPath, backupPath, StandardCopyOption.COPY_ATTRIBUTES, StandardCopyOption.REPLACE_EXISTING)
+        backupMade = true
+        try {
+          save_
+        } catch {
+          case e: Exception ⇒
+            try {
+              java.nio.file.Files.copy(backupPath, origPath, StandardCopyOption.COPY_ATTRIBUTES, StandardCopyOption.REPLACE_EXISTING)
+              backupRestored = true
+            } catch {
+              case e: Exception ⇒ ()
+            }
+            throw e
+        }
+      } catch {
+        case e: Exception ⇒
+          val x = Dialog.showConfirmation(null,
+            s"""Error saving ${file.fileNameOnly}: ${
+              if (!backupMade) "backup could not be created"
+              else if (!backupRestored) s"file is possibly corrupted, backup ${file.fileName + "~"} could not be restored"
+            }\n
+            ${e.toString()}""",
+            "Error saving " + file.fileNameOnly,
+            Dialog.Options.Default,
+            Dialog.Message.Error, null)
+      }
     }
   }
   private val actSaveAs = new Action("Save As …") {
     mnemonic = swing.event.Key.A.id
     onFileChange.strong += (file ⇒ enabled = file != null)
     override def apply() {
-      /* TODO save file */
+      val fc = new FileChooser()
+      fc.fileFilter = new javax.swing.filechooser.FileNameExtensionFilter("SKilL Files", "sf")
+      val result = fc.showSaveDialog(null)
+      if (result == FileChooser.Result.Approve) {
+        try {
+          file.fileName = Paths.get(fc.selectedFile.toURI())
+          file.s.changePath(file.fileName)
+          save_
+          /* TODO damn, does not work after save as anymore when empty types are removed in between */
+        } catch {
+          case e: Exception ⇒
+            val x = Dialog.showConfirmation(null,
+              s"""Could not save ${file.fileNameOnly}\n
+              ${e.toString()}""",
+              "Error saving " + file.fileNameOnly,
+              Dialog.Options.Default,
+              Dialog.Message.Error, null)
+        }
+      }
     }
   }
   private val actClose = new Action("Close") {
@@ -281,6 +344,6 @@ object Main extends SimpleSwingApplication {
   }
 
   // TODO argv[1]
-  open_("C:\\Users\\m\\stud\\dt\\testinp\\time.iml.sf")
+  open_(Paths.get("C:\\Users\\m\\stud\\dt\\testinp\\bc.iml.sf"))
 
 }
