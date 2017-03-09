@@ -94,14 +94,13 @@ class TypeEdit(val page: qq.editor.types.TypePage,
         }
       }
     }
-    for (
-      rs ← empty.api.internal.FileParser.typeRestrictions.get(skillType.asInstanceOf[de.ust.skill.common.scala.internal.StoragePool[_, _]]);
-      r ← rs
-    ) {
-      contents += HBoxT(
-        new qq.util.PlainLabel("@" + r.toString()) { foreground = java.awt.Color.red },
-        HGlue)
-    }
+    //for (
+    //  r ← …type restictions…
+    //) {
+    //  contents += HBoxT(
+    //   new qq.util.PlainLabel("@" + r.toString()),
+    //    HGlue)
+    //}
     file.parentType.get(skillType) match {
       case Some(parentType) ⇒
         contents += HBoxT(

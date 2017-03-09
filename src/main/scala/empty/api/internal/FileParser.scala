@@ -33,9 +33,6 @@ import _root_.empty.api.SkillFile
  */
 object FileParser extends SkillFileParser[SkillFile] {
 
-  //mr: hack for keeping restrictions accessible (should go to storage pool, but …)
-  val typeRestrictions: WeakHashMap[StoragePool[_, _], HashSet[TypeRestriction]] = WeakHashMap()
-
   // TODO we can make this faster using a hash map (for large type systems)
   def newPool(
     typeId: Int,
@@ -49,9 +46,6 @@ object FileParser extends SkillFileParser[SkillFile] {
         else
           superPool.makeSubPool(name, typeId)
     }
-    println(name + " " + rest)
-    //mr: hack for keeping restrictions accessible (should go to storage pool, but …)
-    typeRestrictions(result) = rest
     result
   }
 
