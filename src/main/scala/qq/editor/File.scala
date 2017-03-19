@@ -110,8 +110,7 @@ class File(fn0: java.nio.file.Path) {
     for (t ← s if !(parentType contains t)) rootTypes += t
   }
   updateTables
- 
-  
+
   /** baseType(a) = b if b ∈ parentType*(a) ∩ rootTypes */
   def baseType(a: api.Access[_ <: api.SkillObject]) = a.asInstanceOf[internal.StoragePool[_, _]].basePool.asInstanceOf[api.Access[_]]
   /** parentType+ */
@@ -123,7 +122,7 @@ class File(fn0: java.nio.file.Path) {
       Nil
     }
   }
-  
+
   def objOfId[T <: B, B <: api.SkillObject](pool: api.Access[T], id: Int): api.SkillObject = {
     var o = if (id > 0) {
       val bp = pool.asInstanceOf[internal.StoragePool[T, B]].basePool
@@ -159,13 +158,21 @@ class File(fn0: java.nio.file.Path) {
     objOfId(s(pn), id)
   }
 
-  def idOfObj(o: api.SkillObject): String = {
+  def idOfObj(o: api.SkillObject, stropped: Boolean = false): String = {
     if (o == null) {
       "(null)"
     } else if (de.ust.skill.common.scala.hacks.GetSkillId(o) == -1) {
-      s"${o.getTypeName}#${createdObjectId(o)}"
+      if (stropped) {
+        s"'${o.getTypeName}'#${createdObjectId(o)}"
+      } else {
+        s"${o.getTypeName}#${createdObjectId(o)}"
+      }
     } else {
-      o.prettyString
+      if (stropped) {
+        s"'${o.getTypeName}'#${de.ust.skill.common.scala.hacks.GetSkillId(o)}"
+      } else {
+        o.prettyString
+      }
     }
   }
   /** field definition and type that it belongs to for each field name */
@@ -173,7 +180,7 @@ class File(fn0: java.nio.file.Path) {
     (for (t ← s; f ← t.fields) yield (f.name, (t, f))).groupBy(_._1).mapValues(_.map(_._2))
 
   /* type and field settings */
-  val typeSettings: HashMap[api.Access[_], TypeSettings[_]] = new HashMap() 
+  val typeSettings: HashMap[api.Access[_], TypeSettings[_]] = new HashMap()
   for (t ← s) typeSettings(t) = new TypeSettings(t, this)
 
   val fieldSettings: Map[api.FieldDeclaration[_], FieldSettings[_, _]] =
@@ -184,17 +191,17 @@ class File(fn0: java.nio.file.Path) {
     s.flush()
     deletedObjects.clear()
     createdObjectId.clear()
-    createdObjects.clear()   
+    createdObjects.clear()
     // hash codes of Access[]es have changed
     updateTables
     val tss = new mutable.ListBuffer[TypeSettings[_]]()
-    for (t <- typeSettings.values) tss += t
+    for (t ← typeSettings.values) tss += t
     typeSettings.clear()
-    for (ts <- tss) { println(ts.typ); typeSettings(ts.typ) = ts}
+    for (ts ← tss) { println(ts.typ); typeSettings(ts.typ) = ts }
     // find deleted objects and fields
-    for ((t,s) <- typeSettings) {
-      if (t.asInstanceOf[internal.StoragePool[_,_]].cachedSize == 0) s.isDeleted = true
+    for ((t, s) ← typeSettings) {
+      if (t.asInstanceOf[internal.StoragePool[_, _]].cachedSize == 0) s.isDeleted = true
     }
-    for (fs <- fieldSettings.values) fs.checkDeleted()
+    for (fs ← fieldSettings.values) fs.checkDeleted()
   }
 }

@@ -33,8 +33,7 @@ class SearchResults(val page: ObjectPage)
   }
 
   val searchAction = new swing.Action("Search") {
-    override def apply() = {
-      if (queryEdit.isModified()) queryEdit.componentToProperty()
+    override def apply(): Unit = {
       try {
         query = qq.editor.queries.Query.parse(page.file, queryText())
         queryError.visible = false
@@ -59,8 +58,21 @@ class SearchResults(val page: ObjectPage)
       queryError.revalidate()
     }
   }
-  queryEdit.property.onChange.strong += (_ ⇒ searchAction())
+  queryText.onChange.strong += (_ ⇒  searchAction())
 
+  val searchButtonAction = new swing.Action("Search") {
+    override def apply(): Unit = {
+      if (queryEdit.isModified()) {
+        // when called from button: update property from text field and return; search is then called through property change handler
+        queryEdit.componentToProperty()
+        
+      } else {
+        // re-run search
+        searchAction()
+      }
+    }
+  }
+  
   val lblPagePos = new swing.Label("-")
 
   def showPage: Unit = {
@@ -140,7 +152,7 @@ class SearchResults(val page: ObjectPage)
   import qq.util.Swing._;
   import swing.Swing.HGlue
   contents += VBoxD(
-    HBoxD(queryEdit, new swing.Button(searchAction)),
+    HBoxD(queryEdit, new swing.Button(searchButtonAction)),
     queryError,
     HBoxD(HGlue, lblPagePos, HGlue, pgUpBtn, pgDnBtn),
     resultsPart)

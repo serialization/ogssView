@@ -47,7 +47,7 @@ object Main extends SimpleSwingApplication {
   def newObjectTab(o: api.SkillObject): qq.editor.objects.ObjectPage = {
     val page = new qq.editor.objects.ObjectPage(file, settings)
     tabs.addPage(page)
-    if (o != null) page.goTo(new page.View(o))
+    if (o != null) page.goTo(o)
     page.show()
     page
   }

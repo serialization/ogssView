@@ -74,18 +74,18 @@ class ObjectPage(file0: qq.editor.File, settings0: qq.editor.Settings) extends q
 
   /** run a query (will open first object found) */
   def find(q: String): Unit = {
+    // property change will execute query
     objSearch.queryText := q
-    objSearch.searchAction()
   }
   /** show a root object and potential other objects and update navigation */
   def goTo(v: View): Unit = {
     nextView.clear()
     if (currentView != null && v.obj != currentView.obj) previousView.push(currentView)
     _goTo(v)
-  }
+   }
   /** show an object */
   def goTo(o: api.SkillObject): Unit = {
-    find(file.idOfObj(o))
+    find(file.idOfObj(o, true))
   }
   /** show previously shown type */
   val goBack = new swing.Action("Back") {
