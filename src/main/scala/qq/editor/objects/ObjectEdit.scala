@@ -3,6 +3,8 @@ package qq.editor.objects
 import de.ust.skill.common.scala.api;
 import de.ust.skill.common.scala.internal;
 import de.ust.skill.common.scala.internal.fieldTypes;
+import swing.Label;
+import qq.util.Swing.VBoxD;
 
 /** Edit the fields of \c obj. Can be used as the expandable pane below a reference field */
 class ObjectEdit[P <: api.SkillObject](
@@ -15,10 +17,33 @@ class ObjectEdit[P <: api.SkillObject](
   contents ++= pool.allFields.filter(f => !page.file.fieldSettings(f).isDeleted) map {f=>    new FieldEdit(page, pool, obj, f) }
 
 }
-/** Top level version of ObjectEdit, comes with scroll bars  */
+/** Top level version of ObjectEdit, comes with scroll bars, title, and detects whether the object was deleted. */
 class TopObjectEdit[P <: api.SkillObject](
   val page: ObjectPage,
   val obj: P)
     extends qq.util.VScrollPane {
-  contents = qq.util.Swing.VBoxD(new ObjectEdit(page, obj), swing.Swing.VGlue)
+  
+  
+  def updateContents(): Unit = {
+    if (page.file.deletedObjects.contains(obj)) {
+      contents = VBoxD(
+          new Label(page.file.idOfObj(obj)),
+          new Label("this object has been deleted"), 
+          swing.Swing.VGlue)
+    }  else {
+      contents = VBoxD(
+          new Label(page.file.idOfObj(obj)),
+          new ObjectEdit(page, obj),
+          swing.Swing.VGlue)
+    }
+  }
+  // refresh contents when this object is deleted or re-created
+  val onEditHandler = (e: qq.editor.Edit[_]) => e match {
+    case c: qq.editor.CreateObject[_] if c.obj == obj => updateContents
+    case d: qq.editor.DeleteObject[_] if d.obj == obj => updateContents
+    case _ => ()
+  }
+  page.file.onEdit.weak += onEditHandler
+  
+  updateContents
 }

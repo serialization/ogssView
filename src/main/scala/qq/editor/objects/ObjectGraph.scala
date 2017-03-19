@@ -93,6 +93,12 @@ class ObjectGraph[O <: api.SkillObject](
   }
 
   def updateLayout: Unit = {
+    if (page.file.deletedObjects.contains(root.skillObject)) {
+      // clear all if deleted
+      graph = new qq.graph.Graph(page.file, this, page.settings.graphLayout)
+      peer.removeAll()
+      return
+    }
     val t0 = System.nanoTime()
     visibleNodes.clear()
     expandedNodes.clear()
