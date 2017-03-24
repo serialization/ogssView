@@ -81,25 +81,12 @@ object Main extends SimpleSwingApplication {
 
   /** what to show after file is opened*/
   private def showDefault(): Unit = {
-    /* open the first object in the smallest root pool */
+    /* first type?*/
     try {
-      newObjectTab(file.rootTypes.filter(_.size >= 1).toSeq.sortBy(_.size).head)
+      newTypeTab(file.s.head)
     } catch {
       case _: Exception ⇒
-        /* from the first non-empty pool?*/
-        try {
-          newObjectTab(file.s.filter(_.size >= 1).head)
-        } catch {
-          case _: Exception ⇒
-            /* first type?*/
-            try {
-              newTypeTab(file.s.head)
-            } catch {
-              case _: Exception ⇒
-              /* oh well, start empty*/
-            }
-
-        }
+      /* oh well, start empty*/
     }
   }
   /** open a file */
