@@ -131,11 +131,11 @@ class TypePage(file0: qq.editor.File, settings0: qq.editor.Settings)
     new swing.CheckMenuItem("") {
       action = toggleTreeVisible
       peer.setModel(treeVisibleModel)
-    },
+    }/*, type graph currently not available
     new swing.CheckMenuItem("") {
       action = toggleGraphVisible
       peer.setModel(graphVisibleModel)
-    })
+    }*/)
   override def typeMenuItems = Seq(
     new swing.MenuItem(gotoParentType))
   override def objectMenuItems = Seq(
@@ -157,10 +157,12 @@ class TypePage(file0: qq.editor.File, settings0: qq.editor.Settings)
       action = toggleTreeVisible
       peer.setModel(treeVisibleModel)
     },
+    /* type graph currently not available
     new swing.ToggleButton("") {
+    
       action = toggleGraphVisible
       peer.setModel(graphVisibleModel)
-    },
+    },*/
     scala.swing.Swing.HGlue)
   val typeTree = new TypeTree(this)
   val typeEdit = qq.util.Swing.HBoxT()
