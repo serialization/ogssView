@@ -21,6 +21,9 @@ class TypeNameControl(val page: qq.editor.types.TypePage,
             new swing.MenuItem(swing.Action("Go to") { page.goTo(τ) }),
             new swing.MenuItem(swing.Action("Open in new tab") {
               qq.editor.Main.newTypeTab(τ)
+            }),
+            new swing.MenuItem(swing.Action("Show instances") {
+              qq.editor.Main.newObjectTab(τ)
             }))
         }.peer)
     }
