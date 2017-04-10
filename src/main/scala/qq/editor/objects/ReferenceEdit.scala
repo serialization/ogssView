@@ -19,7 +19,7 @@ class ReferenceEdit(val p: SkillFieldProperty[api.SkillObject], val page: qq.edi
       case u: api.Access[_] ⇒ qq.editor.Main.newObjectTab(u)
       case _                ⇒ qq.editor.Main.newObjectTab()
     }
-    selection.select(s"Select new ${p.description}",
+    selection.select(s"Select new value for ${p.description}",
       { o ⇒
         p := o
         page.tabbedPane.addPage(page)

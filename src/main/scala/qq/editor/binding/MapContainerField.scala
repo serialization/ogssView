@@ -22,11 +22,11 @@ class MapContainerField[O <: api.SkillObject, K, V, C[K, V] <: HashMap[K, V], G]
 
   def groundType = groundType0
 
-  // TODO there should be a function for map-ket to text
-  description = s"""${field.t} ${field.name} [$index.map {
+  // TODO there should be a function for map-key to text
+  description = s"""${groundType} ${field.name}(${index.map {
                         case o: api.SkillObject => file.idOfObj(o)
                         case x => x
-                      }.mkString(", ")}] in ${file.idOfObj(obj)}"""
+                      }.mkString(", ")}) in ${file.idOfObj(obj)}"""
   // no field restrictions: restrictions ++= Restrictions(field)
   restrictions ++= Restrictions(file, groundType)
 

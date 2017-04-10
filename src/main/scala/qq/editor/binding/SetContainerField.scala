@@ -18,6 +18,11 @@ class SetContainerField[O <: api.SkillObject, C[F] <: HashSet[F], F](
 
   def groundType = field.t.asInstanceOf[SingleBaseTypeContainer[C[F],F]].groundType
   
+  description = s"""$groundType ${field.name}(${key match {
+                        case o: api.SkillObject => file.idOfObj(o)
+                        case x => x
+                      }}) in ${file.idOfObj(obj)}"""
+  
   var key_ = key
   restrictions ++= Restrictions(field)
   restrictions ++= Restrictions(file, field.t.asInstanceOf[SingleBaseTypeContainer[_,_]].groundType.asInstanceOf[FieldType[F]]) 

@@ -65,7 +65,7 @@ object NewValue {
         (new HashMap[k, v]()).asInstanceOf[T]
       case ConstantI8(_) | ConstantI16(_) | ConstantI32(_) | ConstantI64(_)
         | ConstantV64(_) ⇒
-        throw new Exception(s"constant field typ $τ does not have a default value")
+        throw new Exception(s"constant field type $τ does not have a default value")
     }
   }
 

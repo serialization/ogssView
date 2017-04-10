@@ -16,7 +16,7 @@ class IndexedContainerField[O <: api.SkillObject, C[F] <: Buffer[F], F](
   val index: Int)
     extends SkillFieldProperty[F](owner0, index.toString(), obj.get(field)(index)) {
 
-  description = s"${field.t} ${field.name} [$index] in ${file.idOfObj(obj)}"  
+  description = s"${groundType} ${field.name}($index) in ${file.idOfObj(obj)}"  
   
   def groundType = field.t.asInstanceOf[SingleBaseTypeContainer[C[F],F]].groundType
 
