@@ -106,14 +106,16 @@ object Main extends SimpleSwingApplication {
       fc.fileFilter = new javax.swing.filechooser.FileNameExtensionFilter("SKilL Files", "sf")
       val result = fc.showOpenDialog(null)
       if (result == FileChooser.Result.Approve) {
+        val file = Paths.get(fc.selectedFile.toURI())
         try {
-          open_(Paths.get(fc.selectedFile.toURI()))
+          open_(file)
         } catch {
           case e: Exception ⇒
+            val fileName = file.toAbsolutePath.toString()
             val x = Dialog.showConfirmation(null,
-              s"""Could not open ${file.fileNameOnly}\n
+              s"""Could not open ${fileName}\n
               ${e.toString()}""",
-              "Error saving " + file.fileNameOnly,
+              "Error saving " + fileName,
               Dialog.Options.Default,
               Dialog.Message.Error, null)
         }
