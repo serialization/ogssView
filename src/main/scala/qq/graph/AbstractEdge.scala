@@ -48,7 +48,7 @@ case class SkillFieldEdge[T](
   }
   override def textLabel(file: File) = field.name
   
-  override def idealDirection(file: File) = file.fieldSettings(field).prefEdgeDirection()
+  override def idealDirection(file: File) = file.fieldPreferences(field).prefEdgeDirection()
   
  }
   
@@ -75,7 +75,7 @@ case class ListMemberEdge[E, C[E] <: Buffer[E]](
   override def textLabel(file: File) = index.toString()
   
   // TODO do collection members share the ideal direction?
-  override def idealDirection(file: File) = file.fieldSettings(field).prefEdgeDirection()
+  override def idealDirection(file: File) = file.fieldPreferences(field).prefEdgeDirection()
 }
 
 case class SetMemberEdge[E, C[E] <: HashSet[E]](
@@ -98,7 +98,7 @@ case class SetMemberEdge[E, C[E] <: HashSet[E]](
   override def textLabel(file: File) = ""
   
   // TODO do collection members share the ideal direction?
-  override def idealDirection(file: File) = file.fieldSettings(field).prefEdgeDirection()
+  override def idealDirection(file: File) = file.fieldPreferences(field).prefEdgeDirection()
 }
 
 case class MapMemberEdge[K, V, C[K,V] <: HashMap[K,V]](
@@ -128,5 +128,5 @@ case class MapMemberEdge[K, V, C[K,V] <: HashMap[K,V]](
          }.mkString(", ")
   
   // TODO do collection members share the ideal direction?
-  override def idealDirection(file: File) = file.fieldSettings(field).prefEdgeDirection()
+  override def idealDirection(file: File) = file.fieldPreferences(field).prefEdgeDirection()
 }

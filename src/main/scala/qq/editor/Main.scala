@@ -7,27 +7,30 @@ import java.nio.file.Paths
 import java.nio.file.StandardCopyOption
 import de.ust.skill.common.scala.api;
 
+/**
+ * State of the whole editor
+ * */
 object Main extends SimpleSwingApplication {
 
   // ugh, buttons have background again with sys UI. And font is very small.
   // And the ugly anti-aliased fonts are still there
   // javax.swing.UIManager.setLookAndFeel(javax.swing.UIManager.getSystemLookAndFeelClassName())
 
-  /** user settings */
-  val settings = new Settings()
+  /** user preferences */
+  val preferences = new EditorPreferences()
 
   /** the current file */
   var file: File = null
 
-  /** event which is fired whenever file is changes (parameter is new value of file) */
+  /** event which is fired whenever [[file]] is changed (parameter is new value of file) */
   val onFileChange: qq.util.binding.Event[File] = new qq.util.binding.Event()
 
-  /** tabs which show the actual content */
+  /** tabbed pane which contains the actual content */
   private val tabs = new qq.util.TabbedPane()
 
   /** add a new tab showing type τ. τ == null allowed*/
   def newTypeTab(τ: api.Access[_ <: api.SkillObject]): qq.editor.types.TypePage = {
-    val page = new qq.editor.types.TypePage(file, settings)
+    val page = new qq.editor.types.TypePage(file, preferences)
     tabs.addPage(page)
     if (τ != null) page.goTo(τ)
     page.show()
@@ -36,7 +39,7 @@ object Main extends SimpleSwingApplication {
 
   /** add a new tab for showing objects*/
   def newObjectTab(): qq.editor.objects.ObjectPage = {
-    val page = new qq.editor.objects.ObjectPage(file, settings)
+    val page = new qq.editor.objects.ObjectPage(file, preferences)
     tabs.addPage(page)
     page.find("")
     page.show()
@@ -45,7 +48,7 @@ object Main extends SimpleSwingApplication {
 
   /** add a new tab showing object o. o == null allowed*/
   def newObjectTab(o: api.SkillObject): qq.editor.objects.ObjectPage = {
-    val page = new qq.editor.objects.ObjectPage(file, settings)
+    val page = new qq.editor.objects.ObjectPage(file, preferences)
     tabs.addPage(page)
     if (o != null) page.goTo(o)
     page.show()
@@ -54,7 +57,7 @@ object Main extends SimpleSwingApplication {
 
   /** add a new tab showing all objects of type τ */
   def newObjectTab(τ: api.Access[_]): qq.editor.objects.ObjectPage = {
-    val page = new qq.editor.objects.ObjectPage(file, settings)
+    val page = new qq.editor.objects.ObjectPage(file, preferences)
     tabs.addPage(page)
     if (τ != null) page.find(s"'${τ.name}'")
     page.show()
@@ -311,7 +314,7 @@ object Main extends SimpleSwingApplication {
       new Menu("Edit") {
         mnemonic = swing.event.Key.E
         contents ++= Seq(undoMenuItem, redoMenuItem)
-        contents += new MenuItem(Action("Properties") { settings.prefEdit.visible = true })
+        contents += new MenuItem(Action("Properties") { preferences.prefEdit.visible = true })
       },
       viewMenu, objectMenu, typeMenu)
   }

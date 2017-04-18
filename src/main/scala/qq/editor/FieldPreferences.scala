@@ -8,11 +8,13 @@ import scala.collection.mutable;
 import qq.util.Vector;
 import qq.util.binding._;
 
-class FieldSettings[T, U <: api.SkillObject](
+/** Persistently stored preferences for a field in a skill user type. 
+ * */
+class FieldPreferences[T, U <: api.SkillObject](
     /** The field this is about */
     val field: api.FieldDeclaration[T],
     /** The type this belongs to */
-    val containingType: TypeSettings[U]) extends PropertyOwner {
+    val containingType: TypePreferences[U]) extends PropertyOwner {
 
   private val prefs = Preferences.userRoot().node(s"/qq/skilledit/fieldsettings/${containingType.typ.name}/${field.name}");  
   
@@ -60,7 +62,8 @@ class FieldSettings[T, U <: api.SkillObject](
   prefEdgeDirection.onChange.strong += (x => if (prefFixedEdgeDirection()) prefs.put("idealDirection", x.toString))
   
   
-  /** true if the value of this field in object o is null, empty collection, zero, or empty string */
+  /** true if the value of this field in object o is null, empty collection, zero, or empty string
+   *  @todo If the field has a default restriction: hide if value==default, instead?*/
   private def hasNullValueIn(o: api.SkillObject): Boolean = {
     field.t.asInstanceOf[internal.fieldTypes.FieldType[_]] match {
       case u: fieldTypes.UserType[T]                   ⇒ o.get(field) == null
@@ -84,7 +87,7 @@ class FieldSettings[T, U <: api.SkillObject](
     }
   }
 
-  /** returns true whether and how this field should be shown in object o*/
+  /** returns whether and how this field should be shown in object o*/
   def visibilityIn(o: api.SkillObject): FieldVisibility = {
     if (prefHide() /* user says hide */
       || (hasNullValueIn(o) && prefHideNull())) { /* or it;s null/empty…*/
@@ -102,7 +105,7 @@ class FieldSettings[T, U <: api.SkillObject](
   def checkDeleted() : Unit = {
     def typeIsDeleted[T](τ: fieldTypes.FieldType[T]): Boolean = {
       τ match {
-        case u: fieldTypes.UserType[_] => containingType.containingFile.typeSettings(u).isDeleted
+        case u: fieldTypes.UserType[_] => containingType.containingFile.typePreferences(u).isDeleted
         case c: fieldTypes.SingleBaseTypeContainer[_,_] => typeIsDeleted(c.groundType)
         case m: fieldTypes.MapType[k,v] => typeIsDeleted(m.keyType) || typeIsDeleted(m.valueType)
         case _ => false

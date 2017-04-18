@@ -14,7 +14,7 @@ import scala.swing.Button
  * A page displaying data about a (set of) object, with an optional search results page on the
  * left and an option graph representation on the right
  */
-class ObjectPage(file0: qq.editor.File, settings0: qq.editor.Settings) extends qq.editor.Page(file0, settings0) {
+class ObjectPage(file0: qq.editor.File, settings0: qq.editor.EditorPreferences) extends qq.editor.Page(file0, settings0) {
 
   /** search panel visible*/
   def searchVisible: Boolean = searchVisibleModel.isSelected()
@@ -209,9 +209,9 @@ class ObjectPage(file0: qq.editor.File, settings0: qq.editor.Settings) extends q
       for (pool ← file.s) {
         val p = pool.asInstanceOf[StoragePool[_, _]]
         if (0 <= pick && pick < p.staticInstances.size) {
-          file.typeSettings(pool).expanded ++= pool.fields.map(Seq(_))
+          file.typePreferences(pool).expanded ++= pool.fields.map(Seq(_))
           for (s ← file.superTypes(pool)) {
-            file.typeSettings(s).expanded ++= s.fields.map(Seq(_))
+            file.typePreferences(s).expanded ++= s.fields.map(Seq(_))
           }
           goTo(p.staticInstances.take(pick).next.asInstanceOf[api.SkillObject])
           pick -= 1 //

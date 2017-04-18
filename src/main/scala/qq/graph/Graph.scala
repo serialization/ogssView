@@ -146,9 +146,9 @@ class Graph(
       .groupBy(_._1.asInstanceOf[SkillFieldEdge[_]].field)
       .mapValues(x ⇒ Vector.avg(x.map(_._2.norm)))
     for ((f, x) ← dirByAbsEdge if (x.isFinite())) {
-      val d = file.fieldSettings(f).prefEdgeDirection
+      val d = file.fieldPreferences(f).prefEdgeDirection
       val d0 = d()
-      if (!file.fieldSettings(f).prefFixedEdgeDirection()) {
+      if (!file.fieldPreferences(f).prefFixedEdgeDirection()) {
         val c = properties.c5().min(d0.abs)
         val d1 = d0 * c + x * (1 - c)
         d := d1.min(0.99f)
@@ -172,7 +172,7 @@ class Graph(
         e ← v.edgesOut.values;
         e2 ← e.data ++ e.reverseData if e2.isInstanceOf[SkillFieldEdge[_]]
       ) yield e2.asInstanceOf[SkillFieldEdge[_]].field).toSet
-      edgeDirections ++= fields.map(x ⇒ (x -> g.file.fieldSettings(x).prefEdgeDirection()))
+      edgeDirections ++= fields.map(x ⇒ (x -> g.file.fieldPreferences(x).prefEdgeDirection()))
     }
     def saveEnergy(e: Float, e2: Float) = {
       energy = e

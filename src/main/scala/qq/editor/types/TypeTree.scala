@@ -31,7 +31,7 @@ class TypeTree(val page: qq.editor.types.TypePage)
     if (page.file.childTypes.contains(τ)) {
       subPart = new swing.BoxPanel(swing.Orientation.Vertical) {
         background = java.awt.SystemColor.text
-        contents ++= page.file.childTypes(τ).filter(!page.file.typeSettings(_).isDeleted).map(new TypeTreeNode(_))
+        contents ++= page.file.childTypes(τ).filter(!page.file.typePreferences(_).isDeleted).map(new TypeTreeNode(_))
       }
     }
     

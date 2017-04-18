@@ -22,10 +22,10 @@ class File(fn0: java.nio.file.Path) {
     val (d, n) = pathAndName
     n + (if (isModified) " + " else "") + " (" + d + ") – SKilL edit"
   }
-  /** the SKilL state from fileName */
+  /** the SKilL state for file [[fileName]] */
   val s: empty.api.SkillFile = empty.api.SkillFile.open(fn0, api.Read, api.Write)
 
-  /** Undo/redo queue of the changes that were applied to the file after it was opened */
+  /** Undo/redo queue of the changes that were applied to the file after it was opened or saved */
   val undoManager = new qq.util.UndoManager()
 
   /** true if file was modified, i.e. there is something to save */
@@ -42,7 +42,7 @@ class File(fn0: java.nio.file.Path) {
   val onEdit: qq.util.binding.Event[qq.editor.Edit[_]] = new qq.util.binding.Event;
 
   /**
-   * Perform an edit and notify the rest of the programme about it
+   * Perform an [[qq.editor.Edit]] and notify the rest of the programme about it
    */
   def modify_(e: qq.editor.Edit[_]): Unit = {
     e.doIt()
@@ -51,7 +51,10 @@ class File(fn0: java.nio.file.Path) {
   }
 
   /**
-   * Perform an edit, add it to the undo-queue, and notify the rest of the programme about it
+   * Perform a [[qq.editor.UserEdit]], add it to the undo-queue, and notify the rest of
+   * the programme about the change.
+   * 
+   * This should only be called from the constructors of UserEdits (should probably be protected, somehow)
    */
   def modify(e: qq.editor.UserEdit[_]): Unit = {
     val e2 = e.toEdit
@@ -61,8 +64,9 @@ class File(fn0: java.nio.file.Path) {
     onModifiednessChange.fire(isModified)
   }
 
-  /**
-   * we mark objects as deleted by adding them to a deleted object queue. This
+  /** Set of deleted objects.
+   *  
+   * We mark objects as deleted by adding them to a deleted object queue. This
    * allows us to undelete them in a way such that all other edits in the undo/redo
    * queue stay valid.
    *
@@ -70,18 +74,26 @@ class File(fn0: java.nio.file.Path) {
    */
   val deletedObjects: mutable.HashSet[api.SkillObject] = new mutable.HashSet()
 
-  /**
+  /** Set of objects which have fields which violate a restriction.
+   * 
    * When deleting causes null references in non-null restricted fields, we add
    * the affected field to this list.
+   * 
+   * Deletions are the only things that can violate restrictions in the skill state.
+   * All other modifications check the restrictions during the creation of the
+   * user edit and reject the modification.
    */
   val validationErrors: mutable.HashSet[Tuple2[api.SkillObject, api.FieldDeclaration[_]]] = new mutable.HashSet()
 
-  /**
+  /** List of newly created objects.
+   *  
    * created objects do not have a SkillId; we give them temporary negative ones;
    * item 0 has ID -1 and so on
    */
   val createdObjects: mutable.ListBuffer[api.SkillObject] = new mutable.ListBuffer()
+  /** Lookup table: surrogate SkillIDs for newly created objects */
   val createdObjectId: mutable.HashMap[api.SkillObject, Int] = new mutable.HashMap()
+  /** add a newly created object to [[createdObjects]] and [[createdObjectId]]*/
   def registerCreatedObject(o: api.SkillObject): Unit = {
     createdObjects.synchronized {
       val id = -1 - createdObjects.size
@@ -99,6 +111,7 @@ class File(fn0: java.nio.file.Path) {
   /** a ∈ rootTypes if ~(∃x)(x = parentType(a)) */
   val rootTypes: HashSet[api.Access[_ <: api.SkillObject]] = new HashSet()
 
+  /** Update [[parentType]], [[childTypes]], and [[rootTypes]]. Necessary after save. */
   private def updateTables(): Unit = {
     parentType.clear()
     for (t ← s; sn ← t.superName) {
@@ -123,6 +136,7 @@ class File(fn0: java.nio.file.Path) {
     }
   }
 
+  /** Get the skill object of a given type with the given SKilL ID. */
   def objOfId[T <: B, B <: api.SkillObject](pool: api.Access[T], id: Int): api.SkillObject = {
     var o = if (id > 0) {
       val bp = pool.asInstanceOf[internal.StoragePool[T, B]].basePool
@@ -142,6 +156,7 @@ class File(fn0: java.nio.file.Path) {
     }
   }
 
+  /** Get the SKilL object identified by string with format `type#ID`. */
   def objOfId(x: String): api.SkillObject = {
     val xt = x.trim()
     if (x.trim().equals("(null)")) return null
@@ -158,6 +173,8 @@ class File(fn0: java.nio.file.Path) {
     objOfId(s(pn), id)
   }
 
+  /** Get a string, `type#ID` or `(null)`, that identifies skill object `o`.
+   *  @param stropped add apostrophes to the type name (make sure, that it is not mistaken for a keyword when used in the serch function) */
   def idOfObj(o: api.SkillObject, stropped: Boolean = false): String = {
     if (o == null) {
       "(null)"
@@ -180,28 +197,33 @@ class File(fn0: java.nio.file.Path) {
     (for (t ← s; f ← t.fields) yield (f.name, (t, f))).groupBy(_._1).mapValues(_.map(_._2))
 
   /* type and field settings */
-  val typeSettings: HashMap[api.Access[_], TypeSettings[_]] = new HashMap()
-  for (t ← s) typeSettings(t) = new TypeSettings(t, this)
+  /** Preferences for all user types */
+  val typePreferences: HashMap[api.Access[_], TypePreferences[_]] = new HashMap()
+  for (t ← s) typePreferences(t) = new TypePreferences(t, this)
 
-  val fieldSettings: Map[api.FieldDeclaration[_], FieldSettings[_, _]] =
-    (for (t ← typeSettings.values; fd ← t.typ.fields) yield (fd, t.fields(fd).asInstanceOf[FieldSettings[_, api.SkillObject]])).toMap
+  /** Preferences for all FieldDeclarations */
+  val fieldPreferences: Map[api.FieldDeclaration[_], FieldPreferences[_, _]] =
+    (for (t ← typePreferences.values; fd ← t.typ.fields) yield (fd, t.fields(fd).asInstanceOf[FieldPreferences[_, api.SkillObject]])).toMap
 
+  /** Save changes to disk */
   def flush(): Unit = {
+    // finally delete the deleted objects (no undo after this)
     deletedObjects.foreach(s.delete(_))
     s.flush()
     deletedObjects.clear()
+    // created objects have a real ID, now. Remove surrogate IDs
     createdObjectId.clear()
     createdObjects.clear()
     // hash codes of Access[]es have changed
     updateTables
-    val tss = new mutable.ListBuffer[TypeSettings[_]]()
-    for (t ← typeSettings.values) tss += t
-    typeSettings.clear()
-    for (ts ← tss) { println(ts.typ); typeSettings(ts.typ) = ts }
+    val tss = new mutable.ListBuffer[TypePreferences[_]]()
+    for (t ← typePreferences.values) tss += t
+    typePreferences.clear()
+    for (ts ← tss) { println(ts.typ); typePreferences(ts.typ) = ts }
     // find deleted objects and fields
-    for ((t, s) ← typeSettings) {
+    for ((t, s) ← typePreferences) {
       if (t.asInstanceOf[internal.StoragePool[_, _]].cachedSize == 0) s.isDeleted = true
     }
-    for (fs ← fieldSettings.values) fs.checkDeleted()
+    for (fs ← fieldPreferences.values) fs.checkDeleted()
   }
 }

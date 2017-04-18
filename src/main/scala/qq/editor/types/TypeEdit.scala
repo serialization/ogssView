@@ -32,7 +32,7 @@ class TypeEdit(val page: qq.editor.types.TypePage,
         /* main part is type and name; FieldTypeControl makes user types in the type clickable */
         val ftc = new FieldTypeControl(page, file, field.t)
         val ftcw = ftc.preferredSize.width
-        val colWidth = qq.editor.Main.settings.typeColumnWidth()
+        val colWidth = qq.editor.Main.preferences.typeColumnWidth()
         var typeAndName = if (ftcw > colWidth) {
           VBoxT(
             HBoxT(ftc, HGlue),
@@ -89,7 +89,7 @@ class TypeEdit(val page: qq.editor.types.TypePage,
           subPart = new swing.BoxPanel(swing.Orientation.Vertical) {
             background = java.awt.SystemColor.text
             contents ++= τ.fields.
-                  filter(!file.fieldSettings(_).isDeleted).
+                  filter(!file.fieldPreferences(_).isDeleted).
                   map(x ⇒ new Field(page, file, skillType, x))
           }
           if (τ == skillType) expand

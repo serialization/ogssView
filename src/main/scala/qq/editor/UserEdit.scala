@@ -12,10 +12,10 @@ import javax.swing.undo._;
 /**
  * All user triggered actions that modify the skill file.
  *
- * These are undoable edits; the original execution of a user edit and
- * its undos and redos all are qq.editor.Edits.
+ * These are undoable edits; the original execution of a [[UserEdit]] and
+ * its undos and redos all are [[qq.editor.Edit]]s.
  *
- * Creating one of those objects will perform them by calling file.modify
+ * The modification is done when a new instance is created.
  */
 sealed abstract class UserEdit[T <: api.SkillObject](
   /** The file this belongs to */
@@ -26,6 +26,7 @@ sealed abstract class UserEdit[T <: api.SkillObject](
   val obj: T)
     extends UndoableEdit {
 
+  /** @return The [[qq.editor.Edit]] that describes the modification when this UserEdit is done or redone */
   def toEdit(): qq.editor.Edit[T]
 
 }
@@ -114,11 +115,12 @@ final case class UserDeleteObject[T <: api.SkillObject](
   override def die() = {}
 
   override def toEdit = {
-    // ungy side effect… set all refs to this to null so that they do not have to be considered always when
+    // ugly side effect… set all refs to this to null so that they do not have to be considered always when
     // ref fields are shown
     for ((o, f) ← refdBy) {
       file.modify_(new SimpleFieldEdit(file, file.s(o.getTypeName).asInstanceOf[api.Access[api.SkillObject]], o, f, o.get(f), null.asInstanceOf[T]))
       val rs = f.asInstanceOf[internal.FieldDeclaration[_, _]].restrictions
+      // store validationErrors when the deletion caused the viaolation of a nonNull restriction (nothing is done with them, yet :( )
       import de.ust.skill.common.scala.internal.restrictions._
       val crs = rs.filter(_.isInstanceOf[CheckableFieldRestriction[_]]).map(_.asInstanceOf[CheckableFieldRestriction[T]])
       for (cr ← crs) {
@@ -134,7 +136,11 @@ final case class UserDeleteObject[T <: api.SkillObject](
     new DeleteObject(file, pool, obj)
   }
 
-  /* check references */
+  /** Get references to the object we want to delete
+   * @todo oops… pays no attention to containers. This will get ugly: we can not set
+   * 		members of sets or keys of maps to null, for that may make them non-unique.
+   * 	  Thus, for sets and maps we have to generate MapRemove and SetRemove Edits
+   * 	  (and the corresponding MapInsert, SetInsert for undo) */
   private def getRefdBy: ListBuffer[Tuple2[api.SkillObject, api.FieldDeclaration[T]]] = {
     import de.ust.skill.common.scala.internal.fieldTypes._
     val result = new ListBuffer[Tuple2[api.SkillObject, api.FieldDeclaration[T]]]()
@@ -345,7 +351,7 @@ final case class UserIndexedContainerModify[T <: api.SkillObject, C <: Buffer[F]
   if (qq.util.Neq(oldValue, newValue)) file.modify(this)
 }
 
-/** edits of things like arrays and lists that have indexed objects */
+/** Modifications of sets */
 sealed abstract class UserSetEdit[T <: api.SkillObject, C <: HashSet[F], F](
   /** The file this belongs to */
   f: qq.editor.File,
@@ -361,7 +367,7 @@ sealed abstract class UserSetEdit[T <: api.SkillObject, C <: HashSet[F], F](
 
 }
 
-/** insertion of a new value into an indexed container */
+/** insertion of a new value into a set container */
 final case class UserSetInsert[T <: api.SkillObject, C <: HashSet[F], F](
   /** The file this belongs to */
   f: qq.editor.File,
@@ -401,7 +407,7 @@ final case class UserSetInsert[T <: api.SkillObject, C <: HashSet[F], F](
     file.modify(this)
   }
 }
-/** insertion of a new value into an indexed container */
+/** Removal of a value from a set container */
 final case class UserSetRemove[T <: api.SkillObject, C <: HashSet[F], F](
   /** The file this belongs to */
   f: qq.editor.File,
@@ -442,7 +448,7 @@ final case class UserSetRemove[T <: api.SkillObject, C <: HashSet[F], F](
   }
 }
 
-/** insertion of a new value into an indexed container */
+/** Replacement of a member of a set container */
 final case class UserSetReplace[T <: api.SkillObject, C <: HashSet[F], F](
   /** The file this belongs to */
   f: qq.editor.File,
@@ -489,7 +495,7 @@ final case class UserSetReplace[T <: api.SkillObject, C <: HashSet[F], F](
   }
 }
 
-/** edits maps as lists indexed by  key sequence */
+/** edits maps as (lists indexed by  key sequence) */
 sealed abstract class UserMapEdit[T <: api.SkillObject, K, V, C[K, V] <: HashMap[K, V]](
   /** The file this belongs to */
   f: qq.editor.File,
@@ -499,13 +505,13 @@ sealed abstract class UserMapEdit[T <: api.SkillObject, K, V, C[K, V] <: HashMap
   o: T,
   /** The field (collection) that is modified */
   val field: api.FieldDeclaration[C[K, V]],
-  /** The index of the modified member of the collection */
+  /** The keys of the modified member of the collection */
   val index: Seq[Any])
     extends UserEdit[T](f, p, o) {
 
 }
 
-/** insertion of a new value into a map */
+/** insertion of a new entry into a map */
 final case class UserMapInsert[T <: api.SkillObject, K, V, C[K, V] <: HashMap[K, V]](
   /** The file this belongs to */
   f: qq.editor.File,
@@ -515,7 +521,7 @@ final case class UserMapInsert[T <: api.SkillObject, K, V, C[K, V] <: HashMap[K,
   o: T,
   /** The field (collection) that is modified */
   fd: api.FieldDeclaration[C[K, V]],
-  /** The index of the modified member of the collection */
+  /** The keys of the new member of the collection */
   i: Seq[Any],
   /** the value of the new member */
   val value: Any)
@@ -550,7 +556,7 @@ final case class UserMapInsert[T <: api.SkillObject, K, V, C[K, V] <: HashMap[K,
   }
 }
 
-/** insertion of a new value into an indexed container */
+/** Removal of an entry from a map container */
 final case class UserMapRemove[T <: api.SkillObject, K, V, C[K, V] <: HashMap[K, V]](
   /** The file this belongs to */
   f: qq.editor.File,
@@ -560,7 +566,7 @@ final case class UserMapRemove[T <: api.SkillObject, K, V, C[K, V] <: HashMap[K,
   o: T,
   /** The field (collection) that is modified */
   fd: api.FieldDeclaration[C[K, V]],
-  /** The index of the modified member of the collection */
+  /** The keys of the deleted entry */
   i: Seq[Any])
     extends UserMapEdit[T, K, V, C](f, p, o, fd, i) {
 
@@ -597,7 +603,7 @@ final case class UserMapRemove[T <: api.SkillObject, K, V, C[K, V] <: HashMap[K,
   }
 }
 
-/** change of the value of a member of an indexed container */
+/** change of the value of a member of a map container */
 final case class UserMapModify[T <: api.SkillObject, K, V, C[K, V] <: HashMap[K, V]](
   /** The file this belongs to */
   f: qq.editor.File,
@@ -607,7 +613,7 @@ final case class UserMapModify[T <: api.SkillObject, K, V, C[K, V] <: HashMap[K,
   o: T,
   /** The field (collection) that is modified */
   fd: api.FieldDeclaration[C[K, V]],
-  /** The index of the modified member of the collection */
+  /** The keys of the modified member of the collection */
   i: Seq[Any],
   /** Value after modification */
   val newValue: Any)

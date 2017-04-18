@@ -12,7 +12,7 @@ class FieldSettingsEdit(
   val field: api.FieldDeclaration[_])
     extends swing.BoxPanel(swing.Orientation.Vertical) {
 
-  val fs = file.fieldSettings(field)
+  val fs = file.fieldPreferences(field)
 
   val hideEd = new CheckBoxEdit(fs.prefHide)
   val hideNullEd = new CheckBoxEdit(fs.prefHideNull)

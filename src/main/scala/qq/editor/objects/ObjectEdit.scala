@@ -14,7 +14,7 @@ class ObjectEdit[P <: api.SkillObject](
 
   val pool: api.Access[P] = page.file.s(obj.getTypeName).asInstanceOf[api.Access[P]]
 
-  contents ++= pool.allFields.filter(f => !page.file.fieldSettings(f).isDeleted) map {f=>    new FieldEdit(page, pool, obj, f) }
+  contents ++= pool.allFields.filter(f => !page.file.fieldPreferences(f).isDeleted) map {f=>    new FieldEdit(page, pool, obj, f) }
 
 }
 /** Top level version of ObjectEdit, comes with scroll bars, title, and detects whether the object was deleted. */

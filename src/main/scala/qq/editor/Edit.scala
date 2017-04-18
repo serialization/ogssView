@@ -10,20 +10,31 @@ import scala.collection.mutable.HashMap;
 import javax.swing.undo._;
 
 /**
- * All actions that modify the content of the skill file
+ * Represents a modification of a skill file.
+ * 
+ * Instances of this class are used to notify the UI elements that they have to update.
+ * Edits can not be undone, rather, an undo is an edit itself.
+ * 
+ * @see qq.editor.UserEdit an undoable modification that was requested by the user 
  */
 sealed abstract class Edit[T <: api.SkillObject](
-    /** The file this belongs to */
+    /** The file that is modified */
     val file: qq.editor.File,
     /** The type of the modified object*/
     val pool: api.Access[T],
     /** The object that is modified */
     val obj: T) {
 
+  /** Apply the change to [[Edit.file]].
+   *  
+   *  Do not call directly, pass object to file.modify, instead,
+   *  in order to ensure that everything is notified about the update.
+   *  
+   *  Probably should be `protected` somehow */
   def doIt(): Unit
 }
 
-/** object creation */
+/** Creation of object `o` */
 final case class CreateObject[T <: api.SkillObject](
   /** The file this belongs to */
   f: qq.editor.File,
@@ -34,12 +45,13 @@ final case class CreateObject[T <: api.SkillObject](
     extends Edit[T](f, p, o) {
 
   override def doIt() = {
+    /* remove from deleted if this creation undoes a deletion */
     file.deletedObjects -= obj
   }
 
 }
 
-/** object deletion */
+/** Deletion of object `o` */
 final case class DeleteObject[T <: api.SkillObject](
   /** The file this belongs to */
   f: qq.editor.File,
@@ -55,7 +67,7 @@ final case class DeleteObject[T <: api.SkillObject](
 
 }
 
-/** modification of a simple field */
+/** Modification of the value of a simple field */
 final case class SimpleFieldEdit[T <: api.SkillObject, F](
   /** The file this belongs to */
   f: qq.editor.File,
@@ -75,7 +87,7 @@ final case class SimpleFieldEdit[T <: api.SkillObject, F](
     obj.set(field, newValue)
   }
 }
-/** edits of things like arrays and lists that have indexed objects */
+/** Modifications of things like arrays and lists that have indexed objects */
 sealed abstract class IndexedContainerEdit[T <: api.SkillObject, C <: Iterable[F], F](
   /** The file this belongs to */
   f: qq.editor.File,
@@ -271,10 +283,7 @@ final case class MapInsert[T <: api.SkillObject, F](
 
   override def doIt(): Unit = {
     val temp = obj.get(field)
-    println(this)
-    println(temp)
     qq.util.FlattenedMap.insert(obj.get(field).asInstanceOf[HashMap[Any,Any]], fd.t.asInstanceOf[MapType[_,_]], index, value)
-    println(temp)
   }
 }
 
@@ -297,10 +306,7 @@ final case class MapRemove[T <: api.SkillObject, F](
 
   override def doIt(): Unit = {
     val temp = obj.get(field)
-    println(this)
-    println(temp)
     qq.util.FlattenedMap.remove(obj.get(field).asInstanceOf[HashMap[Any,Any]], fd.t.asInstanceOf[MapType[_,_]], index)
-    println(temp)
   }
 }
 
@@ -324,9 +330,6 @@ final case class MapModify[T <: api.SkillObject, F](
 
   override def doIt(): Unit = {
     val temp = obj.get(field)
-    println(this)
-    println(temp)
     qq.util.FlattenedMap.set(temp.asInstanceOf[HashMap[Any,Any]], fd.t.asInstanceOf[MapType[_,_]], index, newValue)
-    println(temp)
   }
 }

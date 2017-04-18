@@ -21,7 +21,7 @@ class MapContainerEdit[K, V, C[K, V] <: HashMap[K, V], O <: api.SkillObject](
   val elType = groundTypes.last
 
   private var firstIndex = 0
-  private val pageSize = qq.editor.Main.settings.editCollectionPageSize()
+  private val pageSize = qq.editor.Main.preferences.editCollectionPageSize()
 
   /** label showing field name */
   private val nameLbl = new swing.Label(field.name)
@@ -174,7 +174,7 @@ class MapContainerEdit[K, V, C[K, V] <: HashMap[K, V], O <: api.SkillObject](
 
   updateHeadValues
   refillLower
-  if (obj.get(field).size > 0 && obj.get(field).size <= qq.editor.Main.settings.editCollectionSmall()) {
+  if (obj.get(field).size > 0 && obj.get(field).size <= qq.editor.Main.preferences.editCollectionSmall()) {
     en.expand()
   } else {
     en.collapse()

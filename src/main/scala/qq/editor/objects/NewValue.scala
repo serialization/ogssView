@@ -70,7 +70,7 @@ object NewValue {
   }
 
   class PromptPage[T](file0: qq.editor.File,
-                      settings0: qq.editor.Settings,
+                      settings0: qq.editor.EditorPreferences,
                       val prompt: String,
                       val τ: api.FieldType[T],
                       val restrictions: HashSet[FieldRestriction],

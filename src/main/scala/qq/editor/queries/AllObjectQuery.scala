@@ -7,7 +7,7 @@ class AllObjectQuery(
   override def variables = Seq(variable)
   override def find() = {
     for (
-      p <- file.s.iterator if !file.typeSettings(p).isDeleted  ;
+      p <- file.s.iterator if !file.typePreferences(p).isDeleted  ;
       o ← p.all if !file.deletedObjects.contains(o)
     ) yield Map(variable -> o)
   }

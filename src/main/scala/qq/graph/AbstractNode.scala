@@ -24,13 +24,13 @@ case class SkillObjectNode(val skillObject: api.SkillObject)
   override def getOutEdge(file: qq.editor.File) = {
     val τ = file.s(skillObject.getTypeName)
     for (
-      f ← τ.allFields if !file.fieldSettings(f).isDeleted && file.fieldSettings(f).visibilityIn(skillObject).showAsNode
+      f ← τ.allFields if !file.fieldPreferences(f).isDeleted && file.fieldPreferences(f).visibilityIn(skillObject).showAsNode
     ) yield new SkillFieldEdge(skillObject, f)
   }
   def edgeForField(file: qq.editor.File, field: api.FieldDeclaration[_]): Option[AbstractEdge] = {
     val τ = file.s(skillObject.getTypeName)
     if (τ.allFields.contains(field)) { // only has edges for own fields
-      if (file.fieldSettings(field).visibilityIn(skillObject).showAsNode) {
+      if (file.fieldPreferences(field).visibilityIn(skillObject).showAsNode) {
         Some(new SkillFieldEdge(skillObject, field))
       } else {
         None
@@ -81,7 +81,7 @@ case class ListNode[E, C[E] <: Buffer[E]](val skillObject: api.SkillObject, val 
     UIElements.list(graph, this, skillObject, field)
   }
   override def getOutEdge(file: qq.editor.File) = {
-    if (skillObject.get(field).size <= qq.editor.Main.settings.graphCollectionSmall()) {
+    if (skillObject.get(field).size <= qq.editor.Main.preferences.graphCollectionSmall()) {
       skillObject.get(field).indices.iterator.map(i ⇒ new ListMemberEdge(skillObject, field, i))
     } else {
       Iterator()
@@ -127,7 +127,7 @@ case class SetNode[E, C[E] <: HashSet[E]](val skillObject: api.SkillObject, val 
     UIElements.set(graph, this, skillObject, field)
   }
   override def getOutEdge(file: qq.editor.File) = {
-    if (skillObject.get(field).size <= qq.editor.Main.settings.graphCollectionSmall()) {
+    if (skillObject.get(field).size <= qq.editor.Main.preferences.graphCollectionSmall()) {
       skillObject.get(field).iterator.map(e ⇒ new SetMemberEdge(skillObject, field, e))
     } else {
       Iterator()
@@ -175,7 +175,7 @@ case class MapNode[K, V, C[K, V] <: HashMap[K, V]](val skillObject: api.SkillObj
     UIElements.map(graph, this, skillObject, field)
   }
   override def getOutEdge(file: qq.editor.File) = {
-    if (FlattenedMap.size(skillObject.get(field), fieldType) <= qq.editor.Main.settings.graphCollectionSmall()) {
+    if (FlattenedMap.size(skillObject.get(field), fieldType) <= qq.editor.Main.preferences.graphCollectionSmall()) {
       FlattenedMap.keys(skillObject.get(field), fieldType).iterator.map(e ⇒ new MapMemberEdge(skillObject, field, e))
     } else {
       Iterator()

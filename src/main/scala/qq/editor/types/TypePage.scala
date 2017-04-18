@@ -8,7 +8,7 @@ import scala.swing;
  * A page displaying data about a type, with an optional type tree for naviagation on the
  * left and an option graph representation on the right
  */
-class TypePage(file0: qq.editor.File, settings0: qq.editor.Settings)
+class TypePage(file0: qq.editor.File, settings0: qq.editor.EditorPreferences)
     extends qq.editor.Page(file0, settings0) {
 
   /** types tree visible*/

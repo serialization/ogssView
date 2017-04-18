@@ -56,19 +56,19 @@ class ObjectGraph[O <: api.SkillObject](
   private def expandPrefs(): Set[Seq[api.FieldDeclaration[_]]] = {
     val τ = page.file.s(obj.getTypeName)
     (for (τ2  <- τ +: page.file.superTypes(τ);
-       path <- page.file.typeSettings(τ2).expanded) yield path).toSet
+       path <- page.file.typePreferences(τ2).expanded) yield path).toSet
   }
   /** add paths to expanded nodes. Store at the type that contains the first field */
   private def expandPrefs_add(πs: Set[Seq[api.FieldDeclaration[_]]]): Unit = {
     for (π <- πs if π.size > 0) {
-      val typeSettings = page.file.fieldSettings(π.head).containingType
+      val typeSettings = page.file.fieldPreferences(π.head).containingType
       typeSettings.expanded += π
     }
   }
   /** remove paths to expanded nodes. They are stored at the type that contains the first field */
   private def expandPrefs_remove(πs: Set[Seq[api.FieldDeclaration[_]]]): Unit = {
     for (π <- πs if π.size > 0) {
-      val typeSettings = page.file.fieldSettings(π.head).containingType
+      val typeSettings = page.file.fieldPreferences(π.head).containingType
       typeSettings.expanded.remove(π)
     }
   }

@@ -4,7 +4,7 @@ import qq.util.binding.Property
 import qq.util.binding.PropertyOwner
 import java.util.prefs.Preferences
 
-class Settings extends PropertyOwner {
+class EditorPreferences extends PropertyOwner {
 
   private val prefs = Preferences.userRoot().node(s"/qq/skilledit");
 
