@@ -59,7 +59,7 @@ class Node(val graph: Graph,
    *  overlap of the node's bounding boxes
    */
   def calculateForce(r: Node, overlapRemoval: Float, bounds: java.awt.Dimension) = {
-    val p = graph.properties
+    val p = graph.preferences
     if (r == this) {
       // distance to border
       val (dl, dr, dt, db) = (left, bounds.width - left - width, top, bounds.height - height - top)
@@ -89,7 +89,8 @@ class Node(val graph: Graph,
 
     }
   }
-
+  
+  // TODO ps export: attributes inside node labels 
   def toPs(g: Graph): String = {
     " " + (pos.x - width / 2) + " top " + (pos.y - height / 2) + " sub moveto\n" +
       " " + (pos.x + width / 2) + " top " + (pos.y - height / 2) + " sub lineto\n" +

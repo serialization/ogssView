@@ -64,6 +64,7 @@ object Main extends SimpleSwingApplication {
     page
   }
 
+  /** close current file */
   private def closeFile: Unit = {
     if (file != null) {
       if (file.isModified) {
@@ -100,6 +101,7 @@ object Main extends SimpleSwingApplication {
     onFileChange.fire(file)
     showDefault()
   }
+  /** file open user action (select file, open) */
   private val actOpen = new Action("Open") {
     accelerator = Some(javax.swing.KeyStroke.getKeyStroke("ctrl O"))
     mnemonic = swing.event.Key.O.id
@@ -125,6 +127,7 @@ object Main extends SimpleSwingApplication {
       }
     }
   }
+  /** save the current file */
   private def save_() {
     // if exception here, then problem with redo of delete :( 
     file.flush()
@@ -279,8 +282,7 @@ object Main extends SimpleSwingApplication {
   }
   private val newTypePageMenuItem = new MenuItem(newTypePageAction)
   private val defaultTypeMenuItems = Seq(
-    newTypePageMenuItem,
-    new qq.util.TodoMenuItem("Profiles"))
+    newTypePageMenuItem)
   private val typeMenu = new Menu("Type") {
     mnemonic = swing.event.Key.T
     onFileChange.strong += { file ⇒
@@ -314,7 +316,7 @@ object Main extends SimpleSwingApplication {
       new Menu("Edit") {
         mnemonic = swing.event.Key.E
         contents ++= Seq(undoMenuItem, redoMenuItem)
-        contents += new MenuItem(Action("Properties") { preferences.prefEdit.visible = true })
+        contents += new MenuItem(Action("Preferences") { preferences.prefEdit.visible = true })
       },
       viewMenu, objectMenu, typeMenu)
   }

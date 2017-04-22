@@ -5,8 +5,8 @@ import qq.util.binding.Property
 import qq.util.binding.Restriction
 import java.util.prefs.Preferences
 
-/** properties that control the layout algorithm */
-class LayoutSettings
+/** Preferences that control the layout algorithm */
+class LayoutPreferences
 extends PropertyOwner {
   
   private val prefs = Preferences.userRoot().node(s"/qq/skilledit/layout");  

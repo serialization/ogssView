@@ -5,7 +5,7 @@ import de.ust.skill.common.scala.internal;
 import scala.collection.mutable;
 import qq.util.Swing.HBoxT
 
-
+/** UI-Element displaying the type hierearchy as tree view.*/
 class TypeTree(val page: qq.editor.types.TypePage)
     extends swing.BoxPanel(swing.Orientation.Vertical) {
 
@@ -55,6 +55,7 @@ class TypeTree(val page: qq.editor.types.TypePage)
   }
 
   var selected: TypeTreeNode = null
+  /** select type `τ` in the hierarchy, expand levels and scroll if necessary */
   def select(τ: api.Access[_ <: api.SkillObject]): Unit = {
     if (selected != null) {
       selected.highlight_=(false)

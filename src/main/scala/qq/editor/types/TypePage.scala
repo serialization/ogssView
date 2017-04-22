@@ -5,8 +5,8 @@ import scala.collection.mutable;
 import scala.swing;
 
 /**
- * A page displaying data about a type, with an optional type tree for naviagation on the
- * left and an option graph representation on the right
+ * A page displaying data about a type ([[TypeEdit]]), with an optional type tree for navigation on the
+ * left ([[TypeTree]]).
  */
 class TypePage(file0: qq.editor.File, settings0: qq.editor.EditorPreferences)
     extends qq.editor.Page(file0, settings0) {

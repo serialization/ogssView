@@ -1,5 +1,6 @@
 package qq.editor.queries
 
+/** Search query returning all objects */
 class AllObjectQuery(
               val file0: qq.editor.File,
                 val variable: String) extends Query(file0) {

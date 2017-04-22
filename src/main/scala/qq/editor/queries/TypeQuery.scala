@@ -2,7 +2,7 @@ package qq.editor.queries
 
 import de.ust.skill.common.scala.api;
 
-/** ?x type identifier */
+/** Search query returning all members of type `pool` including subtypes. */
 class TypeQuery(val file0: qq.editor.File,
                 val variable: String,
                 val pool: api.Access[_ <: api.SkillObject]) extends Query(file0) {

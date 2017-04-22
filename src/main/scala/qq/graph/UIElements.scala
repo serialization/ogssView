@@ -31,7 +31,7 @@ object UIElements {
   def nil(g: Graph) = new swing.Label("⊥")
   /** border width of node in graph (root bold is set in preferences) */
   private def borderWidth(g: Graph, n: AbstractNode) = {
-    if (g.viewer.root == n && g.properties.rootBold()) 2 else 1
+    if (g.viewer.root == n && g.preferences.rootBold()) 2 else 1
   }
   def skillObject(g: Graph, node: AbstractNode, o: api.SkillObject) = {
     val button = new qq.util.PlainButton(
@@ -99,16 +99,16 @@ object UIElements {
   }
 
   def list[E, C[E] <: Buffer[E]](g: Graph, node: AbstractNode, o: api.SkillObject, f: api.FieldDeclaration[C[E]]) = {
-    val base = container(g, node, o, f, o.get(f).size <= g.viewer.page.settings.graphCollectionSmall())
+    val base = container(g, node, o, f, o.get(f).size <= g.viewer.page.preferences.graphCollectionSmall())
     base
   }
   def set[E, C[E] <: HashSet[E]](g: Graph, node: AbstractNode, o: api.SkillObject, f: api.FieldDeclaration[C[E]]) = {
-    val base = container(g, node, o, f, o.get(f).size <= g.viewer.page.settings.graphCollectionSmall())
+    val base = container(g, node, o, f, o.get(f).size <= g.viewer.page.preferences.graphCollectionSmall())
     base
   }
   def map[K, V, C[K, V] <: HashMap[K, V]](g: Graph, node: AbstractNode, o: api.SkillObject, f: api.FieldDeclaration[C[K, V]]) = {
     import qq.util.FlattenedMap.size
-    val base = container(g, node, o, f, size(o.get(f), f.t.asInstanceOf[de.ust.skill.common.scala.internal.fieldTypes.MapType[K,V]]) <= g.viewer.page.settings.graphCollectionSmall())
+    val base = container(g, node, o, f, size(o.get(f), f.t.asInstanceOf[de.ust.skill.common.scala.internal.fieldTypes.MapType[K,V]]) <= g.viewer.page.preferences.graphCollectionSmall())
     base
   }
 }

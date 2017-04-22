@@ -4,7 +4,7 @@ import scala.collection.mutable.HashSet
 import qq.util.Vector
 
 /**
- * a edge in the graph. There is at most one edge between two nodes. All
+ * a edge in the graph as drawn. There is at most one edge between two nodes. All
  *  edges that should connect those two nodes in the underlying data
  *  are added to the data and reverseData collections
  */
@@ -54,7 +54,7 @@ class Edge(
   def r: Vector = to.pos - from.pos
   /** calculate the direction stabilising force due to this edge and add it to from and to */
   def calculateForce(): Unit = {
-    def Fp(p: Vector) = (p - r * (p * r) / (r * r)) * graph.properties.c4()
+    def Fp(p: Vector) = (p - r * (p * r) / (r * r)) * graph.preferences.c4()
     def apply(F: Vector) = if (F.isFinite()) {
       val ff = F * F
       from.force -= F
@@ -75,7 +75,7 @@ class Edge(
     }
     /* number of edges from source that represent the same field as e */
     def sameSourceEdgeCount(source: Node, e: AbstractEdge) = {
-      if (graph.properties.scaleDirectionWhenConflict()) {
+      if (graph.preferences.scaleDirectionWhenConflict()) {
         source.edgesOut.values.count(_.data.exists(sameField(e, _))) +
           source.edgesIn.values.count(_.reverseData.exists(sameField(e, _)))
       } else {
@@ -84,7 +84,7 @@ class Edge(
     }
     /* number of edges to target that represent the same field as e */
     def sameTargetEdgeCount(target: Node, e: AbstractEdge) = {
-      if (graph.properties.scaleDirectionWhenConflict()) {
+      if (graph.preferences.scaleDirectionWhenConflict()) {
         target.edgesOut.values.count(_.reverseData.exists(sameField(e, _))) +
           target.edgesIn.values.count(_.data.exists(sameField(e, _)))
       } else {
@@ -213,6 +213,7 @@ class Edge(
     g.setTransform(t)
   }
 
+  // TODO decorations and stack labels of parallel edges in postscript
   def toPs(): String = {
     val fromLabels = reverseData.iterator.map(_.textLabel(graph.file)).toSeq
     val fromDecorations = reverseData.iterator.map(_.toDecoration).toSeq.distinct

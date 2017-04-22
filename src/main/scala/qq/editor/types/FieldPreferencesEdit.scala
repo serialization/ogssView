@@ -4,9 +4,9 @@ import de.ust.skill.common.scala.api;
 import qq.util.binding._;
 
 /**
- * Edit the settings of field
+ * Swing Ui element for editing [[qq.editor.FieldPreferences]]
  */
-class FieldSettingsEdit(
+class FieldPreferencesEdit(
   val file: qq.editor.File,
   val skillType: api.Access[_],
   val field: api.FieldDeclaration[_])

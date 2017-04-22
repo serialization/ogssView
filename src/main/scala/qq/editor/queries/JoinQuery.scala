@@ -1,5 +1,12 @@
 package qq.editor.queries
 
+/** A query returning the join of two queries.
+ *  Returns  all assignments of variables
+ *  which extend assignments from the results sets of both queries. 
+ *  
+ *  Joins must be cheap, i.e. there must be some way to filter before building
+ *  large Cartesian products which our simple minded algorithm must be able to find.
+ *  */
 class JoinQuery(
   file0: qq.editor.File,
   val l: Query,

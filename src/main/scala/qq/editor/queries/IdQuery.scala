@@ -2,7 +2,7 @@ package qq.editor.queries
 
 import de.ust.skill.common.scala.api;
 
-/** Special case: retrieve a specific object */
+/** A query returning a specific object */
 class IdQuery(
     val file0: qq.editor.File,
     val variable: String,

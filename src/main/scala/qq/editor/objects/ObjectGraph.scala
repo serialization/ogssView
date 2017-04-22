@@ -16,7 +16,7 @@ class ObjectGraph[O <: api.SkillObject](
   peer.setSize(new swing.Dimension(50, 50))
   background = java.awt.SystemColor.text
 
-  var graph = new qq.graph.Graph(page.file, this, page.settings.graphLayout)
+  var graph = new qq.graph.Graph(page.file, this, page.preferences.graphLayout)
 
   val root = new qq.graph.SkillObjectNode(obj)
   val visibleNodes = new HashSet[qq.graph.AbstractNode]
@@ -95,7 +95,7 @@ class ObjectGraph[O <: api.SkillObject](
   def updateLayout: Unit = {
     if (page.file.deletedObjects.contains(root.skillObject)) {
       // clear all if deleted
-      graph = new qq.graph.Graph(page.file, this, page.settings.graphLayout)
+      graph = new qq.graph.Graph(page.file, this, page.preferences.graphLayout)
       peer.removeAll()
       return
     }
@@ -160,9 +160,9 @@ class ObjectGraph[O <: api.SkillObject](
     expandedNodes ++= expandWithoutPath
     // go to fields of expanded nodes
     val t2 = System.nanoTime()
-    graph = new qq.graph.Graph(page.file, this, page.settings.graphLayout)
+    graph = new qq.graph.Graph(page.file, this, page.preferences.graphLayout)
     // fix the position of clamped nodes first, then other nodes can get a better inital position
-    if (page.settings.graphLayout.rootAtCentre()) {
+    if (page.preferences.graphLayout.rootAtCentre()) {
       // clamp root to centre
       clampedNodes(root) = qq.util.Vector(size) / 2
       graph.addNode(root)

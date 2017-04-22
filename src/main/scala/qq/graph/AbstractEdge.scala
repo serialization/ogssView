@@ -11,13 +11,19 @@ import qq.util.FlattenedMap
 
 /** the thing a link in the graph represents */
 abstract class AbstractEdge {
+  /** start node in the abstract sense (before it has a position…) */
   def getTo: AbstractNode
+  /** end node */
   def getFrom: AbstractNode
+  /** label for the edge */
   def textLabel(file: File): String
+  /** prefereed direction of the edge in `file` */
   def idealDirection(file: File): Vector
+  /** decoration at the to-end of the edge */
   def toDecoration: EdgeDecoration = SmallArrowDecoration
 }
 
+/** edge representing a skill field */
 case class SkillFieldEdge[T](
     val from: api.SkillObject,
     val field: api.FieldDeclaration[T])
@@ -52,7 +58,7 @@ case class SkillFieldEdge[T](
   
  }
   
-
+/** edge from a list node to the list member */
 case class ListMemberEdge[E, C[E] <: Buffer[E]](
     val from: api.SkillObject,
     val field: api.FieldDeclaration[C[E]],
@@ -78,6 +84,7 @@ case class ListMemberEdge[E, C[E] <: Buffer[E]](
   override def idealDirection(file: File) = file.fieldPreferences(field).prefEdgeDirection()
 }
 
+/** edge from a set node to the set member */
 case class SetMemberEdge[E, C[E] <: HashSet[E]](
     val from: api.SkillObject,
     val field: api.FieldDeclaration[C[E]],
@@ -101,6 +108,7 @@ case class SetMemberEdge[E, C[E] <: HashSet[E]](
   override def idealDirection(file: File) = file.fieldPreferences(field).prefEdgeDirection()
 }
 
+/** edge from a map node to the map member */
 case class MapMemberEdge[K, V, C[K,V] <: HashMap[K,V]](
     val from: api.SkillObject,
     val field: api.FieldDeclaration[C[K,V]],

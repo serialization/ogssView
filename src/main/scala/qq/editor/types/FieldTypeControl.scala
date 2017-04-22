@@ -4,7 +4,8 @@ import de.ust.skill.common.scala.api;
 import de.ust.skill.common.scala.internal.fieldTypes;
 
 /**
- * A control for displaying a field type on a page with user types turned into links
+ * A swing Ui element for displaying a field type on a page with user types turned into links (i.e.\
+ * [[TypeNameControl]]s.
  */
 class FieldTypeControl(
     val page: TypePage,

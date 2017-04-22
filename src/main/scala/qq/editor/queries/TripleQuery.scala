@@ -3,6 +3,11 @@ package qq.editor.queries
 import de.ust.skill.common.scala.api;
 import de.ust.skill.common.scala.internal.fieldTypes._;
 
+/** The basic triple query `subject predicate object.`, i.e.\ in RDF terms:
+ *  `subject` and `object` are `predicate`-related, or, here: `subject` has field `predicate`,
+ *  and the value of `predicate` in `subject` is `object`.
+ *  
+ *  Implementation is in different subclasses depending on which of subj and pred are variables */
 abstract class TripleQuery(
   file0: qq.editor.File,
   val subj: Term,
@@ -31,6 +36,7 @@ object TripleQuery {
       }
   }
 }
+/** Tripe Query `?v pred ?w`. */
 class VarVarTripleQuery(
   file0: qq.editor.File,
   override val subj: VarTerm,
@@ -165,6 +171,7 @@ class VarVarTripleQuery(
   }
 }
 
+/** Triple query `c pred ?v`. */
 class ConstVarTripleQuery(
   file0: qq.editor.File,
   override val subj: ConstTerm,
@@ -250,6 +257,7 @@ class ConstVarTripleQuery(
   }
 }
 
+/** Triple query `?v pred c.`. `*/
 class VarConstTripleQuery(
   file0: qq.editor.File,
   override val subj: VarTerm,

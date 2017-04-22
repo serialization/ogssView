@@ -7,6 +7,7 @@ import de.ust.skill.common.scala.internal.fieldTypes.UserType
 import de.ust.skill.common.scala.api.RestrictionCheckFailed
 import qq.util.binding.Restriction
 
+/** Make [[qq.util.binding.Restriction]]s for SKilL fields */
 object Restrictions {
   /** internal representation of checkable field restrictions of field x */
   def apply[E, T](x: api.FieldDeclaration[T]): Iterator[Restriction[E]] = {

@@ -8,6 +8,17 @@ import scala.collection.mutable.HashSet
 import scala.collection.mutable.HashMap
 import qq.editor.binding.SkillFieldProperty
 
+/**
+ * swing UI element for modifying a field of the SKilL file.
+ * 
+ * @param The [[qq.editor.Page]] in which this UI element is shown 
+ * @param pool a user type
+ * @param obj an object in `pool`
+ * @param field a field of `obj`
+ * 
+ * TODO Should be possible to reuse [[ElementFieldEdit]] for ground types
+ * */
+
 class FieldEdit[F, O <: api.SkillObject](
   val page: qq.editor.Page,
   val pool: api.Access[O],

@@ -4,7 +4,10 @@ import de.ust.skill.common.scala.api;
 import de.ust.skill.common.scala.internal.fieldTypes.SingleBaseTypeContainer;
 import scala.collection.mutable.Buffer;
 import qq.util.Swing.HBoxD;
-
+/** Swing Ui element for modifying the contents of a list or array field.
+ * 
+ * @param getNewElement closure that returns a value that is used for newly inserted elements
+ * @param canResize whether entries can be added to or removed from the container */
 class IndexedContainerEdit[E, C[E] <: Buffer[E], O <: api.SkillObject](
   val page: qq.editor.Page,
   val pool: api.Access[O],

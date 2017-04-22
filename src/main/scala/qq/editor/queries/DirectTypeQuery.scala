@@ -3,6 +3,7 @@ package qq.editor.queries
 import de.ust.skill.common.scala.api;
 import de.ust.skill.common.scala.internal;
 
+/** Search query returning all members of type `pool` but not of its subtypes. */
 class DirectTypeQuery(val file0: qq.editor.File,
                       val variable: String,
                       val pool: api.Access[_]) extends Query(file0) {

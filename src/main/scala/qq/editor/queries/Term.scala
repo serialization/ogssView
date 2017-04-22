@@ -1,5 +1,6 @@
 package qq.editor.queries
 
+/** The terms in the queries, i.e.\ constants and variable. */
 abstract class Term {
   def canBeSubject: Boolean
   def canBeObject: Boolean

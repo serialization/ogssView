@@ -5,7 +5,9 @@ import de.ust.skill.common.scala.internal.fieldTypes._
 import qq.util.Swing.HBoxD
 import swing.Swing.HGlue
 
-/** display a value of ground type; references get a expandable pane that shows their referent */
+/** Swing UI element for displaying the value of ground type (without a way to modify it).
+ *  
+ *  references get a expandable pane that shows their referent */
 class GroundValueLabel(
   val page: qq.editor.Page,
   val typ: api.FieldType[_],

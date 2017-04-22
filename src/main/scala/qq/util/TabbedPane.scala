@@ -1,6 +1,7 @@
 package qq.util
 
 object TabbedPane {
+  /** Extends [[swing.TabbedPane.Page]] with its index and the tab component of the java peer. */
   class Page(parent0: TabbedPane, title0: String, content0: swing.Component, tip0: String)
       extends swing.TabbedPane.Page(parent0, title0, content0, tip0) {
     var tabbedPane = parent0
@@ -29,6 +30,7 @@ object TabbedPane {
     override def index: Int = if (tabbedPane != null) tabbedPane.peer.indexOfComponent(content.peer) else 0;
     def show(): Unit = tabbedPane.peer.setSelectedIndex(index)
   }
+  /** Page in a tabbed pane that has a close button */
   class ClosablePage(parent0: TabbedPane, title0: String, content0: swing.Component, tip0: String)
       extends Page(parent0, title0, content0, tip0) {
     def this(title0: String, content0: swing.Component, tip0: String) =
@@ -47,6 +49,7 @@ object TabbedPane {
   }
 }
 
+/** Extends [[swing.TabbedPane]] by publishing a notification when a new page is selected. */
 class TabbedPane extends swing.TabbedPane {
 
   /* TODO howto override pages?—f… that pages thing anyway: it doesn't store the pages, apply

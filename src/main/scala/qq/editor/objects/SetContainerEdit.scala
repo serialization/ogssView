@@ -6,6 +6,8 @@ import de.ust.skill.common.scala.internal.fieldTypes.SingleBaseTypeContainer;
 import de.ust.skill.common.scala.internal.fieldTypes.FieldType;
 import scala.collection.mutable.HashSet;
 
+/** Swing Ui element for modifying the contents of a set field. */
+
 class SetContainerEdit[E, C[E] <: HashSet[E], O <: api.SkillObject](
   val page: qq.editor.Page,
   val pool: api.Access[O],

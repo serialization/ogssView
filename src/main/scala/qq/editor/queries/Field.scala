@@ -16,6 +16,7 @@ abstract class Field {
   def apply(o: api.SkillObject): Iterator[Tuple2[api.Access[_], api.FieldDeclaration[_]]]
 }
 
+/* All fields with the given name in any type. */
 class UnspecificField(
   val file: qq.editor.File,
   val name: String)
@@ -31,6 +32,7 @@ class UnspecificField(
   }
 }
 
+/** The field with the given name in the given type */
 class SpecificTypeField(
   val file: qq.editor.File,
   val typeName: String,

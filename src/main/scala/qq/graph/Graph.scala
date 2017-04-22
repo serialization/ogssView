@@ -10,7 +10,7 @@ import qq.util.Vector
 class Graph(
     val file: qq.editor.File,
     val viewer: qq.editor.objects.ObjectGraph[_],
-    val properties: LayoutSettings) {
+    val preferences: LayoutPreferences) {
 
   /**
    * nodes in the graph (indexed by the thing they represent).
@@ -46,9 +46,9 @@ class Graph(
       T
     }
     if (addedF && !addedT) {
-      F.pos = T.pos - x.idealDirection(file) * properties.c2()
+      F.pos = T.pos - x.idealDirection(file) * preferences.c2()
     } else if (addedT) {
-      T.pos = F.pos + x.idealDirection(file) * properties.c2()
+      T.pos = F.pos + x.idealDirection(file) * preferences.c2()
     }
     // add to existing edge if one exists
     if (F.edgesOut.contains(T)) {
@@ -111,9 +111,9 @@ class Graph(
     var energyPreviousStep = Float.PositiveInfinity
     var stepsWithProgress = 0
 
-    val initialIterations = properties.initialIterations()
-    val phaseInIterations = properties.phaseInIterations()
-    for (step ← 0.until(properties.iterations)) {
+    val initialIterations = preferences.initialIterations()
+    val phaseInIterations = preferences.phaseInIterations()
+    for (step ← 0.until(preferences.iterations)) {
       resetAccumulators
       calculateForce((((step - initialIterations + 9) / 10 * 10).toFloat / phaseInIterations).max(0).min(1), size)
       move(stepsize)
@@ -137,7 +137,7 @@ class Graph(
     }
     graphInfo.saveEnergy(energy, energyHu)
   }
-  def cluttered: Boolean = energy / nodes.size > properties.cluttered()
+  def cluttered: Boolean = energy / nodes.size > preferences.cluttered()
   private def updateIdealEdgeDirections = {
     val drawnEdges = for (n ← nodes.values; e ← n.edgesOut.values) yield e
     val abstractEdgesDirections = drawnEdges.toSeq.flatMap(e ⇒ e.data.iterator.map(x ⇒ (x, e.r)) ++ e.reverseData.iterator.map(x ⇒ (x, -e.r)))
@@ -149,7 +149,7 @@ class Graph(
       val d = file.fieldPreferences(f).prefEdgeDirection
       val d0 = d()
       if (!file.fieldPreferences(f).prefFixedEdgeDirection()) {
-        val c = properties.c5().min(d0.abs)
+        val c = preferences.c5().min(d0.abs)
         val d1 = d0 * c + x * (1 - c)
         d := d1.min(0.99f)
       }

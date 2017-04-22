@@ -2,7 +2,7 @@ package qq.graph
 
 import java.awt.Graphics2D
 
-/** arrowheads, whatever */
+/** Decoration at the end of an edge (arrows) */
 abstract class EdgeDecoration {
   def width: Int
   /* draw decoration, (0,0) is where the edge meets the node, (width,0) is where the line continues*/

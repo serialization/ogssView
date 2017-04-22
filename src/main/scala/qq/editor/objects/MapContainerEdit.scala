@@ -9,6 +9,7 @@ import qq.util.Swing.VBoxD
 import swing.Swing.HGlue
 import qq.util.FlattenedMap
 
+/** Swing Ui element for modifying the contents of a map field. */
 class MapContainerEdit[K, V, C[K, V] <: HashMap[K, V], O <: api.SkillObject](
   val page: qq.editor.Page,
   val pool: api.Access[O],

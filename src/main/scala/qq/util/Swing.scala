@@ -1,5 +1,8 @@
 package qq.util
 
+/** Functions I miss in swing.Swing :)
+ *  
+ *  Well, originally only HBox and VBox, but then the white background was added in a rush…  */
 object Swing {
   def HBox(textStyle: Boolean, xs: swing.Component*): swing.BoxPanel = new swing.BoxPanel(swing.Orientation.Horizontal) {
     if (textStyle) background = java.awt.SystemColor.text

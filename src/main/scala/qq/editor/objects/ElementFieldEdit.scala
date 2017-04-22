@@ -4,7 +4,14 @@ import de.ust.skill.common.scala.api
 import de.ust.skill.common.scala.internal.fieldTypes._
 import scala.collection.mutable.Buffer
 import qq.editor.binding.SkillFieldProperty
-
+/**
+ * swing UI element for modifying a [[SkillFieldProperty]].
+ * 
+ * @param The [[qq.editor.Page]] in which this UI element is shown 
+ * @param typ type of the property (can probably be removed, now that the fieldProperty exports its groundType)
+ * @param fieldProperty the element of a container field that is modified
+ * @param addLabel whether or not a label with the name of the fieldProperty is shown
+ * */
 class ElementFieldEdit[E, O <: api.SkillObject](
   val page: qq.editor.Page,
   val typ: FieldType[_],
@@ -24,7 +31,7 @@ class ElementFieldEdit[E, O <: api.SkillObject](
       | _: MapType[_, _] ⇒
       throw new Exception(s"required ground type, found container ${typ}")
     case ConstantI8(_) | ConstantI16(_) | ConstantI32(_) | ConstantI64(_) | ConstantV64(_) ⇒
-      throw new Exception(s"required ground type, found constannt ${typ}")
+      throw new Exception(s"required ground type, found constant ${typ}")
     case I8 | I16 | I32 | I64 | V64 | F32 | F64 | BoolType | _: StringType ⇒
       val editField = if (typ.isInstanceOf[StringType]) 
         new qq.util.binding.TextEdit(fieldProperty.asInstanceOf[SkillFieldProperty[String]],
@@ -35,6 +42,7 @@ class ElementFieldEdit[E, O <: api.SkillObject](
             else throw new qq.util.binding.RestrictionException("expected string in double quotation marks")
         },
         {(x:String)  ⇒ if (x == null) "(null)"
+          // TODO better escaping function: ….Literal(….Constant("\0011")) = "\"\\011\"" → no round trip
            else ""+scala.reflect.runtime.universe.Literal(scala.reflect.runtime.universe.Constant(x))
         })
       else fieldProperty.defaultEditor

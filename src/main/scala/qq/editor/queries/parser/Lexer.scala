@@ -2,7 +2,7 @@ package qq.editor.queries.parser
 
 import scala.util.parsing.combinator._;
 import scala.util.parsing.input._;
-/* tokens */
+/** Lexical tokens */
 sealed trait Token
 case class Ident(val name: String) extends Token with Positional
 case class StrLit(val text: String) extends Token with Positional
@@ -37,6 +37,9 @@ case class UnionKwd() extends Token with Positional
 case class TrueKwd() extends Token with Positional
 case class FalseKwd() extends Token with Positional
 
+/** Lexer for the query language.
+ *  
+ *  Most tokens types are still unused… */
 object Lexer extends RegexParsers {
   override def skipWhitespace = true
   override val whiteSpace = "[ \t\r\n\f]+".r

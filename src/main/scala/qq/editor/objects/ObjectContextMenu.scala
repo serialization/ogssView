@@ -2,6 +2,9 @@ package qq.editor.objects
 
 import de.ust.skill.common.scala.api
 
+/** Popup menu for a object in a editor page. Is used by non-null references.
+ *  
+ *  TODO (also) providing a list of MenuItems would make ReferenceEdit nicer. */
 object ObjectContextMenu {
   def apply(o: api.SkillObject, page: qq.editor.Page): swing.PopupMenu = {
     new swing.PopupMenu() {

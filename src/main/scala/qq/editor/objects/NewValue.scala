@@ -21,6 +21,7 @@ import qq.util.Swing.HBoxD
  * Functions to create a new value of a ground type; either default or ask the user
  */
 object NewValue {
+  /** default value of type `τ` considering defaults and minima from `restrictions`. */
   def default[T](τ: api.FieldType[T], restrictions: HashSet[FieldRestriction]): T = {
     // default?
     restrictions.foreach {
@@ -69,6 +70,9 @@ object NewValue {
     }
   }
 
+  /** page for the main tabbed pane that is used to prompt the user for primitive type values.
+   *  
+   *  references are prompted in an [[ObjectPage]]. */
   class PromptPage[T](file0: qq.editor.File,
                       settings0: qq.editor.EditorPreferences,
                       val prompt: String,
@@ -118,6 +122,12 @@ object NewValue {
       HBoxD(HGlue, objSelectErrorLabel, HGlue, new Button(accept), new Button(cancel)))
   }
 
+  /** Ask the user to enter or select a value of type `τ`.
+   *  
+   *  @param prompt text for the user
+   *  @param restrictions field restrictions that the value has to fulfil
+   *  @param onSelect closure that uses the selected value
+   *  @param onCancel closure called when the user cancels the selection*/
   def promptInPage[T](τ: api.FieldType[T],
                       prompt: String,
                       page: Page,
@@ -133,7 +143,7 @@ object NewValue {
         }
         sel.select(prompt, onSelect, _ ⇒ onCancel(()))
       case _ ⇒
-        val sel = new PromptPage(page.file, page.settings, prompt, τ, restrictions, onSelect, onCancel)
+        val sel = new PromptPage(page.file, page.preferences, prompt, τ, restrictions, onSelect, onCancel)
         page.tabbedPane.addPage(sel)
         sel.show()
     }

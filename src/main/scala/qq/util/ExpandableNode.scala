@@ -1,7 +1,7 @@
 package qq.util
 
 /**
- * A node that can be expanded and collapsed: useful for building trees
+ * A Swing UI-element that can be expanded and collapsed: used for building tree-views
  */
 class ExpandableNode(val node: swing.Component, textStyle: Boolean)
     extends swing.BoxPanel(swing.Orientation.Vertical) {

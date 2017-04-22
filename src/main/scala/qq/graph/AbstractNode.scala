@@ -17,6 +17,7 @@ abstract class AbstractNode() {
   def name(graph: Graph): String
 }
 
+/** A node representing a skill object */
 case class SkillObjectNode(val skillObject: api.SkillObject)
     extends AbstractNode() {
 
@@ -47,6 +48,7 @@ case class SkillObjectNode(val skillObject: api.SkillObject)
   override def name(graph: Graph) = graph.file.idOfObj(skillObject)
 }
 
+/** A node representing a value of a primitive type */
 case class ValueNode[T](val skillObject: api.SkillObject, val field: api.FieldDeclaration[T])
     extends AbstractNode() {
 
@@ -62,6 +64,7 @@ case class ValueNode[T](val skillObject: api.SkillObject, val field: api.FieldDe
   override def name(graph: Graph) = UIElements.valueShortString(skillObject.get(field))
 
 }
+/** A node representing null */
 case class NullNode[T](val skillObject: api.SkillObject, val field: api.FieldDeclaration[T])
     extends AbstractNode() {
   override def getUiElement(graph: Graph) = UIElements.nil(graph)
@@ -74,6 +77,7 @@ case class NullNode[T](val skillObject: api.SkillObject, val field: api.FieldDec
   }
   override def name(graph: Graph) = "⊥"
 }
+/** A node for a list field */
 case class ListNode[E, C[E] <: Buffer[E]](val skillObject: api.SkillObject, val field: api.FieldDeclaration[C[E]])
     extends AbstractNode() {
 
@@ -94,6 +98,7 @@ case class ListNode[E, C[E] <: Buffer[E]](val skillObject: api.SkillObject, val 
   }
   override def name(graph: Graph) = (if (field.t.isInstanceOf[ListType[_]]) "list of " else "array of ") + skillObject.get(field).size
 }
+/** A node for a primitive type value as list element */
 case class ListValueNode[E, C[E] <: Buffer[E]](val skillObject: api.SkillObject, val field: api.FieldDeclaration[C[E]], val index: Int)
     extends AbstractNode() {
 
@@ -108,6 +113,7 @@ case class ListValueNode[E, C[E] <: Buffer[E]](val skillObject: api.SkillObject,
   }
   override def name(graph: Graph) = UIElements.valueShortString(skillObject.get(field)(index))
 }
+/** Null as list element*/
 case class ListNullNode[E, C[E] <: Buffer[E]](val skillObject: api.SkillObject, val field: api.FieldDeclaration[C[E]], val index: Int)
     extends AbstractNode() {
 
@@ -120,6 +126,7 @@ case class ListNullNode[E, C[E] <: Buffer[E]](val skillObject: api.SkillObject, 
   }
   override def name(graph: Graph) = "⊥"
 }
+/** Node for the set field */
 case class SetNode[E, C[E] <: HashSet[E]](val skillObject: api.SkillObject, val field: api.FieldDeclaration[C[E]])
     extends AbstractNode() {
 
@@ -140,6 +147,7 @@ case class SetNode[E, C[E] <: HashSet[E]](val skillObject: api.SkillObject, val 
   }
   override def name(graph: Graph) = "set of " + skillObject.get(field).size
 }
+/** Primitive value element of a set */
 case class SetValueNode[E, C[E] <: HashSet[E]](val skillObject: api.SkillObject, val field: api.FieldDeclaration[C[E]], val element: E)
     extends AbstractNode() {
 
@@ -155,6 +163,7 @@ case class SetValueNode[E, C[E] <: HashSet[E]](val skillObject: api.SkillObject,
   override def name(graph: Graph) = UIElements.valueShortString(element)
 }
 // at most one null per set
+/** Null in a set */
 case class SetNullNode[E, C[E] <: HashSet[E]](val skillObject: api.SkillObject, val field: api.FieldDeclaration[C[E]])
     extends AbstractNode() {
 
@@ -167,6 +176,7 @@ case class SetNullNode[E, C[E] <: HashSet[E]](val skillObject: api.SkillObject, 
   }
   override def name(graph: Graph) = "⊥"
 }
+/** Map field */
 case class MapNode[K, V, C[K, V] <: HashMap[K, V]](val skillObject: api.SkillObject, val field: api.FieldDeclaration[C[K, V]])
     extends AbstractNode() {
 
@@ -188,6 +198,7 @@ case class MapNode[K, V, C[K, V] <: HashMap[K, V]](val skillObject: api.SkillObj
   }
   override def name(g: Graph) = "map of "+FlattenedMap.size(skillObject.get(field),field.t.asInstanceOf[MapType[K,V]])
 }
+/** Primitie value in a map */
 case class MapValueNode[K, V, C[K, V] <: HashMap[K, V]](val skillObject: api.SkillObject, val field: api.FieldDeclaration[C[K, V]], val index: Seq[Any])
     extends AbstractNode() {
 
@@ -203,6 +214,7 @@ case class MapValueNode[K, V, C[K, V] <: HashMap[K, V]](val skillObject: api.Ski
   }
   override def name(graph: Graph) = UIElements.valueShortString(FlattenedMap.get(skillObject.get(field), fieldType, index))
 }
+/** Null in a map*/
 case class MapNullNode[K, V, C[K, V] <: HashMap[K, V]](val skillObject: api.SkillObject, val field: api.FieldDeclaration[C[K, V]], val index: Seq[Any])
     extends AbstractNode() {
 

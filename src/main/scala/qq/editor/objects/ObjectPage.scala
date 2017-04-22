@@ -11,8 +11,8 @@ import scala.swing.Action
 import scala.swing.Button
 
 /**
- * A page displaying data about a (set of) object, with an optional search results page on the
- * left and an option graph representation on the right
+ * A page displaying data about an object ([[TopObjectEdit]]), with an optional search results page on the
+ * left ([[SearchResults]]) and an option graph representation on the right ([[ObjectGraph]]).
  */
 class ObjectPage(file0: qq.editor.File, settings0: qq.editor.EditorPreferences) extends qq.editor.Page(file0, settings0) {
 

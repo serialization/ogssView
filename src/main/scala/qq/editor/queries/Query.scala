@@ -3,8 +3,7 @@ package qq.editor.queries
 import de.ust.skill.common.scala.api;
 
 /**
- * A query that will return a iterable list of the (sets of) objects that match
- * the query.
+ * A query that will return a iterable list of assignments of variables to objects or values that satisfy query.
  *
  * Queries will be used to
  * * list all objects in a pool
@@ -31,7 +30,6 @@ abstract class Query(
 }
 
 object Query {
-  /* preliminary */
   def parse(file: qq.editor.File, x: String): Query = {
     import qq.editor.queries.parser._;
     if (x == "") new AllObjectQuery(file, "object")

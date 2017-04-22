@@ -15,7 +15,7 @@ class TypeEdit(val page: qq.editor.types.TypePage,
 
   background = java.awt.SystemColor.text
 
-  /** displays one field. the field properties can be shown and hidden */
+  /** displays one field. the field preferences can be shown and hidden */
   class Field(val page: qq.editor.types.TypePage,
               val file: qq.editor.File,
               val skillType: api.Access[_ <: api.SkillObject],
@@ -68,7 +68,7 @@ class TypeEdit(val page: qq.editor.types.TypePage,
           }
         }
       },
-        new FieldSettingsEdit(file, skillType, field) {
+        new FieldPreferencesEdit(file, skillType, field) {
         border = swing.Swing.BeveledBorder(swing.Swing.Raised)
       }, true) {
   }

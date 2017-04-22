@@ -3,6 +3,9 @@ package qq.editor.objects
 import scala.collection.mutable;
 import de.ust.skill.common.scala.api;
 
+/** Swing UI element for entering a search query and displaying a list of search results.
+ *  
+ *  Selecting a search result opens it in `page`; the search result is intended to be part of `page`. */
 class SearchResults(val page: ObjectPage)
     extends swing.BoxPanel(swing.Orientation.Vertical)
     with qq.util.binding.PropertyOwner {
@@ -46,6 +49,12 @@ class SearchResults(val page: ObjectPage)
           resultsTable.peer.setRowSelectionInterval(0, 0)
         }
         if (resultsRetrieved.size == 1) {
+          /** hide list of search results when there is only one result.
+           *  
+           *  TODO: is nice when opened from programme, but when the user typed the
+           *    query themselves, at least the query should stay visible (but with
+           *    the current layout, the query can not stay visible without the list
+           *    of results)*/
           page.searchVisibleModel.setSelected(false)
           page.updateVisibility
         }

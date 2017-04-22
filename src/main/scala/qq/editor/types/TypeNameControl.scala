@@ -4,7 +4,8 @@ import de.ust.skill.common.scala.api;
 import de.ust.skill.common.scala.internal;
 
 /**
- * A control for displaying a type on a page with user types turned into links
+ * A control for displaying a type name on a page with user types turned into links and
+ * a context menu for actions with this type.
  */
 class TypeNameControl(val page: qq.editor.types.TypePage,
                       val τ: api.Access[_ <: api.SkillObject]) extends swing.BoxPanel(swing.Orientation.Horizontal) {
