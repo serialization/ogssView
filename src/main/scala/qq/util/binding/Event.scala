@@ -3,7 +3,8 @@ package qq.util.binding
 import scala.collection.mutable;
 
 /**
- * stores pointers to event handler functions and allows call them with a parameter
+ * Somethign that can happen.
+ * Stores pointers to event handler functions and allows call them with a parameter
  */
 class Event[T] {
   /**

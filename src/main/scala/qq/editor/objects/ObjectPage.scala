@@ -14,7 +14,8 @@ import scala.swing.Button
  * A page displaying data about an object ([[TopObjectEdit]]), with an optional search results page on the
  * left ([[SearchResults]]) and an option graph representation on the right ([[ObjectGraph]]).
  */
-class ObjectPage(file0: qq.editor.File, settings0: qq.editor.EditorPreferences) extends qq.editor.Page(file0, settings0) {
+class ObjectPage(file0: qq.editor.File, preferences0: qq.editor.EditorPreferences)
+extends qq.editor.Page(file0, preferences0) {
 
   /** search panel visible*/
   def searchVisible: Boolean = searchVisibleModel.isSelected()
@@ -213,7 +214,7 @@ class ObjectPage(file0: qq.editor.File, settings0: qq.editor.EditorPreferences) 
           for (s ← file.superTypes(pool)) {
             file.typePreferences(s).expanded ++= s.fields.map(Seq(_))
           }
-          goTo(p.staticInstances.take(pick).next.asInstanceOf[api.SkillObject])
+          goTo(p.staticInstances.drop(pick).next.asInstanceOf[api.SkillObject])
           pick -= 1 //
         }
         pick -= p.staticInstances.size

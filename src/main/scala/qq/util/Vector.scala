@@ -1,5 +1,6 @@
 package qq.util
 
+/** 2D vectors */
 class Vector(val x: Float, val y: Float) {
   def isZero(): Boolean = x == 0 && y == 0
   def isFinite(): Boolean = !x.isInfinite() && !y.isInfinite() && !x.isNaN() && !y.isNaN()
@@ -38,7 +39,7 @@ object Vector {
     if (u.size != 2) throw new Exception("expected (x,y)")
     new Vector(u(0).toFloat, u(1).toFloat)
   }
-  /* can't use sum for that cause requires Numeric and that is ordered */
+  /* can't use sum for that because sum requires Numeric and Numeric is ordered */
   def avg(xs: Iterable[Vector]): Vector = xs.fold(new Vector(0, 0))(_ + _) / xs.size
 }
 

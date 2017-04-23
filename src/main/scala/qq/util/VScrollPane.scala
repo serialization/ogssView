@@ -1,5 +1,6 @@
 package qq.util
 
+/** A [[swing.ScrollPane]] that only scrolls vertically */
 class VScrollPane
 extends swing.ScrollPane() {
     protected trait DontHScroll extends javax.swing.JScrollPane {

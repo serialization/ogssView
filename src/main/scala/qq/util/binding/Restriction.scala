@@ -1,5 +1,6 @@
 package qq.util.binding
 
+/** Restricts the valid values of a [[Property]]. */
 abstract class Restriction[T] {
   /** @retval Right(()) if @c value satisfies the restriction,
    *  @retval Left(conditionMessage) otherwise */
@@ -10,6 +11,7 @@ abstract class Restriction[T] {
   val conditionMessage: String
 }
 
+/** A [[Restriction]] was violated; `message` can be shown to the user. */
 class RestrictionException(message: String) extends scala.IllegalArgumentException(message) {
   
 }

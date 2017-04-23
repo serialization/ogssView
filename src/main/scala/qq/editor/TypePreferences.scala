@@ -15,7 +15,7 @@ class TypePreferences[T <: api.SkillObject](
 ) {
   
   /**
-   * Settings for the fields in this type.
+   * Preferences for the fields in this type.
    * 
    * only own fields; behaviour of inherited fields is taken from parent
    */

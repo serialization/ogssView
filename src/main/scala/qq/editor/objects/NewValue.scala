@@ -74,13 +74,13 @@ object NewValue {
    *  
    *  references are prompted in an [[ObjectPage]]. */
   class PromptPage[T](file0: qq.editor.File,
-                      settings0: qq.editor.EditorPreferences,
+                      preferences0: qq.editor.EditorPreferences,
                       val prompt: String,
                       val τ: api.FieldType[T],
                       val restrictions: HashSet[FieldRestriction],
                       val onSelect: T ⇒ Unit,
                       val onCancel: Unit ⇒ Unit)
-      extends qq.editor.Page(file0, settings0) {
+      extends qq.editor.Page(file0, preferences0) {
 
     def viewMenuItems = Seq()
     def typeMenuItems = Seq()

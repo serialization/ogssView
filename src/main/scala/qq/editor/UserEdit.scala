@@ -137,10 +137,14 @@ final case class UserDeleteObject[T <: api.SkillObject](
   }
 
   /** Get references to the object we want to delete
-   * @todo oops… pays no attention to containers. This will get ugly: we can not set
+   * @todo TODO oops… pays no attention to containers. This will get ugly: we can not set
    * 		members of sets or keys of maps to null, for that may make them non-unique.
    * 	  Thus, for sets and maps we have to generate MapRemove and SetRemove Edits
-   * 	  (and the corresponding MapInsert, SetInsert for undo) */
+   * 	  (and the corresponding MapInsert, SetInsert for undo)
+   * @todo TODO It would be nice to let the user see what will get nulled/removed before
+   *    deleting the object. However, to do so without a modal window, all this can't
+   *    happen in the constructor (it probably shouldn't, anyway. I don't mind too much
+   *    for the other UserEdits, but delete got far too complex…)*/
   private def getRefdBy: ListBuffer[Tuple2[api.SkillObject, api.FieldDeclaration[T]]] = {
     import de.ust.skill.common.scala.internal.fieldTypes._
     val result = new ListBuffer[Tuple2[api.SkillObject, api.FieldDeclaration[T]]]()

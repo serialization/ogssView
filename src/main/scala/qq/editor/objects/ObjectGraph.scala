@@ -52,7 +52,7 @@ class ObjectGraph[O <: api.SkillObject](
   val clampedNodes = new HashMap[qq.graph.AbstractNode, Vector]
 
   /** paths to expanded nodes. Only those which start with fields of obj are releavant and got from
-   *  the settings of the type of obj and super types */
+   *  the preferences of the type of obj and super types */
   private def expandPrefs(): Set[Seq[api.FieldDeclaration[_]]] = {
     val τ = page.file.s(obj.getTypeName)
     (for (τ2  <- τ +: page.file.superTypes(τ);
@@ -61,15 +61,15 @@ class ObjectGraph[O <: api.SkillObject](
   /** add paths to expanded nodes. Store at the type that contains the first field */
   private def expandPrefs_add(πs: Set[Seq[api.FieldDeclaration[_]]]): Unit = {
     for (π <- πs if π.size > 0) {
-      val typeSettings = page.file.fieldPreferences(π.head).containingType
-      typeSettings.expanded += π
+      val typePreferences = page.file.fieldPreferences(π.head).containingType
+      typePreferences.expanded += π
     }
   }
   /** remove paths to expanded nodes. They are stored at the type that contains the first field */
   private def expandPrefs_remove(πs: Set[Seq[api.FieldDeclaration[_]]]): Unit = {
     for (π <- πs if π.size > 0) {
-      val typeSettings = page.file.fieldPreferences(π.head).containingType
-      typeSettings.expanded.remove(π)
+      val typePreferences = page.file.fieldPreferences(π.head).containingType
+      typePreferences.expanded.remove(π)
     }
   }
   def expandCollapse(n: qq.graph.AbstractNode) {

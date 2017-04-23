@@ -2,6 +2,7 @@ package qq.util.binding
 
 import javax.swing.undo._;
 
+/** Undoable edit for the modifications of [[Property]]s by [[EditControl]]s*/
 class PropertyModifyEdit[T](val property: Property[T], var oldValue: T, var newValue: T)
     extends UndoableEdit {
 
@@ -14,7 +15,6 @@ class PropertyModifyEdit[T](val property: Property[T], var oldValue: T, var newV
     val rr = r.asInstanceOf[PropertyModifyEdit[T]]
     if (ll.property != rr.property) return false
     if (ll.newValue != rr.oldValue) return false // WTF
-    // TODO✓ should not happen: can we completely remove this edit when ll.old == rr.new, i.e. when the compound edit is a noop?
     ll.newValue = rr.newValue
     rr.oldValue = ll.oldValue
     return true

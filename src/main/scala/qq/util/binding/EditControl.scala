@@ -1,5 +1,6 @@
 package qq.util.binding
 
+/** A ui-element used for editing a [[Proeprty]]. */
 abstract class EditControl[T](val property: Property[T]) extends swing.Component {
   /**
    * whether editing updates the property immediately or update has to be called

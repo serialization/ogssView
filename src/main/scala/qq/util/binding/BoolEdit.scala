@@ -1,6 +1,6 @@
 package qq.util.binding
 
-/**
+/*
  * Unlabled edit control for a boolean property with two radio buttons. Looks better
  * then a check box when combined with text edits
  */

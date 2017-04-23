@@ -8,7 +8,7 @@ import swing.Swing.HGlue
 import swing.Swing.RigidBox
 import scala.swing.Dimension
 
-/** show the fields of one type and edit their profile settings. If page != null make hyperlinks to other types*/
+/** show the fields of one type and edit their preferences. If page != null make hyperlinks to other types*/
 class TypeEdit(val page: qq.editor.types.TypePage,
                val file: qq.editor.File,
                val skillType: api.Access[_ <: api.SkillObject]) extends qq.util.VScrollPane {

@@ -8,8 +8,8 @@ import scala.swing;
  * A page displaying data about a type ([[TypeEdit]]), with an optional type tree for navigation on the
  * left ([[TypeTree]]).
  */
-class TypePage(file0: qq.editor.File, settings0: qq.editor.EditorPreferences)
-    extends qq.editor.Page(file0, settings0) {
+class TypePage(file0: qq.editor.File, preferences0: qq.editor.EditorPreferences)
+    extends qq.editor.Page(file0, preferences0) {
 
   /** types tree visible*/
   def treeVisible: Boolean = treeVisibleModel.isSelected()

@@ -196,7 +196,7 @@ class File(fn0: java.nio.file.Path) {
   val fieldsByName: Map[String, Seq[Tuple2[api.Access[_], api.FieldDeclaration[_]]]] =
     (for (t ← s; f ← t.fields) yield (f.name, (t, f))).groupBy(_._1).mapValues(_.map(_._2))
 
-  /* type and field settings */
+  /* type and field preferences for this file */
   /** Preferences for all user types */
   val typePreferences: HashMap[api.Access[_], TypePreferences[_]] = new HashMap()
   for (t ← s) typePreferences(t) = new TypePreferences(t, this)

@@ -3,7 +3,12 @@ package qq.util.binding
 import scala.collection.mutable;
 import de.ust.skill.common.scala.api
 
-/** For binding GUI elements to actual data. Adapted from schauderhaft blog */
+/** 
+ * Something that can be changed; an [[Observable]] with assignment.
+ * 
+ * Adapted from schauderhaft blog (blog.schauderhaft.de/2011/05/01/binding-scala-objects-to-swing-components/)
+ * 
+ * Used for binding GUI elements to actual data.*/
 class Property[T](val owner: PropertyOwner, val name: String, var value: T)
     extends Observable[T]() {
 

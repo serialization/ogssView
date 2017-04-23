@@ -1,7 +1,9 @@
 package qq.util.binding
 
 import scala.collection.mutable
-
+/**
+ * Something that can change; a read-only [[Property]].
+ */
 abstract class Observable[T]() {
   def apply(): T
   def doOnChange(value: T) = {
