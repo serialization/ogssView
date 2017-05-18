@@ -1,5 +1,7 @@
 package qq.util.binding
 
+import qq.util.Neq
+
 /** A ui-element used for editing a [[Property]]. */
 abstract class EditControl[T](val property: Property[T]) extends swing.Component {
   /**
@@ -33,7 +35,7 @@ abstract class EditControl[T](val property: Property[T]) extends swing.Component
       editValue() match {
         case Right(x) ⇒
           val old = property()
-          if (qq.util.Neq(x, old)) {
+          if (Neq(x, old)) {
             property := x
             if (property.owner != null && property.owner.undoManager != null) {
               property.owner.undoManager.addEdit(new PropertyModifyEdit(property, old, x))

@@ -2,13 +2,15 @@ package qq.util.binding
 
 import scala.collection.mutable;
 import de.ust.skill.common.scala.api
+import qq.util.Neq
 
-/** 
+/**
  * Something that can be changed; an [[Observable]] with assignment.
- * 
+ *
  * Adapted from schauderhaft blog (blog.schauderhaft.de/2011/05/01/binding-scala-objects-to-swing-components/)
- * 
- * Used for binding GUI elements to actual data.*/
+ *
+ * Used for binding GUI elements to actual data.
+ */
 class Property[T](val owner: PropertyOwner, val name: String, var value: T)
     extends Observable[T]() {
 
@@ -29,7 +31,7 @@ class Property[T](val owner: PropertyOwner, val name: String, var value: T)
       case x :: xs ⇒
         throw new RestrictionException(x)
       case Nil ⇒
-        if (qq.util.Neq(value, newValue)) {
+        if (Neq(value, newValue)) {
           value = newValue
           doOnChange(newValue)
         }
@@ -39,7 +41,7 @@ class Property[T](val owner: PropertyOwner, val name: String, var value: T)
    * Set the value of the property to \c newValue without checking restrictions
    */
   def assignUnchecked(newValue: T): Unit = this.synchronized {
-    if (qq.util.Neq(value, newValue)) {
+    if (Neq(value, newValue)) {
       value = newValue
       doOnChange(newValue)
     }
@@ -58,12 +60,12 @@ class Property[T](val owner: PropertyOwner, val name: String, var value: T)
   def defaultEditor: EditControl[T] = {
     value match {
       case _: Boolean ⇒ new BoolEdit(this.asInstanceOf[Property[Boolean]]).asInstanceOf[EditControl[T]]
-      case _: Byte    ⇒ new TextEdit(this.asInstanceOf[Property[Byte]], _.toByte).asInstanceOf[EditControl[T]]
-      case _: Short   ⇒ new TextEdit(this.asInstanceOf[Property[Short]], _.toShort).asInstanceOf[EditControl[T]]
-      case _: Int     ⇒ new TextEdit(this.asInstanceOf[Property[Int]], _.toInt).asInstanceOf[EditControl[T]]
-      case _: Long    ⇒ new TextEdit(this.asInstanceOf[Property[Long]], _.toLong).asInstanceOf[EditControl[T]]
-      case _: Float   ⇒ new TextEdit(this.asInstanceOf[Property[Float]], _.toFloat).asInstanceOf[EditControl[T]]
-      case _: Double  ⇒ new TextEdit(this.asInstanceOf[Property[Double]], _.toDouble).asInstanceOf[EditControl[T]]
+      case _: Byte ⇒ new TextEdit(this.asInstanceOf[Property[Byte]], _.toByte).asInstanceOf[EditControl[T]]
+      case _: Short ⇒ new TextEdit(this.asInstanceOf[Property[Short]], _.toShort).asInstanceOf[EditControl[T]]
+      case _: Int ⇒ new TextEdit(this.asInstanceOf[Property[Int]], _.toInt).asInstanceOf[EditControl[T]]
+      case _: Long ⇒ new TextEdit(this.asInstanceOf[Property[Long]], _.toLong).asInstanceOf[EditControl[T]]
+      case _: Float ⇒ new TextEdit(this.asInstanceOf[Property[Float]], _.toFloat).asInstanceOf[EditControl[T]]
+      case _: Double ⇒ new TextEdit(this.asInstanceOf[Property[Double]], _.toDouble).asInstanceOf[EditControl[T]]
       case _: String ⇒ new TextEdit(this.asInstanceOf[Property[String]],
         x ⇒ (if (x == "(null)") null else x), (x: String) ⇒ (if (x == null) "(null)" else x)).asInstanceOf[EditControl[T]]
     }

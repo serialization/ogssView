@@ -7,9 +7,9 @@ import scala.collection.mutable.HashMap;
 import scala.collection.mutable.HashSet;
 
 /** Represents a skill file while opened in the editor */
-class File(fn0: java.nio.file.Path) {
-  /** The name of the skill file this is about (may change with save as) */
-  var fileName = fn0
+class File(
+    /** The name of the skill file this is about (may change with save as) */
+    var fileName: java.nio.file.Path) {
 
   private def pathAndName = {
     val dirnamepattern = "^(?:(.*)[\\\\/])?([^\\\\/]+)$".r
@@ -23,7 +23,7 @@ class File(fn0: java.nio.file.Path) {
     n + (if (isModified) " + " else "") + " (" + d + ") – SKilL edit"
   }
   /** the SKilL state for file [[fileName]] */
-  val s: empty.api.SkillFile = empty.api.SkillFile.open(fn0, api.Read, api.Write)
+  val s: empty.api.SkillFile = empty.api.SkillFile.open(fileName, api.Read, api.Write)
 
   /** Undo/redo queue of the changes that were applied to the file after it was opened or saved */
   val undoManager = new qq.util.UndoManager()
@@ -53,7 +53,7 @@ class File(fn0: java.nio.file.Path) {
   /**
    * Perform a [[qq.editor.UserEdit]], add it to the undo-queue, and notify the rest of
    * the programme about the change.
-   * 
+   *
    * This should only be called from the constructors of UserEdits (should probably be protected, somehow)
    */
   def modify(e: qq.editor.UserEdit[_]): Unit = {
@@ -64,8 +64,9 @@ class File(fn0: java.nio.file.Path) {
     onModifiednessChange.fire(isModified)
   }
 
-  /** Set of deleted objects.
-   *  
+  /**
+   * Set of deleted objects.
+   *
    * We mark objects as deleted by adding them to a deleted object queue. This
    * allows us to undelete them in a way such that all other edits in the undo/redo
    * queue stay valid.
@@ -74,19 +75,21 @@ class File(fn0: java.nio.file.Path) {
    */
   val deletedObjects: mutable.HashSet[api.SkillObject] = new mutable.HashSet()
 
-  /** Set of objects which have fields which violate a restriction.
-   * 
+  /**
+   * Set of objects which have fields which violate a restriction.
+   *
    * When deleting causes null references in non-null restricted fields, we add
    * the affected field to this list.
-   * 
+   *
    * Deletions are the only things that can violate restrictions in the skill state.
    * All other modifications check the restrictions during the creation of the
    * user edit and reject the modification.
    */
   val validationErrors: mutable.HashSet[Tuple2[api.SkillObject, api.FieldDeclaration[_]]] = new mutable.HashSet()
 
-  /** List of newly created objects.
-   *  
+  /**
+   * List of newly created objects.
+   *
    * created objects do not have a SkillId; we give them temporary negative ones;
    * item 0 has ID -1 and so on
    */
@@ -173,8 +176,10 @@ class File(fn0: java.nio.file.Path) {
     objOfId(s(pn), id)
   }
 
-  /** Get a string, `type#ID` or `(null)`, that identifies skill object `o`.
-   *  @param stropped add apostrophes to the type name (make sure, that it is not mistaken for a keyword when used in the serch function) */
+  /**
+   * Get a string, `type#ID` or `(null)`, that identifies skill object `o`.
+   *  @param stropped add apostrophes to the type name (make sure, that it is not mistaken for a keyword when used in the serch function)
+   */
   def idOfObj(o: api.SkillObject, stropped: Boolean = false): String = {
     if (o == null) {
       "(null)"

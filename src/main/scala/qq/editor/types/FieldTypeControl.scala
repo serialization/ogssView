@@ -2,6 +2,7 @@ package qq.editor.types
 
 import de.ust.skill.common.scala.api;
 import de.ust.skill.common.scala.internal.fieldTypes;
+import qq.editor.objects.DefaultColors
 
 /**
  * A swing Ui element for displaying a field type on a page with user types turned into links (i.e.\
@@ -13,7 +14,7 @@ class FieldTypeControl(
     val fieldType: api.FieldType[_])
     extends swing.BoxPanel(swing.Orientation.Horizontal) {
 
-  background = java.awt.SystemColor.text
+  background = DefaultColors.text
 
   contents ++=
     (fieldType.asInstanceOf[fieldTypes.FieldType[_]] match {

@@ -1,20 +1,30 @@
 package qq.editor
 
-import swing._;
-import event._;
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.nio.file.StandardCopyOption
-import de.ust.skill.common.scala.api;
+
+import scala.swing.Action
+import scala.swing.Dialog
+import scala.swing.FileChooser
+import scala.swing.MainFrame
+import scala.swing.Menu
+import scala.swing.MenuBar
+import scala.swing.MenuItem
+import scala.swing.SimpleSwingApplication
+
+import de.ust.skill.common.scala.api
+import qq.editor.objects.DefaultColors
+import javax.swing.UIManager
+import scala.collection.mutable.HashMap
 
 /**
  * State of the whole editor
- * */
+ */
 object Main extends SimpleSwingApplication {
 
-  // ugh, buttons have background again with sys UI. And font is very small.
-  // And the ugly anti-aliased fonts are still there
-  // javax.swing.UIManager.setLookAndFeel(javax.swing.UIManager.getSystemLookAndFeelClassName())
+  // set correct look and feel
+  javax.swing.UIManager.setLookAndFeel(javax.swing.UIManager.getSystemLookAndFeelClassName())
 
   /** user preferences */
   val preferences = new EditorPreferences()
@@ -337,7 +347,11 @@ object Main extends SimpleSwingApplication {
     size = new java.awt.Dimension(640, 480)
   }
 
-  // TODO argv[1]… not NOW
-  //open_(Paths.get(argv[1]))
+  // open first command line argument so that a user can open a file using double-click in the file system explorer
+  override def main(args: Array[String]) {
+    super.main(args)
 
+    if (!args.isEmpty)
+      open_(Paths.get(args(0)))
+  }
 }

@@ -1,8 +1,11 @@
 package qq.editor.objects
 
-import de.ust.skill.common.scala.api
-import scala.collection.mutable.HashSet
+import java.awt.RenderingHints
+
 import scala.collection.mutable.HashMap
+import scala.collection.mutable.HashSet
+
+import de.ust.skill.common.scala.api
 import qq.util.Vector
 
 /** Show obj and neighbourhood as graph */
@@ -29,13 +32,13 @@ class ObjectGraph[O <: api.SkillObject](
   private def addVpath(n: qq.graph.AbstractNode, π: Seq[api.FieldDeclaration[_]]): Unit = {
     vpathsToNode.getOrElseUpdate(n, Set())
     if (vpathsToNode(n).size == 0) {
-        vpathsToNode(n) += π
+      vpathsToNode(n) += π
     } else {
       if (π.size < vpathsToNode(n).head.size) {
         vpathsToNode(n) = Set(π)
       } else if (π.size == vpathsToNode(n).head.size) {
         if (vpathsToNode(n).size < 5) {
-          vpathsToNode(n) += π        
+          vpathsToNode(n) += π
         }
       }
     }
@@ -45,18 +48,22 @@ class ObjectGraph[O <: api.SkillObject](
     epathsToNode(n) += π
     addVpath(n, π)
   }
-    
-    val expandWithoutPath = new HashSet[qq.graph.AbstractNode]
+
+  val expandWithoutPath = new HashSet[qq.graph.AbstractNode]
 
   // once shown, nodes stay at their position
   val clampedNodes = new HashMap[qq.graph.AbstractNode, Vector]
 
-  /** paths to expanded nodes. Only those which start with fields of obj are releavant and got from
-   *  the preferences of the type of obj and super types */
+  /**
+   * paths to expanded nodes. Only those which start with fields of obj are releavant and got from
+   *  the preferences of the type of obj and super types
+   */
   private def expandPrefs(): Set[Seq[api.FieldDeclaration[_]]] = {
     val τ = page.file.s(obj.getTypeName)
-    (for (τ2  <- τ +: page.file.superTypes(τ);
-       path <- page.file.typePreferences(τ2).expanded) yield path).toSet
+    (for (
+      τ2 <- τ +: page.file.superTypes(τ);
+      path <- page.file.typePreferences(τ2).expanded
+    ) yield path).toSet
   }
   /** add paths to expanded nodes. Store at the type that contains the first field */
   private def expandPrefs_add(πs: Set[Seq[api.FieldDeclaration[_]]]): Unit = {
@@ -112,8 +119,8 @@ class ObjectGraph[O <: api.SkillObject](
     val edgesOnPaths = new HashSet[qq.graph.AbstractEdge]()
     for (path ← expandPrefs) {
       def expandPath(o: api.SkillObject,
-                     pathToO: Seq[api.FieldDeclaration[_]],
-                     pathToDo: Seq[api.FieldDeclaration[_]]): Boolean = {
+        pathToO: Seq[api.FieldDeclaration[_]],
+        pathToDo: Seq[api.FieldDeclaration[_]]): Boolean = {
         if (o != null) {
           if (pathToDo.size == 0) {
             val node = new qq.graph.SkillObjectNode(o)
@@ -161,9 +168,9 @@ class ObjectGraph[O <: api.SkillObject](
     // go to fields of expanded nodes
     val t2 = System.nanoTime()
     graph = new qq.graph.Graph(page.file, this, page.preferences.graphLayout)
-    // fix the position of clamped nodes first, then other nodes can get a better inital position
+    // fix the position of clamped nodes first, then other nodes can get a better initial position
     if (page.preferences.graphLayout.rootAtCentre()) {
-      // clamp root to centre
+      // clamp root to center
       clampedNodes(root) = qq.util.Vector(size) / 2
       graph.addNode(root)
       graph.nodes(root).clampedAt = Some(clampedNodes(root))
@@ -202,7 +209,7 @@ class ObjectGraph[O <: api.SkillObject](
         if (graph.nodes.contains(edge.getTo)) graph.addEdge(edge)
       }
     }*/
-    for (e<- edgesOnPaths) {
+    for (e <- edgesOnPaths) {
       graph.addEdge(e)
     }
 
@@ -228,11 +235,19 @@ class ObjectGraph[O <: api.SkillObject](
   override def paintComponent(g: swing.Graphics2D) {
     super.paintComponent(g)
 
+    // enable antialising for text and shapes
+    g.setRenderingHint(
+      RenderingHints.KEY_TEXT_ANTIALIASING,
+      RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+    g.setRenderingHint(
+      RenderingHints.KEY_ANTIALIASING,
+      RenderingHints.VALUE_ANTIALIAS_ON);
+
     // Start by erasing this Canvas
-    g.setColor(java.awt.SystemColor.text)
+    g.setColor(DefaultColors.text)
     g.clearRect(0, 0, bounds.width, bounds.height)
     g.fillRect(0, 0, bounds.width, bounds.height)
-    g.setColor(java.awt.SystemColor.textText)
+    g.setColor(DefaultColors.textText)
 
     for (c ← graph.nodes.values) {
       //g.drawString((c.force).toString(), c.pos.x.toInt, c.pos.y.toInt - 10)
@@ -244,7 +259,7 @@ class ObjectGraph[O <: api.SkillObject](
       c.uiElement.peer.setLocation(c.left, c.top)
       c.uiElement.peer.revalidate()
     }
-   /* for (i ← 0.until(graph.graphInfo.energyOfStep.size)) {
+    /* for (i ← 0.until(graph.graphInfo.energyOfStep.size)) {
       g.drawString("x", 10 + i, 10 + 10 * graph.graphInfo.energyOfStep(i) / graph.nodes.size)
       g.drawString("o", 10 + i, 10 + graph.graphInfo.stepOfStep(i))
       g.drawString("-", 10 + i, 10 + 10 * graph.graphInfo.energyHuOfStep(i))

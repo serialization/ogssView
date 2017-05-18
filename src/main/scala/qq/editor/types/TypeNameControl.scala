@@ -2,6 +2,7 @@ package qq.editor.types
 
 import de.ust.skill.common.scala.api;
 import de.ust.skill.common.scala.internal;
+import qq.editor.objects.DefaultColors
 
 /**
  * A control for displaying a type name on a page with user types turned into links and
@@ -10,7 +11,7 @@ import de.ust.skill.common.scala.internal;
 class TypeNameControl(val page: qq.editor.types.TypePage,
                       val τ: api.Access[_ <: api.SkillObject]) extends swing.BoxPanel(swing.Orientation.Horizontal) {
 
-  background = java.awt.SystemColor.text
+  background = DefaultColors.text
 
   if (page != null) {
     contents += new qq.util.PlainButton(swing.Action(τ.name) {

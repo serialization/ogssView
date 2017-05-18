@@ -7,13 +7,14 @@ import qq.util.Swing.HBoxT
 import swing.Swing.HGlue
 import swing.Swing.RigidBox
 import scala.swing.Dimension
+import qq.editor.objects.DefaultColors
 
 /** show the fields of one type and edit their preferences. If page != null make hyperlinks to other types*/
 class TypeEdit(val page: qq.editor.types.TypePage,
                val file: qq.editor.File,
                val skillType: api.Access[_ <: api.SkillObject]) extends qq.util.VScrollPane {
 
-  background = java.awt.SystemColor.text
+  background = DefaultColors.text
 
   /** displays one field. the field preferences can be shown and hidden */
   class Field(val page: qq.editor.types.TypePage,
@@ -52,7 +53,7 @@ class TypeEdit(val page: qq.editor.types.TypePage,
           typeAndName
         } else {
           new swing.BoxPanel(swing.Orientation.Vertical) {
-            background = java.awt.SystemColor.text
+            background = DefaultColors.text
             contents ++= f2.restrictions.map { x ⇒
               HBoxT(
                 new qq.util.PlainLabel(
@@ -74,7 +75,7 @@ class TypeEdit(val page: qq.editor.types.TypePage,
   }
 
   private val inner = new swing.BoxPanel(swing.Orientation.Vertical) {
-    background = java.awt.SystemColor.text
+    background = DefaultColors.text
     def addFieldsOfType(τ: api.Access[_ <: api.SkillObject]): Unit = {
       if (file.parentType.contains(τ)) {
         addFieldsOfType(file.parentType(τ))
@@ -87,7 +88,7 @@ class TypeEdit(val page: qq.editor.types.TypePage,
 
         if (τ.fields.length > 0) {
           subPart = new swing.BoxPanel(swing.Orientation.Vertical) {
-            background = java.awt.SystemColor.text
+            background = DefaultColors.text
             contents ++= τ.fields.
                   filter(!file.fieldPreferences(_).isDeleted).
                   map(x ⇒ new Field(page, file, skillType, x))

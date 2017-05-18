@@ -111,43 +111,50 @@ class Edge(
 
   }
 
-  /** print a block of strings */
+  /**
+   * print a block of strings
+   *
+   * @todo broken in case of labels pointing towards bottom
+   * @todo the four methods below should be simplified into a single method 
+   */
   private def putsstr(g: swing.Graphics2D, top: Float, right: Float, ss: Seq[String]) = {
-    val h = g.getFontMetrics.getHeight
-    var y = top + h
+    val h = 1.5 * g.getFontMetrics.getHeight
     for (s ← ss) {
-      g.drawString(s, right - g.getFontMetrics.stringWidth(s), y)
-      y += h
+      g.drawString(s, right - g.getFontMetrics.stringWidth(s), top)
+      g.translate(0, -h)
     }
+    g.translate(0, h * ss.size)
   }
   private def putssbr(g: swing.Graphics2D, bottom: Float, right: Float, ss: Seq[String]) = {
-    val h = g.getFontMetrics.getHeight
-    var y = bottom - g.getFontMetrics.getDescent
+    val h = 1.5 * g.getFontMetrics.getHeight
     for (s ← ss) {
-      g.drawString(s, right - g.getFontMetrics.stringWidth(s), y)
-      y -= h
+      g.drawString(s, right - g.getFontMetrics.stringWidth(s), bottom)
+      g.translate(0, -h)
     }
+    g.translate(0, h * ss.size)
   }
   private def putsstl(g: swing.Graphics2D, top: Float, left: Float, ss: Seq[String]) = {
-    val h = g.getFontMetrics.getHeight
-    var y = top + h
+    val h = 1.5 * g.getFontMetrics.getHeight
     for (s ← ss) {
-      g.drawString(s, left, y)
-      y += h
+      g.drawString(s, left, top)
+      g.translate(0, -h)
     }
+    g.translate(0, h * ss.size)
   }
   private def putssbl(g: swing.Graphics2D, bottom: Float, left: Float, ss: Seq[String]) = {
-    val h = g.getFontMetrics.getHeight
-    var y = bottom - g.getFontMetrics.getDescent
+    val h = 1.5 * g.getFontMetrics.getHeight
     for (s ← ss) {
-      g.drawString(s, left, y)
-      y -= h
+      g.drawString(s, left, bottom)
+      g.translate(0, -h)
     }
+    g.translate(0, h * ss.size)
   }
 
   /**
    * draw this edge, add decoration and textLabels from data and reverse data if feasible,
    * otherwise provide interactive means to get to them
+   * 
+   * @todo this code is overly complicated and broken in that it does not place labels correctly
    */
   def draw(g: swing.Graphics2D) {
     val t = g.getTransform

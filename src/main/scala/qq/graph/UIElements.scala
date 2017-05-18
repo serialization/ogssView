@@ -2,13 +2,13 @@ package qq.graph
 
 import qq.util.HtmlEscape
 import de.ust.skill.common.scala.api
-import java.awt.SystemColor
 import scala.collection.mutable.Buffer
 import scala.collection.mutable.HashSet
 import scala.collection.mutable.HashMap
 import swing.Swing.LineBorder
 import swing.Swing.CompoundBorder
 import swing.Swing.EmptyBorder
+import qq.editor.objects.DefaultColors
 
 /** common Ui elements for the graph nodes*/
 object UIElements {
@@ -33,6 +33,18 @@ object UIElements {
   private def borderWidth(g: Graph, n: AbstractNode) = {
     if (g.viewer.root == n && g.preferences.rootBold()) 2 else 1
   }
+
+  /**
+   * boarder is colored like text for ordinary nodes and like selection for selected node
+   */
+  private def borderColour(g: Graph, n: AbstractNode) = {
+    if (g.viewer.root == n) {
+      DefaultColors.textHighlight
+    } else {
+      DefaultColors.textText
+    }
+  }
+
   def skillObject(g: Graph, node: AbstractNode, o: api.SkillObject) = {
     val button = new qq.util.PlainButton(
       new swing.Action(node.name(g)) {
@@ -47,18 +59,19 @@ object UIElements {
         val text = valueShortString(o.get(f))
         qq.util.Swing.HBoxT(new qq.util.PlainLabel(f.name + " = " + text), swing.Swing.HGlue)
       }
+
       if (innerFields.size == 0) {
         button.border = CompoundBorder(
-          LineBorder(SystemColor.textText, borderWidth(g, node)),
+          LineBorder(borderColour(g, node), borderWidth(g, node)),
           EmptyBorder(0, 2, 0, 2))
         button
       } else {
         val head = qq.util.Swing.HBoxT(button, swing.Swing.HGlue)
         head.border = CompoundBorder(
-          swing.Swing.MatteBorder(0, 0, borderWidth(g, node), 0, SystemColor.textText),
+          swing.Swing.MatteBorder(0, 0, borderWidth(g, node), 0, borderColour(g, node)),
           EmptyBorder(0, 2, 0, 2))
         val whole = qq.util.Swing.VBoxT((head +: innerFields): _*)
-        whole.border = LineBorder(SystemColor.textText, borderWidth(g, node))
+        whole.border = LineBorder(borderColour(g, node), borderWidth(g, node))
         whole
       }
     } else {
@@ -70,30 +83,30 @@ object UIElements {
     val lm = new swing.Action("list members") {
       override def apply() {
         val page = qq.editor.Main.newObjectTab()
-        page.find(g.file.idOfObj(o)+" "+f.name + " ?member")
+        page.find(g.file.idOfObj(o) + " " + f.name + " ?member")
         page.show()
-        }
+      }
     }
-    
+
     val button = new qq.util.PlainButton(
       new swing.Action(node.name(g)) {
         override def apply() = {
           if (small) {
-          g.viewer.expandCollapse(node)
+            g.viewer.expandCollapse(node)
           } else {
             lm()
           }
         }
       }) {
-      peer.setComponentPopupMenu(new swing.PopupMenu(){contents += new swing.MenuItem(lm)}.peer)
+      peer.setComponentPopupMenu(new swing.PopupMenu() { contents += new swing.MenuItem(lm) }.peer)
     }
 
     button.border = CompoundBorder(
-      LineBorder(java.awt.SystemColor.textText),
+      LineBorder(DefaultColors.textText),
       CompoundBorder(
-        LineBorder(java.awt.SystemColor.text),
+        LineBorder(DefaultColors.text),
         CompoundBorder(
-          LineBorder(java.awt.SystemColor.textText),
+          LineBorder(DefaultColors.textText),
           EmptyBorder(0, 2, 0, 2))))
     button
   }
@@ -108,7 +121,7 @@ object UIElements {
   }
   def map[K, V, C[K, V] <: HashMap[K, V]](g: Graph, node: AbstractNode, o: api.SkillObject, f: api.FieldDeclaration[C[K, V]]) = {
     import qq.util.FlattenedMap.size
-    val base = container(g, node, o, f, size(o.get(f), f.t.asInstanceOf[de.ust.skill.common.scala.internal.fieldTypes.MapType[K,V]]) <= g.viewer.page.preferences.graphCollectionSmall())
+    val base = container(g, node, o, f, size(o.get(f), f.t.asInstanceOf[de.ust.skill.common.scala.internal.fieldTypes.MapType[K, V]]) <= g.viewer.page.preferences.graphCollectionSmall())
     base
   }
 }

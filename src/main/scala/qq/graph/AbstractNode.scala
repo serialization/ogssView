@@ -157,7 +157,7 @@ case class SetValueNode[E, C[E] <: HashSet[E]](val skillObject: api.SkillObject,
   override def getOutEdge(file: qq.editor.File) = Iterator() // values are leaves
   override def hashCode = java.util.Objects.hash(skillObject, field) ^ (if (element == null) 0 else element.hashCode())
   override def equals(that: Any) = that match {
-    case that: SetValueNode[E, C] ⇒ that.skillObject == skillObject && that.field == field && !qq.util.Neq(that.element, element)
+    case that: SetValueNode[E, C] ⇒ that.skillObject == skillObject && that.field == field && ne(that.element, element)
     case _                        ⇒ false
   }
   override def name(graph: Graph) = UIElements.valueShortString(element)
