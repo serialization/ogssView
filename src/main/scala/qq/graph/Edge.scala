@@ -2,6 +2,7 @@ package qq.graph
 
 import scala.collection.mutable.HashSet
 import qq.util.Vector
+import java.awt.geom.AffineTransform
 
 /**
  * a edge in the graph as drawn. There is at most one edge between two nodes. All
@@ -9,19 +10,19 @@ import qq.util.Vector
  *  are added to the data and reverseData collections
  */
 class Edge(
-    val graph: Graph,
-    val from: Node,
-    val to: Node,
-    data0: AbstractEdge) {
+    val graph : Graph,
+    val from : Node,
+    val to : Node,
+    data0 : AbstractEdge) {
 
   /** all abstract edges represented by this drawn link */
-  val data: HashSet[AbstractEdge] = HashSet(data0)
+  val data : HashSet[AbstractEdge] = HashSet(data0)
   /** abstract edges represented by a edge in the opposite direction of this one */
-  val reverseData: HashSet[AbstractEdge] = HashSet()
+  val reverseData : HashSet[AbstractEdge] = HashSet()
 
   val uiElementAtFrom = new swing.Label("  ")
   val uiElementAtTo = new swing.Label("  ")
-  def updateToolTip: Unit = {
+  def updateToolTip : Unit = {
     // two tool tips with all edges neatly on top of each other
     uiElementAtFrom.tooltip = s"""<html><table><tr>
       <td valign="middle">${from.data.name(graph)}</td>
@@ -51,11 +52,11 @@ class Edge(
 
   }
 
-  def r: Vector = to.pos - from.pos
+  def r : Vector = to.pos - from.pos
   /** calculate the direction stabilising force due to this edge and add it to from and to */
-  def calculateForce(): Unit = {
-    def Fp(p: Vector) = (p - r * (p * r) / (r * r)) * graph.preferences.c4()
-    def apply(F: Vector) = if (F.isFinite()) {
+  def calculateForce() : Unit = {
+    def Fp(p : Vector) = (p - r * (p * r) / (r * r)) * graph.preferences.c4()
+    def apply(F : Vector) = if (F.isFinite()) {
       val ff = F * F
       from.force -= F
       to.force += F
@@ -67,14 +68,14 @@ class Edge(
     // thank data and reverseDate that's a lot of cases…
 
     // e and f represent the same field
-    def sameField(e: AbstractEdge, f: AbstractEdge) = {
+    def sameField(e : AbstractEdge, f : AbstractEdge) = {
       e.isInstanceOf[SkillFieldEdge[_]] &&
         f.isInstanceOf[SkillFieldEdge[_]] &&
         e.asInstanceOf[SkillFieldEdge[_]].field ==
         f.asInstanceOf[SkillFieldEdge[_]].field
     }
     /* number of edges from source that represent the same field as e */
-    def sameSourceEdgeCount(source: Node, e: AbstractEdge) = {
+    def sameSourceEdgeCount(source : Node, e : AbstractEdge) = {
       if (graph.preferences.scaleDirectionWhenConflict()) {
         source.edgesOut.values.count(_.data.exists(sameField(e, _))) +
           source.edgesIn.values.count(_.reverseData.exists(sameField(e, _)))
@@ -83,7 +84,7 @@ class Edge(
       }
     }
     /* number of edges to target that represent the same field as e */
-    def sameTargetEdgeCount(target: Node, e: AbstractEdge) = {
+    def sameTargetEdgeCount(target : Node, e : AbstractEdge) = {
       if (graph.preferences.scaleDirectionWhenConflict()) {
         target.edgesOut.values.count(_.reverseData.exists(sameField(e, _))) +
           target.edgesIn.values.count(_.data.exists(sameField(e, _)))
@@ -113,115 +114,98 @@ class Edge(
 
   /**
    * print a block of strings
-   *
-   * @todo broken in case of labels pointing towards bottom
-   * @todo the four methods below should be simplified into a single method 
    */
-  private def putsstr(g: swing.Graphics2D, top: Float, right: Float, ss: Seq[String]) = {
-    val h = 1.5 * g.getFontMetrics.getHeight
+  private def putsstr(g : swing.Graphics2D, ss : Seq[String], width : Float, toDirection : Boolean) = {
+    val savedTransformation = g.getTransform
+
+    // calculate label distance
+    val direction = if (toDirection) -1 else 1
+    val h = 1.5 * g.getFontMetrics.getHeight * direction
+    val begin = (width / 2 - 3) * direction
+
+    // set initial position relative to the center of the line
+    g.translate(begin, h * (if (!toDirection) .75 else .5))
+
     for (s ← ss) {
-      g.drawString(s, right - g.getFontMetrics.stringWidth(s), top)
-      g.translate(0, -h)
+      g.drawString(s, if (toDirection) 0 else -g.getFontMetrics.stringWidth(s), 0)
+      g.translate(0, h)
     }
-    g.translate(0, h * ss.size)
-  }
-  private def putssbr(g: swing.Graphics2D, bottom: Float, right: Float, ss: Seq[String]) = {
-    val h = 1.5 * g.getFontMetrics.getHeight
-    for (s ← ss) {
-      g.drawString(s, right - g.getFontMetrics.stringWidth(s), bottom)
-      g.translate(0, -h)
-    }
-    g.translate(0, h * ss.size)
-  }
-  private def putsstl(g: swing.Graphics2D, top: Float, left: Float, ss: Seq[String]) = {
-    val h = 1.5 * g.getFontMetrics.getHeight
-    for (s ← ss) {
-      g.drawString(s, left, top)
-      g.translate(0, -h)
-    }
-    g.translate(0, h * ss.size)
-  }
-  private def putssbl(g: swing.Graphics2D, bottom: Float, left: Float, ss: Seq[String]) = {
-    val h = 1.5 * g.getFontMetrics.getHeight
-    for (s ← ss) {
-      g.drawString(s, left, bottom)
-      g.translate(0, -h)
-    }
-    g.translate(0, h * ss.size)
+
+    g.setTransform(savedTransformation)
   }
 
   /**
    * draw this edge, add decoration and textLabels from data and reverse data if feasible,
    * otherwise provide interactive means to get to them
-   * 
-   * @todo this code is overly complicated and broken in that it does not place labels correctly
    */
-  def draw(g: swing.Graphics2D) {
-    val t = g.getTransform
+  def draw(g : swing.Graphics2D) {
+    // save transformation to reset changes made in the body of this method 
+    val savedTransformation = g.getTransform
+
     val fromLabels = reverseData.iterator.map(_.textLabel(graph.file)).toSeq
     val fromDecorations = reverseData.iterator.map(_.toDecoration).toSeq.distinct
     val toLabels = data.iterator.map(_.textLabel(graph.file)).toSeq
     val toDecorations = data.iterator.map(_.toDecoration).toSeq.distinct
+
     if (from == to) {
+      // self edge
       g.translate(from.pos.x.toInt + from.width / 2, from.pos.y.toInt)
       g.drawOval(-10, -20, 40, 40)
-      putsstl(g, 30, 0, fromLabels)
-      putssbl(g, 30, 0, toLabels)
+      g.translate(30, 0)
+      putsstr(g, fromLabels ++ toLabels, 0, true)
     } else {
+      // regular edge
       val f = from.pos + from.toBorder(to.pos - from.pos)
       val t = to.pos + to.toBorder(from.pos - to.pos)
       g.translate(f.x.toInt, f.y.toInt)
-      val d = t - f
-      val fromBelow = from.intersectsTopOrBottom(d) ^ (d.y > 0)
-      val toBelow = to.intersectsTopOrBottom(d) ^ (d.y < 0)
-      val φ = d.direction
-      if (φ.abs <= math.Pi / 2) {
-        // write in direction of edge
-        g.rotate(φ)
-        var width = d.abs.toInt
-        for (d ← fromDecorations) {
-          d.draw(g)
-          width -= d.width
-          g.translate(d.width, 0)
-        }
-        g.translate(width, 0)
-        g.rotate(math.Pi)
-        for (d ← toDecorations) {
-          d.draw(g)
-          width -= d.width
-          g.translate(d.width, 0)
-        }
-        g.rotate(math.Pi)
-        if (toBelow) putssbr(g, 0, 0, toLabels) else putsstr(g, 0, 0, toLabels)
-        if (fromBelow) putssbl(g, 0, -width, fromLabels) else putsstl(g, 0, -width, fromLabels)
-        g.drawLine(0, 0, -width, 0)
-      } else {
-        // write in opposite direction
-        g.rotate(φ)
-        var width = d.abs.toInt
-        for (d ← fromDecorations) {
-          d.draw(g)
-          width -= d.width
-          g.translate(d.width, 0)
-        }
-        g.translate(width, 0)
-        g.rotate(math.Pi)
-        for (d ← toDecorations) {
-          d.draw(g)
-          width -= d.width
-          g.translate(d.width, 0)
-        }
-        if (toBelow) putssbl(g, 0, 0, toLabels) else putsstl(g, 0, 0, toLabels)
-        if (fromBelow) putssbr(g, 0, width, fromLabels) else putsstr(g, 0, width, fromLabels)
-        g.drawLine(0, 0, width, 0)
+      val delta = t - f
+      val φ = delta.direction
 
+      // create decorations
+      g.rotate(φ)
+      var width = delta.abs.toInt
+      for (d ← fromDecorations) {
+        d.draw(g)
+        width -= d.width
+        g.translate(d.width, 0)
       }
+      g.translate(width, 0)
+      g.rotate(math.Pi)
+      for (d ← toDecorations) {
+        d.draw(g)
+        width -= d.width
+        g.translate(d.width, 0)
+      }
+      // draw line
+      g.rotate(math.Pi)
+      g.drawLine(0, 0, -width, 0)
+
+      // set transformation such that center is the center of the line and direct causes text to be readable
+      locally {
+        val trans = savedTransformation.clone().asInstanceOf[AffineTransform]
+        val mid = (t + f) * .5f
+        trans.translate(mid.x, mid.y)
+        trans.rotate(φ)
+        // ensure that rotations points upwards
+        locally {
+          val data = new Array[Double](6)
+          trans.getMatrix(data)
+          if (data(3) < 0)
+            trans.rotate(math.Pi)
+        }
+
+        g.setTransform(trans)
+      }
+
+      // create toLabels above and fromLabels below      
+      putsstr(g, toLabels, width, true)
+      putsstr(g, fromLabels, width, false)
     }
-    g.setTransform(t)
+    g.setTransform(savedTransformation)
   }
 
   // TODO decorations and stack labels of parallel edges in postscript
-  def toPs(): String = {
+  def toPs() : String = {
     val fromLabels = reverseData.iterator.map(_.textLabel(graph.file)).toSeq
     val fromDecorations = reverseData.iterator.map(_.toDecoration).toSeq.distinct
     val toLabels = data.iterator.map(_.textLabel(graph.file)).toSeq

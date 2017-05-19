@@ -1,5 +1,8 @@
+name := "skillView"
 
-scalaVersion := "2.11.7"
+version := "0.9"
+
+scalaVersion := "2.11.8"
 
 libraryDependencies += "org.scala-lang.modules" %% "scala-swing" % "1.0.1"
 
