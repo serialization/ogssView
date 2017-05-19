@@ -181,6 +181,7 @@ class Edge(
       g.drawLine(0, 0, -width, 0)
 
       // set transformation such that center is the center of the line and direct causes text to be readable
+      var flipped = false;
       locally {
         val trans = savedTransformation.clone().asInstanceOf[AffineTransform]
         val mid = (t + f) * .5f
@@ -190,16 +191,18 @@ class Edge(
         locally {
           val data = new Array[Double](6)
           trans.getMatrix(data)
-          if (data(3) < 0)
+          if (data(3) < 0) {
             trans.rotate(math.Pi)
+            flipped = true
+          }
         }
 
         g.setTransform(trans)
       }
 
       // create toLabels above and fromLabels below      
-      putsstr(g, toLabels, width, true)
-      putsstr(g, fromLabels, width, false)
+      putsstr(g, toLabels, width, !flipped)
+      putsstr(g, fromLabels, width, flipped)
     }
     g.setTransform(savedTransformation)
   }
