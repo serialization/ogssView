@@ -1,9 +1,10 @@
-/*  ___ _  ___ _ _                                                            *\
- * / __| |/ (_) | |       Your SKilL Scala Binding                            *
- * \__ \ ' <| | | |__     generated: 18.09.2016                               *
- * |___/_|\_\_|_|____|    by: m                                               *
-\*                                                                            */
+/*  ___ _  ___ _ _                                                                                                    *\
+** / __| |/ (_) | |     Your SKilL scala Binding                                                                      **
+** \__ \ ' <| | | |__   <<debug>>                                                                                     **
+** |___/_|\_\_|_|____|  by: <<some developer>>                                                                        **
+\*                                                                                                                    */
 package empty.api
+
 
 import java.io.File
 import java.nio.file.Path
@@ -35,15 +36,17 @@ import de.ust.skill.common.scala.internal.UnrootedInterfacePool
  * @author Timm Felden
  */
 final class SkillFile(
-  _path: Path,
-  _mode: WriteMode,
-  _String: StringPool,
-  _annotationType: fieldTypes.AnnotationType,
-  _types: ArrayBuffer[StoragePool[_ <: SkillObject, _ <: SkillObject]],
-  _typesByName: HashMap[String, StoragePool[_ <: SkillObject, _ <: SkillObject]])
+  _path : Path,
+  _mode : WriteMode,
+  _String : StringPool,
+  _annotationType : fieldTypes.AnnotationType,
+  _types : ArrayBuffer[StoragePool[_ <: SkillObject, _ <: SkillObject]],
+  _typesByName : HashMap[String, StoragePool[_ <: SkillObject, _ <: SkillObject]])
     extends SkillState(_path, _mode, _String, _annotationType, _types, _typesByName) {
 
-  private[api] def AnnotationType = annotationType
+  private[api] def AnnotationType : AnnotationType = annotationType
+
+
 
 }
 
@@ -54,7 +57,7 @@ object SkillFile {
   /**
    * Reads a binary SKilL file and turns it into a SKilL state.
    */
-  def open(path: String, read: ReadMode = Read, write: WriteMode = Write): SkillFile = {
+  def open(path : String, read : ReadMode = Read, write : WriteMode = Write) : SkillFile = {
     val f = new File(path)
     if (!f.exists())
       f.createNewFile()
@@ -63,7 +66,7 @@ object SkillFile {
   /**
    * Reads a binary SKilL file and turns it into a SKilL state.
    */
-  def open(file: File, read: ReadMode, write: WriteMode): SkillFile = {
+  def open(file : File, read : ReadMode, write : WriteMode) : SkillFile = {
     if (!file.exists())
       file.createNewFile()
     readFile(file.toPath, read, write)
@@ -71,19 +74,19 @@ object SkillFile {
   /**
    * Reads a binary SKilL file and turns it into a SKilL state.
    */
-  def open(path: Path, read: ReadMode, write: WriteMode): SkillFile = readFile(path, read, write)
+  def open(path : Path, read : ReadMode, write : WriteMode) : SkillFile = readFile(path, read, write)
 
   /**
    * same as open(create)
    */
-  def create(path: Path, write: WriteMode = Write): SkillFile = readFile(path, Create, write)
+  def create(path : Path, write : WriteMode = Write) : SkillFile = readFile(path, Create, write)
 
   /**
    * same as open(read)
    */
-  def read(path: Path, write: WriteMode = Write): SkillFile = readFile(path, Read, write)
+  def read(path : Path, write : WriteMode = Write) : SkillFile = readFile(path, Read, write)
 
-  private def readFile(path: Path, read: ReadMode, write: WriteMode): SkillFile = read match {
+  private def readFile(path : Path, read : ReadMode, write : WriteMode) : SkillFile = read match {
     case Read ⇒ internal.FileParser.read(FileInputStream.open(path, write == ReadOnly), write)
 
     case Create ⇒
