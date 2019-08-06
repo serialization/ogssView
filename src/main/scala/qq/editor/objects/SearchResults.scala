@@ -1,7 +1,8 @@
 package qq.editor.objects
 
 import scala.collection.mutable;
-import de.ust.skill.common.scala.api;
+import ogss.common.scala.api;
+import ogss.common.scala.internal;
 
 /** Swing UI element for entering a search query and displaying a list of search results.
  *  
@@ -63,6 +64,7 @@ class SearchResults(val page: ObjectPage)
           val text = e.getMessage
           queryError.text = if (text != null) text else e.toString()
           queryError.visible = true
+          throw e //TODO delete
       }
       queryError.revalidate()
     }
@@ -95,8 +97,8 @@ class SearchResults(val page: ObjectPage)
       visibleData
         .map { x ⇒
           query.variables.map { v ⇒
-            if (x(v).isInstanceOf[api.SkillObject])
-              page.file.idOfObj(x(v).asInstanceOf[api.SkillObject])
+            if (x(v).isInstanceOf[internal.Obj])
+              page.file.idOfObj(x(v).asInstanceOf[internal.Obj])
             else if (x(v) == null) "(null)" else x(v).toString().asInstanceOf[Any] // no boolean checkbox magic
           }.toArray
         }.toArray,
@@ -121,8 +123,8 @@ class SearchResults(val page: ObjectPage)
       if (i >= 0) {
         val row = resultsRetrieved(displayOffset + i)
           .values
-          .filter(_.isInstanceOf[api.SkillObject])
-          .map(_.asInstanceOf[api.SkillObject])
+          .filter(_.isInstanceOf[internal.Obj])
+          .map(_.asInstanceOf[internal.Obj])
         page.goTo(new page.View(row.head, row.drop(1)))
       }
   }

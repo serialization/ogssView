@@ -1,12 +1,13 @@
 package qq.editor.queries
 
-import de.ust.skill.common.scala.api;
+import ogss.common.scala.api;
+import ogss.common.scala.internal;
 
 /** A query returning a specific object */
 class IdQuery(
     val file0: qq.editor.File,
     val variable: String,
-    val obj: api.SkillObject) extends Query(file0) {
+    val obj: internal.Obj) extends Query(file0) {
 
   override def variables = Seq(variable)
   override def find() = {
@@ -15,7 +16,7 @@ class IdQuery(
   override def prepare(assigned: Seq[String]) = ()
   override def find(assignment: Map[String, Any]) = {
     /* we must ensure (outside) that b contains variable: we want to disallow the generation of full cartesian products */
-    if (assignment(variable).isInstanceOf[api.SkillObject] && obj == assignment(variable)) {
+    if (assignment(variable).isInstanceOf[internal.Obj] && obj == assignment(variable)) {
       Iterator(assignment)
     } else {
       Iterator()

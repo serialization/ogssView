@@ -1,7 +1,8 @@
 package qq.graph
 
 import qq.util.HtmlEscape
-import de.ust.skill.common.scala.api
+import ogss.common.scala.api
+import ogss.common.scala.internal
 import scala.collection.mutable.Buffer
 import scala.collection.mutable.HashSet
 import scala.collection.mutable.HashMap
@@ -45,7 +46,7 @@ object UIElements {
     }
   }
 
-  def skillObject(g: Graph, node: AbstractNode, o: api.SkillObject) = {
+  def skillObject(g: Graph, node: AbstractNode, o: internal.Obj) = {
     val button = new qq.util.PlainButton(
       new swing.Action(node.name(g)) {
         override def apply() = {
@@ -54,9 +55,9 @@ object UIElements {
       })
     button.peer.setComponentPopupMenu(qq.editor.objects.ObjectContextMenu(o, g.viewer.page).peer)
     if (g.viewer.expandedNodes.contains(node)) {
-      val τ = g.file.s(o.getTypeName)
+      val τ = g.file.s.pool(o)
       val innerFields = for (f ← τ.allFields.toSeq if !g.file.fieldPreferences(f).isDeleted && g.file.fieldPreferences(f).visibilityIn(o).showInParent) yield {
-        val text = valueShortString(o.get(f))
+        val text = valueShortString(f.get(o))
         qq.util.Swing.HBoxT(new qq.util.PlainLabel(f.name + " = " + text), swing.Swing.HGlue)
       }
 
@@ -78,7 +79,7 @@ object UIElements {
       button
     }
   }
-  private def container(g: Graph, node: AbstractNode, o: api.SkillObject, f: api.FieldDeclaration[_], small: Boolean) = {
+  private def container(g: Graph, node: AbstractNode, o: internal.Obj, f: api.FieldAccess[_], small: Boolean) = {
 
     val lm = new swing.Action("list members") {
       override def apply() {
@@ -111,17 +112,17 @@ object UIElements {
     button
   }
 
-  def list[E, C[E] <: Buffer[E]](g: Graph, node: AbstractNode, o: api.SkillObject, f: api.FieldDeclaration[C[E]]) = {
-    val base = container(g, node, o, f, o.get(f).size <= g.viewer.page.preferences.graphCollectionSmall())
+  def list[E, C[E] <: Buffer[E]](g: Graph, node: AbstractNode, o: internal.Obj, f: api.FieldAccess[C[E]]) = {
+    val base = container(g, node, o, f, f.get(o).size <= g.viewer.page.preferences.graphCollectionSmall())
     base
   }
-  def set[E, C[E] <: HashSet[E]](g: Graph, node: AbstractNode, o: api.SkillObject, f: api.FieldDeclaration[C[E]]) = {
-    val base = container(g, node, o, f, o.get(f).size <= g.viewer.page.preferences.graphCollectionSmall())
+  def set[E, C[E] <: HashSet[E]](g: Graph, node: AbstractNode, o: internal.Obj, f: api.FieldAccess[C[E]]) = {
+    val base = container(g, node, o, f, f.get(o).size <= g.viewer.page.preferences.graphCollectionSmall())
     base
   }
-  def map[K, V, C[K, V] <: HashMap[K, V]](g: Graph, node: AbstractNode, o: api.SkillObject, f: api.FieldDeclaration[C[K, V]]) = {
+  def map[K, V, C[K, V] <: HashMap[K, V]](g: Graph, node: AbstractNode, o: internal.Obj, f: api.FieldAccess[C[K, V]]) = {
     import qq.util.FlattenedMap.size
-    val base = container(g, node, o, f, size(o.get(f), f.t.asInstanceOf[de.ust.skill.common.scala.internal.fieldTypes.MapType[K, V]]) <= g.viewer.page.preferences.graphCollectionSmall())
+    val base = container(g, node, o, f, size(f.get(o), f.t.asInstanceOf[ogss.common.scala.internal.fieldTypes.MapType[K, V]]) <= g.viewer.page.preferences.graphCollectionSmall())
     base
   }
 }

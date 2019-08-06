@@ -1,1 +1,14 @@
 /bin/
+
+# sbt project
+project/**
+!project/plugins.sbt
+target/**
+
+#eclipse
+.classpath
+.project
+.cache-main
+.cache-tests
+.settings
+

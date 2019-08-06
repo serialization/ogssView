@@ -13,7 +13,8 @@ import scala.swing.MenuBar
 import scala.swing.MenuItem
 import scala.swing.SimpleSwingApplication
 
-import de.ust.skill.common.scala.api
+import ogss.common.scala.api
+import ogss.common.scala.internal
 import qq.editor.objects.DefaultColors
 import javax.swing.UIManager
 import scala.collection.mutable.HashMap
@@ -39,7 +40,7 @@ object Main extends SimpleSwingApplication {
   private val tabs = new qq.util.TabbedPane()
 
   /** add a new tab showing type τ. τ == null allowed*/
-  def newTypeTab(τ: api.Access[_ <: api.SkillObject]): qq.editor.types.TypePage = {
+  def newTypeTab(τ: api.Access[_ <: internal.Obj]): qq.editor.types.TypePage = {
     val page = new qq.editor.types.TypePage(file, preferences)
     tabs.addPage(page)
     if (τ != null) page.goTo(τ)
@@ -57,7 +58,7 @@ object Main extends SimpleSwingApplication {
   }
 
   /** add a new tab showing object o. o == null allowed*/
-  def newObjectTab(o: api.SkillObject): qq.editor.objects.ObjectPage = {
+  def newObjectTab(o: internal.Obj): qq.editor.objects.ObjectPage = {
     val page = new qq.editor.objects.ObjectPage(file, preferences)
     tabs.addPage(page)
     if (o != null) page.goTo(o)
@@ -97,7 +98,7 @@ object Main extends SimpleSwingApplication {
   private def showDefault(): Unit = {
     /* first type?*/
     try {
-      newTypeTab(file.s.head)
+      newTypeTab(file.s.allTypes.next())
     } catch {
       case _: Exception ⇒
       /* oh well, start empty*/
@@ -118,7 +119,7 @@ object Main extends SimpleSwingApplication {
     override def apply() {
       closeFile
       val fc = new FileChooser()
-      fc.fileFilter = new javax.swing.filechooser.FileNameExtensionFilter("SKilL Files", "sf")
+      fc.fileFilter = new javax.swing.filechooser.FileNameExtensionFilter("OGSS Files", "sg")
       val result = fc.showOpenDialog(null)
       if (result == FileChooser.Result.Approve) {
         val file = Paths.get(fc.selectedFile.toURI())
@@ -197,7 +198,7 @@ object Main extends SimpleSwingApplication {
     onFileChange.strong += (file ⇒ enabled = file != null)
     override def apply() {
       val fc = new FileChooser()
-      fc.fileFilter = new javax.swing.filechooser.FileNameExtensionFilter("SKilL Files", "sf")
+      fc.fileFilter = new javax.swing.filechooser.FileNameExtensionFilter("OGSS Files", "sg")
       val result = fc.showSaveDialog(null)
       if (result == FileChooser.Result.Approve) {
         try {
@@ -338,7 +339,7 @@ object Main extends SimpleSwingApplication {
       title = if (file != null)
         file.windowTitle
       else
-        "SKilL Editor"
+        "OGGS Editor"
     }
     onFileChange.strong += updateTitle
     onFileChange.strong += (file ⇒ if (file != null) file.onModifiednessChange.strong += (_ ⇒ updateTitle(file)))

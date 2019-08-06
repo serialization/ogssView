@@ -1,21 +1,22 @@
 package qq.editor.objects
 
-import de.ust.skill.common.scala.api;
-import de.ust.skill.common.scala.internal.FieldDeclaration;
-import de.ust.skill.common.scala.internal.fieldTypes.SingleBaseTypeContainer;
-import de.ust.skill.common.scala.internal.fieldTypes.FieldType;
+import ogss.common.scala.api;
+import ogss.common.scala.internal;
+import ogss.common.scala.internal.Field;
+import ogss.common.scala.internal.fieldTypes.SingleArgumentType;
+import ogss.common.scala.internal.FieldType;
 import scala.collection.mutable.HashSet;
 
 /** Swing Ui element for modifying the contents of a set field. */
 
-class SetContainerEdit[E, C[E] <: HashSet[E], O <: api.SkillObject](
+class SetContainerEdit[E, C[E] <: HashSet[E], O <: internal.Obj](
   val page: qq.editor.Page,
   val pool: api.Access[O],
   val obj: O,
-  val field: api.FieldDeclaration[C[E]])
+  val field: api.FieldAccess[C[E]])
     extends swing.BoxPanel(swing.Orientation.Vertical) {
 
-  private val groundType = field.t.asInstanceOf[SingleBaseTypeContainer[_, _]].groundType.asInstanceOf[FieldType[E]]
+  private val base = field.t.asInstanceOf[SingleArgumentType[_, _]].base.asInstanceOf[FieldType[E]]
   
   private var firstIndex = 0
   private val pageSize = qq.editor.Main.preferences.editCollectionPageSize()
@@ -31,7 +32,7 @@ class SetContainerEdit[E, C[E] <: HashSet[E], O <: api.SkillObject](
   private val pgDnAct = new swing.Action("Next Page") {
     icon = new qq.icons.ForwardIcon(true, true)
     override def apply() {
-      val n = obj.get(field).size
+      val n = field.get(obj).size
       if (firstIndex + pageSize < n) {
         firstIndex += pageSize
         updateHeadValues
@@ -42,7 +43,7 @@ class SetContainerEdit[E, C[E] <: HashSet[E], O <: api.SkillObject](
   private val pgUpAct = new swing.Action("Previous Page") {
     icon = new qq.icons.BackIcon(true, true)
     override def apply() {
-      val n = obj.get(field).size
+      val n = field.get(obj).size
       if (firstIndex > 0) {
         firstIndex -= pageSize min firstIndex
         updateHeadValues
@@ -62,7 +63,7 @@ class SetContainerEdit[E, C[E] <: HashSet[E], O <: api.SkillObject](
 
   /** update number of elements and current position in header */
   private def updateHeadValues(): Unit = {
-    val n = obj.get(field).size
+    val n = field.get(obj).size
     countLbl.text = "" + n + " elements"
     shownLbl.text = "" + firstIndex + " to " + ((firstIndex + pageSize - 1) min (n - 1)) + " of " + n
     pgUpAct.enabled = firstIndex > 0
@@ -111,11 +112,11 @@ class SetContainerEdit[E, C[E] <: HashSet[E], O <: api.SkillObject](
   private val lowerPart = new swing.BoxPanel(swing.Orientation.Vertical)
   private def refillLower(): Unit = {
     lowerPart.contents.clear()
-    lowerPart.contents ++= obj.get(field).toSeq.sortBy(x ⇒ if (x == null) "" else x.toString).drop(firstIndex).take(pageSize).map { key ⇒
+    lowerPart.contents ++= field.get(obj).toSeq.sortBy(x ⇒ if (x == null) "" else x.toString).drop(firstIndex).take(pageSize).map { key ⇒
       val fprop = new qq.editor.binding.SetContainerField(null, page.file, pool, obj, field, key)
       val fed = new ElementFieldEdit(
         page,
-        groundType,
+        base,
         fprop)
       val ra = new swing.Action("remove") {
         icon = new qq.icons.RemoveListItemIcon(true)
@@ -133,8 +134,8 @@ class SetContainerEdit[E, C[E] <: HashSet[E], O <: api.SkillObject](
     val aa = new swing.Action("add") {
       icon = new qq.icons.AddListItemIcon(true)
       override def apply() {
-        NewValue.promptInPage(groundType, s"New element for set ${field.name}",
-            page, field.asInstanceOf[FieldDeclaration[_,_]].restrictions,
+        NewValue.promptInPage(base, s"New element for set ${field.name}",
+            page, //field.asInstanceOf[internal.Field[_,_]].restrictions,
             (x : E) => { 
               new qq.editor.UserSetInsert(page.file, pool, obj, field, x)
               page.tabbedPane.addPage(page)
@@ -144,7 +145,7 @@ class SetContainerEdit[E, C[E] <: HashSet[E], O <: api.SkillObject](
       }
     }
     lowerPart.contents += qq.util.Swing.HBoxD(0.0f,
-      new swing.Label(if (firstIndex + pageSize >= obj.get(field).size) s"end of ${field.name}" else ""),
+      new swing.Label(if (firstIndex + pageSize >= field.get(obj).size) s"end of ${field.name}" else ""),
       swing.Swing.HGlue,
       new qq.util.PlainButton(aa) { text = "" })
 
@@ -154,7 +155,7 @@ class SetContainerEdit[E, C[E] <: HashSet[E], O <: api.SkillObject](
 
   updateHeadValues
   refillLower
-  if (obj.get(field).size > 0 && obj.get(field).size <= qq.editor.Main.preferences.editCollectionSmall()) {
+  if (field.get(obj).size > 0 && field.get(obj).size <= qq.editor.Main.preferences.editCollectionSmall()) {
     en.expand()
   } else {
     en.collapse()

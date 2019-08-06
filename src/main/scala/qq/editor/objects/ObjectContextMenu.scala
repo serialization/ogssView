@@ -1,12 +1,13 @@
 package qq.editor.objects
 
-import de.ust.skill.common.scala.api
+import ogss.common.scala.api
+import ogss.common.scala.internal
 
 /** Popup menu for a object in a editor page. Is used by non-null references.
  *  
  *  TODO (also) providing a list of MenuItems would make ReferenceEdit nicer. */
 object ObjectContextMenu {
-  def apply(o: api.SkillObject, page: qq.editor.Page): swing.PopupMenu = {
+  def apply(o: internal.Obj, page: qq.editor.Page): swing.PopupMenu = {
     new swing.PopupMenu() {
       page match {
         case page: ObjectPage ⇒
@@ -21,7 +22,7 @@ object ObjectContextMenu {
           qq.editor.Main.newObjectTab(o)
         }),
         new swing.MenuItem(swing.Action("Show/hide fields") {
-          val τ = page.file.s(o.getTypeName)
+          val τ = page.file.s.pool(o).asInstanceOf[internal.Pool[_ <: internal.Obj]]
           val frame = new swing.Frame() {
             title = s"Field preferences of ${τ.name}"
             contents = new qq.editor.types.TypeEdit(null, page.file, τ)

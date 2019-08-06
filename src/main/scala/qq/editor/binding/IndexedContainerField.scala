@@ -1,30 +1,31 @@
 package qq.editor.binding
 
-import de.ust.skill.common.scala.api;
-import de.ust.skill.common.scala.internal.fieldTypes.SingleBaseTypeContainer;
-import de.ust.skill.common.scala.internal.fieldTypes.FieldType;
+import ogss.common.scala.api;
+import ogss.common.scala.internal;
+import ogss.common.scala.internal.fieldTypes.SingleArgumentType;
+import ogss.common.scala.internal.FieldType;
 import scala.collection.mutable.Buffer;
 
 /** Property for an element of a list &c. field for use by edit components.
  *  Generates undoable UserEdit to update the file and monitors Edits to update its own state */
-class IndexedContainerField[O <: api.SkillObject, C[F] <: Buffer[F], F](
+class IndexedContainerField[O <: internal.Obj, C[F] <: Buffer[F], F](
   owner0: qq.util.binding.PropertyOwner,
   val file: qq.editor.File,
   val pool: api.Access[O],
   val obj: O,
-  val field: api.FieldDeclaration[C[F]],
+  val field: api.FieldAccess[C[F]],
   val index: Int)
-    extends SkillFieldProperty[F](owner0, index.toString(), obj.get(field)(index)) {
+    extends SkillFieldProperty[F](owner0, index.toString(), field.get(obj)(index)) {
 
   description = s"${groundType} ${field.name}($index) in ${file.idOfObj(obj)}"  
   
-  def groundType = field.t.asInstanceOf[SingleBaseTypeContainer[C[F],F]].groundType
+  def groundType = field.t.asInstanceOf[SingleArgumentType[C[F],F]].base
 
   restrictions ++= Restrictions(field)
-  restrictions ++= Restrictions(file, field.t.asInstanceOf[SingleBaseTypeContainer[_,_]].groundType.asInstanceOf[FieldType[F]]) 
+  restrictions ++= Restrictions(file, field.t.asInstanceOf[SingleArgumentType[_,_]].base.asInstanceOf[FieldType[F]]) 
 
   /**
-   * when obj.get(field)(index) is the last element and is removed, this object
+   * when field.get(obj)(index) is the last element and is removed, this object
    *  disables itself so that it can do no harm. Its owner will remove it.
    */
   private var disabled = false
@@ -38,14 +39,14 @@ class IndexedContainerField[O <: api.SkillObject, C[F] <: Buffer[F], F](
             if (ins.index == index) {
               this.assignUnchecked(ins.value)
             } else if (ins.index < index) {
-              this.assignUnchecked(obj.get(field)(index))
+              this.assignUnchecked(field.get(obj)(index))
             }
           case del: qq.editor.IndexedContainerRemove[O, C[F], F] ⇒
             if (del.index <= index) {
-              if (index >= obj.get(field).size) {
+              if (index >= field.get(obj).size) {
                 disabled = true
               } else {
-                this.assignUnchecked(obj.get(field)(index))
+                this.assignUnchecked(field.get(obj)(index))
               }
             }
           case mod: qq.editor.IndexedContainerModify[O, C[F], F] ⇒

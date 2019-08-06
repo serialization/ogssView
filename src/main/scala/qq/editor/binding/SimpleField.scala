@@ -1,17 +1,17 @@
 package qq.editor.binding
 
-import de.ust.skill.common.scala.api;
-import de.ust.skill.common.scala.internal;
+import ogss.common.scala.api;
+import ogss.common.scala.internal;
 
 /** Property for a ground type field for use by edit components.
  *  Generates undoable UserEdit to update the file and monitors Edits to update its own state */
-class SimpleField[O <: api.SkillObject, F](
+class SimpleField[O <: internal.Obj, F](
   owner0: qq.util.binding.PropertyOwner,
   val file: qq.editor.File,
   val pool: api.Access[O],
   val obj: O,
-  val field: api.FieldDeclaration[F])
-    extends SkillFieldProperty[F](owner0, field.name, obj.get(field)) {
+  val field: api.FieldAccess[F])
+    extends SkillFieldProperty[F](owner0, field.name, field.get(obj)) {
 
   def groundType = field.t
 

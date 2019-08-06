@@ -1,12 +1,13 @@
 package qq.util
 
-import de.ust.skill.common.scala.internal.fieldTypes._
+import ogss.common.scala.internal
+import ogss.common.scala.internal.fieldTypes._
 import scala.collection.mutable.HashMap
 
 /** functions for treating a nested map as map from tupels to result type */
 object FlattenedMap {
   /** flatten the nested map type into a list of ground types */
-  def typeList(τ: MapType[_, _]): Seq[FieldType[_]] = {
+  def typeList(τ: MapType[_, _]): Seq[internal.FieldType[_]] = {
     τ.valueType match {
       case τ2: MapType[_, _] ⇒
         τ.keyType +: typeList(τ2)

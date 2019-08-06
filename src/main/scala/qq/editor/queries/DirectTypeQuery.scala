@@ -1,7 +1,7 @@
 package qq.editor.queries
 
-import de.ust.skill.common.scala.api;
-import de.ust.skill.common.scala.internal;
+import ogss.common.scala.api;
+import ogss.common.scala.internal;
 
 /** Search query returning all members of type `pool` but not of its subtypes. */
 class DirectTypeQuery(val file0: qq.editor.File,
@@ -11,15 +11,16 @@ class DirectTypeQuery(val file0: qq.editor.File,
   override def variables = Seq(variable)
   override def find() = {
     for (
-      o ← pool.asInstanceOf[internal.StoragePool[_ <: api.SkillObject, _ <: api.SkillObject]].staticInstances
+      o ← pool.asInstanceOf[internal.Pool[_ <: internal.Obj]].staticInstances
       if !file.deletedObjects.contains(o)
     ) yield Map(variable -> o)
   }
   override def prepare(assigned: Seq[String]) = ()
   override def find(assigment: Map[String, Any]) = {
     /* we must ensure (outside) that b contains variable: we want to disallow the generation of full cartesian products */
-    if (assigment(variable).isInstanceOf[api.SkillObject]
-      && pool.name == assigment(variable).asInstanceOf[api.SkillObject].getTypeName) {
+    if (assigment(variable).isInstanceOf[internal.Obj]
+    //TODO ist das richtig so?????
+      && pool == file0.s.pool(assigment(variable).asInstanceOf[internal.Obj])) {
       Iterator(assigment)
     } else {
       Iterator()
@@ -29,7 +30,7 @@ class DirectTypeQuery(val file0: qq.editor.File,
 
   override def costSizeEstimate = {
     /* iterate over n static instances and return all of them */
-    val n = pool.asInstanceOf[internal.StoragePool[_, _]].staticInstances.size
+    val n = pool.asInstanceOf[internal.Pool[_]].staticInstances.size
     (n.toDouble, n.toDouble)
   }
   override def costSizeEstimate(assigned: Seq[String]): Tuple2[Double, Double] = {
@@ -44,7 +45,7 @@ class DirectTypeQuery(val file0: qq.editor.File,
 object DirectTypeQuery {
   def apply(file: qq.editor.File,
             s: Term,
-            pool: api.Access[_ <: api.SkillObject]) = { 
+            pool: api.Access[_ <: internal.Obj]) = { 
     s match {
       case v: VarTerm => new DirectTypeQuery(file, v.variable, pool)
       case _ => throw new Exception("Variable expected")

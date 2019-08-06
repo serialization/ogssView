@@ -1,7 +1,8 @@
 package qq.editor.objects
 
-import de.ust.skill.common.scala.api
-import de.ust.skill.common.scala.internal.fieldTypes._
+import ogss.common.scala.api
+import ogss.common.scala.internal
+import ogss.common.scala.internal.fieldTypes._
 import scala.collection.mutable.Buffer
 import qq.editor.binding.SkillFieldProperty
 /**
@@ -12,28 +13,25 @@ import qq.editor.binding.SkillFieldProperty
  * @param fieldProperty the element of a container field that is modified
  * @param addLabel whether or not a label with the name of the fieldProperty is shown
  * */
-class ElementFieldEdit[E, O <: api.SkillObject](
+class ElementFieldEdit[E, O <: internal.Obj](
   val page: qq.editor.Page,
-  val typ: FieldType[_],
+  val typ: internal.FieldType[_],
   val fieldProperty: SkillFieldProperty[E],
   val addLabel: Boolean = true)
     extends swing.BoxPanel(swing.Orientation.Vertical) {
 
   val (editField: qq.util.binding.EditControl[E], wholeComponent) = (typ match {
-    case _: AnnotationType
-      | _: UserType[_] ⇒
-      val ed = new ReferenceEdit(fieldProperty.asInstanceOf[SkillFieldProperty[api.SkillObject]], page, addLabel)
+    case _: internal.AnyRefType
+      | _: internal.Pool[_] ⇒
+      val ed = new ReferenceEdit(fieldProperty.asInstanceOf[SkillFieldProperty[internal.Obj]], page, addLabel)
       (ed.editField, ed)    
     case _: ListType[_]
-      | _: VariableLengthArray[_]
       | _: SetType[_]
-      | _: ConstantLengthArray[_]
+      | _: ArrayType[_]
       | _: MapType[_, _] ⇒
       throw new Exception(s"required ground type, found container ${typ}")
-    case ConstantI8(_) | ConstantI16(_) | ConstantI32(_) | ConstantI64(_) | ConstantV64(_) ⇒
-      throw new Exception(s"required ground type, found constant ${typ}")
-    case I8 | I16 | I32 | I64 | V64 | F32 | F64 | BoolType | _: StringType ⇒
-      val editField = if (typ.isInstanceOf[StringType]) 
+    case I8 | I16 | I32 | I64 | V64 | F32 | F64 | Bool | _: internal.StringPool ⇒
+      val editField = if (typ.isInstanceOf[internal.StringPool]) 
         new qq.util.binding.TextEdit(fieldProperty.asInstanceOf[SkillFieldProperty[String]],
         {x ⇒ val s = x.trim()
             if (s == "(null)") null 

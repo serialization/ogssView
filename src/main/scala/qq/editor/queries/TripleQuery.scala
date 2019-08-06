@@ -1,7 +1,8 @@
 package qq.editor.queries
 
-import de.ust.skill.common.scala.api;
-import de.ust.skill.common.scala.internal.fieldTypes._;
+import ogss.common.scala.api;
+import ogss.common.scala.internal;
+import ogss.common.scala.internal.fieldTypes._;
 
 /** The basic triple query `subject predicate object.`, i.e.\ in RDF terms:
  *  `subject` and `object` are `predicate`-related, or, here: `subject` has field `predicate`,
@@ -50,19 +51,18 @@ class VarVarTripleQuery(
     /* scan all pools that have this field*/
     pred().flatMap {
       case (pool, field) ⇒
-        field.t.asInstanceOf[FieldType[_]] match {
-          case I8 | I16 | I32 | I64 | V64 | F32 | F64 | _: StringType | BoolType | _: UserType[_] | _: AnnotationType ⇒
-            pool.map { x ⇒ Map(subj.variable -> x, obj.variable -> x.asInstanceOf[api.SkillObject].get(field)) }
-          case ConstantI8(_) | ConstantI16(_) | ConstantI32(_) | ConstantI64(_) | ConstantV64(_) ⇒ Iterator()
-          case c: SingleBaseTypeContainer[c, e] ⇒
+        field.t.asInstanceOf[internal.FieldType[_]] match {
+          case I8 | I16 | I32 | I64 | V64 | F32 | F64 | _: internal.StringPool | Bool | _: internal.Pool[_] | _: internal.AnyRefType ⇒
+            pool.map { x ⇒ Map(subj.variable -> x, obj.variable -> field.get(x.asInstanceOf[internal.Obj])) }
+          case c: SingleArgumentType[c, e] ⇒
             pool.flatMap { so ⇒
-              so.asInstanceOf[api.SkillObject].get(field).asInstanceOf[c]
+              field.get(so.asInstanceOf[internal.Obj]).asInstanceOf[c]
                 .map(elem ⇒ Map(subj.variable -> so, obj.variable -> elem))
             }
           case m: MapType[k, v] ⇒
             import qq.util.FlattenedMap._
             pool.flatMap { so => 
-              val map = so.asInstanceOf[api.SkillObject].get(field).asInstanceOf[scala.collection.mutable.HashMap[k,v]]
+              val map = field.get(so.asInstanceOf[internal.Obj]).asInstanceOf[scala.collection.mutable.HashMap[k,v]]
               keys(map, m ).map(key => Map(subj.variable -> so, obj.variable -> get(map, m, key)))
             }
         }
@@ -73,12 +73,12 @@ class VarVarTripleQuery(
     // if object is not bound, bind to all possible values, otherwise filter 
     val s = assignment(subj.variable)
     s match {
-      case s: api.SkillObject ⇒
+      case s: internal.Obj ⇒
         pred(s).flatMap {
           case (pool, field) ⇒
-            field.t.asInstanceOf[FieldType[_]] match {
-              case I8 | I16 | I32 | I64 | V64 | F32 | F64 | _: StringType | BoolType ⇒
-                val value = s.asInstanceOf[api.SkillObject].get(field)
+            field.t.asInstanceOf[internal.FieldType[_]] match {
+              case I8 | I16 | I32 | I64 | V64 | F32 | F64 | _: internal.StringPool | Bool ⇒
+                val value = field.get(s.asInstanceOf[internal.Obj])
                 if (assignment.contains(obj.variable)) {
                   if (assignment(obj.variable) == value) {
                     Iterator(assignment)
@@ -88,8 +88,8 @@ class VarVarTripleQuery(
                 } else {
                   Iterator(assignment + (obj.variable -> value))
                 }
-              case _: UserType[_] | _: AnnotationType ⇒
-                val o = s.asInstanceOf[api.SkillObject].get(field)
+              case _: internal.Pool[_] | _: internal.AnyRefType ⇒
+                val o = field.get(s.asInstanceOf[internal.Obj])
                 if (assignment.contains(obj.variable)) {
                   if (assignment(obj.variable) == o) {
                     Iterator(assignment)
@@ -103,9 +103,8 @@ class VarVarTripleQuery(
                     Iterator()
                   }
                 }
-              case ConstantI8(_) | ConstantI16(_) | ConstantI32(_) | ConstantI64(_) | ConstantV64(_) ⇒ Iterator()
-              case _: SingleBaseTypeContainer[c, e] ⇒
-                val c = s.asInstanceOf[api.SkillObject].get(field).asInstanceOf[c]
+              case _: SingleArgumentType[c, e] ⇒
+                val c = field.get(s.asInstanceOf[internal.Obj]).asInstanceOf[c]
                 if (assignment.contains(obj.variable)) {
                   if (c.toSeq.contains(assignment(obj.variable))) {
                     Iterator(assignment)
@@ -117,7 +116,7 @@ class VarVarTripleQuery(
                 }
           case m: MapType[k, v] ⇒
             import qq.util.FlattenedMap._
-              val map = s.asInstanceOf[api.SkillObject].get(field).asInstanceOf[scala.collection.mutable.HashMap[k,v]]
+              val map = field.get(s.asInstanceOf[internal.Obj]).asInstanceOf[scala.collection.mutable.HashMap[k,v]]
 
                 if (assignment.contains(obj.variable)) {
                   if (keys(map, m).map(key => get(map, m, key)).filter(_ == assignment(obj.variable)).size != 0) {
@@ -137,11 +136,10 @@ class VarVarTripleQuery(
   override def costSizeEstimate() = {
     var x = 0.0
     for ((pool, field) ← pred()) {
-      field.t.asInstanceOf[FieldType[_]] match {
-        case I8 | I16 | I32 | I64 | V64 | F32 | F64 | _: StringType | BoolType | _: UserType[_] | _: AnnotationType ⇒
+      field.t.asInstanceOf[internal.FieldType[_]] match {
+        case I8 | I16 | I32 | I64 | V64 | F32 | F64 | _: internal.StringPool | Bool | _: internal.Pool[_] | _: internal.AnyRefType ⇒
           x += pool.size
-        case ConstantI8(_) | ConstantI16(_) | ConstantI32(_) | ConstantI64(_) | ConstantV64(_) ⇒ Iterator()
-        case c: CompoundType[c] ⇒
+        case c: ContainerType[c] ⇒
           x += 10 * pool.size
       }
     }
@@ -154,11 +152,10 @@ class VarVarTripleQuery(
     } else {
       var x = 0.0
       for ((pool, field) ← pred()) {
-        field.t.asInstanceOf[FieldType[_]] match {
-          case I8 | I16 | I32 | I64 | V64 | F32 | F64 | _: StringType | BoolType | _: UserType[_] | _: AnnotationType ⇒
+        field.t.asInstanceOf[internal.FieldType[_]] match {
+          case I8 | I16 | I32 | I64 | V64 | F32 | F64 | _: internal.StringPool | Bool | _: internal.Pool[_] | _: internal.AnyRefType ⇒
             x = x max 1
-          case ConstantI8(_) | ConstantI16(_) | ConstantI32(_) | ConstantI64(_) | ConstantV64(_) ⇒ Iterator()
-          case c: CompoundType[c] ⇒
+          case c: ContainerType[c] ⇒
             x = x max 10
         }
       }
@@ -179,7 +176,7 @@ class ConstVarTripleQuery(
   override val obj: VarTerm)
     extends TripleQuery(file0, subj, pred, obj) {
 
-  if (!subj.value.isInstanceOf[api.SkillObject]) throw new Exception("constant subject must be a skill object")
+  if (!subj.value.isInstanceOf[internal.Obj]) throw new Exception("constant subject must be a skill object")
 
   def variables = Seq(obj.variable)
 
@@ -189,12 +186,12 @@ class ConstVarTripleQuery(
   def find(assignment: Map[String, Any]) = {
     // if object is not bound, bind to all possible values, otherwise filter 
     subj.value match {
-      case s: api.SkillObject ⇒
+      case s: internal.Obj ⇒
         pred(s).flatMap {
           case (pool, field) ⇒
-            field.t.asInstanceOf[FieldType[_]] match {
-              case I8 | I16 | I32 | I64 | V64 | F32 | F64 | _: StringType | BoolType ⇒
-                val value = s.asInstanceOf[api.SkillObject].get(field)
+            field.t.asInstanceOf[internal.FieldType[_]] match {
+              case I8 | I16 | I32 | I64 | V64 | F32 | F64 | _: internal.StringPool | Bool ⇒
+                val value = field.get(s.asInstanceOf[internal.Obj])
                 if (assignment.contains(obj.variable)) {
                   if (assignment(obj.variable) == value) {
                     Iterator(assignment)
@@ -204,8 +201,8 @@ class ConstVarTripleQuery(
                 } else {
                   Iterator(assignment + (obj.variable -> value))
                 }
-              case _: UserType[_] | _: AnnotationType ⇒
-                val o = s.asInstanceOf[api.SkillObject].get(field)
+              case _: internal.Pool[_] | _: internal.AnyRefType ⇒
+                val o = field.get(s.asInstanceOf[internal.Obj])
                 if (assignment.contains(obj.variable)) {
                   if (assignment(obj.variable) == o) {
                     Iterator(assignment)
@@ -219,9 +216,8 @@ class ConstVarTripleQuery(
                     Iterator()
                   }
                 }
-              case ConstantI8(_) | ConstantI16(_) | ConstantI32(_) | ConstantI64(_) | ConstantV64(_) ⇒ Iterator()
-              case _: SingleBaseTypeContainer[c, e] ⇒
-                val c = s.asInstanceOf[api.SkillObject].get(field).asInstanceOf[c]
+              case _: SingleArgumentType[c, e] ⇒
+                val c = field.get(s.asInstanceOf[internal.Obj]).asInstanceOf[c]
                 (if (assignment.contains(obj.variable)) {
                   c.filter(_ == assignment(obj.variable))
                 } else {
@@ -240,12 +236,11 @@ class ConstVarTripleQuery(
 
   override def costSizeEstimate(assignment: Seq[String]) = {
     var x = 0.0
-    for ((pool, field) ← pred(subj.value.asInstanceOf[api.SkillObject])) {
-      field.t.asInstanceOf[FieldType[_]] match {
-        case I8 | I16 | I32 | I64 | V64 | F32 | F64 | _: StringType | BoolType | _: UserType[_] | _: AnnotationType ⇒
+    for ((pool, field) ← pred(subj.value.asInstanceOf[internal.Obj])) {
+      field.t.asInstanceOf[internal.FieldType[_]] match {
+        case I8 | I16 | I32 | I64 | V64 | F32 | F64 | _: internal.StringPool | Bool | _: internal.Pool[_] | _: internal.AnyRefType ⇒
           x += 1
-        case ConstantI8(_) | ConstantI16(_) | ConstantI32(_) | ConstantI64(_) | ConstantV64(_) ⇒ Iterator()
-        case c: CompoundType[c] ⇒
+        case c: ContainerType[c] ⇒
           x += 10
       }
     }
@@ -271,13 +266,13 @@ class VarConstTripleQuery(
     /* scan all pools that have this field*/
     pred().flatMap {
       case (pool, field) ⇒
-        field.t.asInstanceOf[FieldType[_]] match {
-          case I8 | I16 | I32 | I64 | V64 | F32 | F64 | _: StringType | BoolType | _: UserType[_] | _: AnnotationType ⇒
-            pool.filter(_.asInstanceOf[api.SkillObject].get(field) == obj.value).map { x ⇒ Map(subj.variable -> x) }
-          case ConstantI8(_) | ConstantI16(_) | ConstantI32(_) | ConstantI64(_) | ConstantV64(_) ⇒ Iterator()
-          case c: SingleBaseTypeContainer[c, e] ⇒
+        field.t.asInstanceOf[internal.FieldType[_]] match {
+          case I8 | I16 | I32 | I64 | V64 | F32 | F64 | _: internal.StringPool | Bool | _: internal.Pool[_] | _: internal.AnyRefType ⇒
+            // x ⇒  ..  TODO is this okey?
+            pool.filter(x ⇒ field.get(x.asInstanceOf[internal.Obj]) == obj.value).map { x ⇒ Map(subj.variable -> x) }
+          case c: SingleArgumentType[c, e] ⇒
             pool.flatMap { so ⇒
-              so.asInstanceOf[api.SkillObject].get(field).asInstanceOf[c]
+              field.get(so.asInstanceOf[internal.Obj]).asInstanceOf[c]
                 .filter(_ == obj.value).map(elem ⇒ Map(subj.variable -> so))
             }
           case m: MapType[c, e] ⇒
@@ -290,27 +285,26 @@ class VarConstTripleQuery(
     // if object is not bound, bind to all possible values, otherwise filter 
     val s = assignment(subj.variable)
     s match {
-      case s: api.SkillObject ⇒
+      case s: internal.Obj ⇒
         pred(s).flatMap {
           case (pool, field) ⇒
-            field.t.asInstanceOf[FieldType[_]] match {
-              case I8 | I16 | I32 | I64 | V64 | F32 | F64 | _: StringType | BoolType ⇒
-                val value = s.asInstanceOf[api.SkillObject].get(field)
+            field.t.asInstanceOf[internal.FieldType[_]] match {
+              case I8 | I16 | I32 | I64 | V64 | F32 | F64 | _: internal.StringPool | Bool ⇒
+                val value = field.get(s.asInstanceOf[internal.Obj])
                 if (obj.value == value) {
                   Iterator(assignment)
                 } else {
                   Iterator()
                 }
-              case _: UserType[_] | _: AnnotationType ⇒
-                val o = s.asInstanceOf[api.SkillObject].get(field)
+              case _: internal.Pool[_] | _: internal.AnyRefType ⇒
+                val o = field.get(s.asInstanceOf[internal.Obj])
                 if (obj.value == o) {
                   Iterator(assignment)
                 } else {
                   Iterator()
                 }
-              case ConstantI8(_) | ConstantI16(_) | ConstantI32(_) | ConstantI64(_) | ConstantV64(_) ⇒ Iterator()
-              case _: SingleBaseTypeContainer[c, e] ⇒
-                val c = s.asInstanceOf[api.SkillObject].get(field).asInstanceOf[c]
+              case _: SingleArgumentType[c, e] ⇒
+                val c = field.get(s.asInstanceOf[internal.Obj]).asInstanceOf[c]
                 if (c.toSeq.contains(obj.value)) {
                   Iterator(assignment)
                 } else {
@@ -327,11 +321,10 @@ class VarConstTripleQuery(
   override def costSizeEstimate() = {
     var x = 0.0
     for ((pool, field) ← pred()) {
-      field.t.asInstanceOf[FieldType[_]] match {
-        case I8 | I16 | I32 | I64 | V64 | F32 | F64 | _: StringType | BoolType | _: UserType[_] | _: AnnotationType ⇒
+      field.t.asInstanceOf[internal.FieldType[_]] match {
+        case I8 | I16 | I32 | I64 | V64 | F32 | F64 | _: internal.StringPool | Bool | _: internal.Pool[_] | _: internal.AnyRefType ⇒
           x += pool.size
-        case ConstantI8(_) | ConstantI16(_) | ConstantI32(_) | ConstantI64(_) | ConstantV64(_) ⇒ Iterator()
-        case c: CompoundType[c] ⇒
+        case c: ContainerType[c] ⇒
           x += 10 * pool.size
       }
     }
@@ -344,11 +337,10 @@ class VarConstTripleQuery(
     } else {
       var x = 0.0
       for ((pool, field) ← pred()) {
-        field.t.asInstanceOf[FieldType[_]] match {
-          case I8 | I16 | I32 | I64 | V64 | F32 | F64 | _: StringType | BoolType | _: UserType[_] | _: AnnotationType ⇒
+        field.t.asInstanceOf[internal.FieldType[_]] match {
+          case I8 | I16 | I32 | I64 | V64 | F32 | F64 | _: internal.StringPool | Bool | _: internal.Pool[_] | _: internal.AnyRefType ⇒
             x = x max 1
-          case ConstantI8(_) | ConstantI16(_) | ConstantI32(_) | ConstantI64(_) | ConstantV64(_) ⇒ Iterator()
-          case c: CompoundType[c] ⇒
+          case c: ContainerType[c] ⇒
             x = x max 10
         }
       }

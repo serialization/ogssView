@@ -3,7 +3,8 @@ import scala.util.parsing.combinator._
 import scala.util.parsing.input._;
 import qq.editor.queries._
 import qq.editor.queries.parser.Lexer._
-import de.ust.skill.common.scala.api
+import ogss.common.scala.api
+import ogss.common.scala.internal
 
 /** Parse for the query language. */
 object Parser extends Parsers {
@@ -19,7 +20,7 @@ object Parser extends Parsers {
   /** Literal (constant term) */
   def lit(file: qq.editor.File): Parser[Term] = {
     accept("literal", {
-      case o: ObjLit => new ConstTerm(file.objOfId(file.s(o.pool), o.id)) 
+      case o: ObjLit => new ConstTerm(file.objOfId(file.s.pool(o.pool).asInstanceOf[internal.Pool[_<:internal.Obj]], o.id)) 
       case i: IntLit => new ConstTerm(i.value) 
       case f: FltLit => new ConstTerm(f.value) 
       case s: StrLit => new ConstTerm(s.text) 
@@ -27,9 +28,9 @@ object Parser extends Parsers {
       case _: FalseKwd => new ConstTerm(false)
         })
   }
-  def objlit(file: qq.editor.File): Parser[api.SkillObject] = {
+  def objlit(file: qq.editor.File): Parser[internal.Obj] = {
     accept("object literal", {
-      case o: ObjLit => file.objOfId(file.s(o.pool), o.id)
+      case o: ObjLit => file.objOfId(file.s.pool(o.pool).asInstanceOf[internal.Pool[_<:internal.Obj]], o.id)
     })
   }
 
@@ -58,8 +59,8 @@ object Parser extends Parsers {
   }
   def field(file: qq.editor.File): Parser[Field] = certainfield(file) | anyfield(file) 
   
-  def typeId(file: qq.editor.File): Parser[api.Access[_ <: api.SkillObject]] = 
-    accept("identifier (type)", {case i: Ident => file.s(i.name.toLowerCase())})
+  def typeId(file: qq.editor.File): Parser[api.Access[_ <: internal.Obj]] = 
+    accept("identifier (type)", {case i: Ident => file.s.pool(i.name).asInstanceOf[internal.Pool[_ <: internal.Obj]]})
   
   /** triples (term fied term) and pseudo triples (term `type` name, term `directType` name) */
   def triple(file: qq.editor.File): Parser[Query] = {

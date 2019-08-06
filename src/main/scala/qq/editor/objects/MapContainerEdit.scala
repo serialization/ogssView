@@ -1,8 +1,9 @@
 package qq.editor.objects
 
-import de.ust.skill.common.scala.api;
-import de.ust.skill.common.scala.internal.fieldTypes.MapType
-import de.ust.skill.common.scala.internal.fieldTypes.FieldType
+import ogss.common.scala.api;
+import ogss.common.scala.internal;
+import ogss.common.scala.internal.fieldTypes.MapType
+import ogss.common.scala.internal.FieldType
 import scala.collection.mutable.HashMap;
 import qq.util.Swing.HBoxD
 import qq.util.Swing.VBoxD
@@ -10,11 +11,11 @@ import swing.Swing.HGlue
 import qq.util.FlattenedMap
 
 /** Swing Ui element for modifying the contents of a map field. */
-class MapContainerEdit[K, V, C[K, V] <: HashMap[K, V], O <: api.SkillObject](
+class MapContainerEdit[K, V, C[K, V] <: HashMap[K, V], O <: internal.Obj](
   val page: qq.editor.Page,
   val pool: api.Access[O],
   val obj: O,
-  val field: api.FieldDeclaration[C[K, V]])
+  val field: api.FieldAccess[C[K, V]])
     extends swing.BoxPanel(swing.Orientation.Vertical) {
 
   val skillType = field.t.asInstanceOf[MapType[K, V]]
@@ -35,7 +36,7 @@ class MapContainerEdit[K, V, C[K, V] <: HashMap[K, V], O <: api.SkillObject](
   private val pgDnAct = new swing.Action("Next Page") {
     icon = new qq.icons.ForwardIcon(true, true)
     override def apply() {
-      val n = FlattenedMap.size(obj.get(field), skillType)
+      val n = FlattenedMap.size(field.get(obj), skillType)
       if (firstIndex + pageSize < n) {
         firstIndex += pageSize
         updateHeadValues
@@ -46,7 +47,7 @@ class MapContainerEdit[K, V, C[K, V] <: HashMap[K, V], O <: api.SkillObject](
   private val pgUpAct = new swing.Action("Previous Page") {
     icon = new qq.icons.BackIcon(true, true)
     override def apply() {
-      val n = FlattenedMap.size(obj.get(field), skillType)
+      val n = FlattenedMap.size(field.get(obj), skillType)
       if (firstIndex > 0) {
         firstIndex -= pageSize min firstIndex
         updateHeadValues
@@ -66,7 +67,7 @@ class MapContainerEdit[K, V, C[K, V] <: HashMap[K, V], O <: api.SkillObject](
 
   /** update number of elements and current position in header */
   private def updateHeadValues(): Unit = {
-    val n = FlattenedMap.size(obj.get(field), skillType)
+    val n = FlattenedMap.size(field.get(obj), skillType)
     countLbl.text = "" + n + " elements"
     shownLbl.text = "" + firstIndex + " to " + ((firstIndex + pageSize - 1) min (n - 1)) + " of " + n
     pgUpAct.enabled = firstIndex > 0
@@ -112,7 +113,7 @@ class MapContainerEdit[K, V, C[K, V] <: HashMap[K, V], O <: api.SkillObject](
   private val lowerPart = new swing.BoxPanel(swing.Orientation.Vertical)
   private def refillLower(): Unit = {
     lowerPart.contents.clear()
-    lowerPart.contents ++= FlattenedMap.keys(obj.get(field), skillType).toSeq.sortBy(x ⇒ if (x == null) "" else x.toString).drop(firstIndex).take(pageSize).map { key ⇒
+    lowerPart.contents ++= FlattenedMap.keys(field.get(obj), skillType).toSeq.sortBy(x ⇒ if (x == null) "" else x.toString).drop(firstIndex).take(pageSize).map { key ⇒
       val keysbox = VBoxD()
       for ((k, t) ← key.zip(groundTypes)) {
         keysbox.contents += qq.util.Swing.HBoxD(new GroundValueLabel(page, t, k), swing.Swing.HGlue)
@@ -148,14 +149,14 @@ class MapContainerEdit[K, V, C[K, V] <: HashMap[K, V], O <: api.SkillObject](
              onOk(done)
            } else {
              NewValue.promptInPage[Any](todo.head.asInstanceOf[FieldType[Any]], s"Key ${done.size + 1} for new entry in $field",
-                 page, scala.collection.mutable.HashSet(),
+                 page, //scala.collection.mutable.HashSet(),
                  { case x: Any => selectKeys(todo.tail, done :+ x, onOk, onCancel)},
                  onCancel)
            }
         }
         selectKeys(groundTypes.dropRight(1), Seq(), 
           keys => {
-            new qq.editor.UserMapInsert(page.file, pool, obj, field, keys, NewValue.default(groundTypes.last, scala.collection.mutable.HashSet()))
+            new qq.editor.UserMapInsert(page.file, pool, obj, field, keys, NewValue.default(groundTypes.last)) //, scala.collection.mutable.HashSet()))
             page.tabbedPane.addPage(page)
           },
           _ => page.tabbedPane.addPage(page)
@@ -165,7 +166,7 @@ class MapContainerEdit[K, V, C[K, V] <: HashMap[K, V], O <: api.SkillObject](
       }
     }
     lowerPart.contents += qq.util.Swing.HBoxD(0.0f,
-      new swing.Label(if (firstIndex + pageSize >= FlattenedMap.size(obj.get(field), skillType)) s"end of ${field.name}" else ""),
+      new swing.Label(if (firstIndex + pageSize >= FlattenedMap.size(field.get(obj), skillType)) s"end of ${field.name}" else ""),
       swing.Swing.HGlue,
       new qq.util.PlainButton(aa) { text = "" })
 
@@ -175,7 +176,7 @@ class MapContainerEdit[K, V, C[K, V] <: HashMap[K, V], O <: api.SkillObject](
 
   updateHeadValues
   refillLower
-  if (obj.get(field).size > 0 && obj.get(field).size <= qq.editor.Main.preferences.editCollectionSmall()) {
+  if (field.get(obj).size > 0 && field.get(obj).size <= qq.editor.Main.preferences.editCollectionSmall()) {
     en.expand()
   } else {
     en.collapse()

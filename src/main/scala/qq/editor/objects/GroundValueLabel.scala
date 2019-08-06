@@ -1,7 +1,8 @@
 package qq.editor.objects
 
-import de.ust.skill.common.scala.api
-import de.ust.skill.common.scala.internal.fieldTypes._
+import ogss.common.scala.api
+import ogss.common.scala.internal
+import ogss.common.scala.internal.fieldTypes._
 import qq.util.Swing.HBoxD
 import swing.Swing.HGlue
 
@@ -15,18 +16,15 @@ class GroundValueLabel(
     extends swing.BoxPanel(swing.Orientation.Vertical) {
 
   val labelField = typ match {
-    case _: AnnotationType
-      | _: UserType[_] ⇒
-      new swing.Label(page.file.idOfObj(value.asInstanceOf[api.SkillObject]))
+    case _: internal.AnyRefType
+      | _: internal.Pool[_] ⇒
+      new swing.Label(page.file.idOfObj(value.asInstanceOf[internal.Obj]))
     case _: ListType[_]
-      | _: VariableLengthArray[_]
       | _: SetType[_]
-      | _: ConstantLengthArray[_]
+      | _: ArrayType[_]
       | _: MapType[_, _] ⇒
       throw new Exception(s"required ground type, found container ${typ}")
-    case ConstantI8(_) | ConstantI16(_) | ConstantI32(_) | ConstantI64(_) | ConstantV64(_) ⇒
-      throw new Exception(s"required ground type, found constant ${typ}")
-    case I8 | I16 | I32 | I64 | V64 | F32 | F64 | BoolType | _: StringType ⇒
+    case I8 | I16 | I32 | I64 | V64 | F32 | F64 | Bool | _: internal.StringPool ⇒
       if (value == null) {
         new swing.Label("(null)")
       } else {
@@ -36,9 +34,9 @@ class GroundValueLabel(
   val en = new qq.util.ExpandableNode(HBoxD(labelField, HGlue), false)
 
   typ match {
-    case _: AnnotationType
-      | _: UserType[_] ⇒
-      if (value != null) en.lazySubPart = { x ⇒ new ObjectEdit(page, value.asInstanceOf[api.SkillObject]) }
+    case _: internal.AnyRefType
+      | _: internal.Pool[_] ⇒
+      if (value != null) en.lazySubPart = { x ⇒ new ObjectEdit(page, value.asInstanceOf[internal.Obj]) }
     case _ ⇒
   }
   contents += en

@@ -1,7 +1,7 @@
 package qq.editor
 
-import de.ust.skill.common.scala.api;
-import de.ust.skill.common.scala.internal;
+import ogss.common.scala.api;
+import ogss.common.scala.internal;
 import scala.collection.mutable.Buffer;
 import scala.collection.mutable.ArrayBuffer;
 import scala.collection.mutable.ListBuffer;
@@ -17,7 +17,7 @@ import javax.swing.undo._;
  *
  * The modification is done when a new instance is created.
  */
-sealed abstract class UserEdit[T <: api.SkillObject](
+sealed abstract class UserEdit[T <: internal.Obj](
   /** The file this belongs to */
   val file: qq.editor.File,
   /** The type of the modified object*/
@@ -32,12 +32,12 @@ sealed abstract class UserEdit[T <: api.SkillObject](
 }
 
 /** object creation */
-final case class UserCreateObject[T <: api.SkillObject](
+final case class UserCreateObject[T <: internal.Obj](
   /** The file this belongs to */
   f: qq.editor.File,
   /** The type of the created object*/
   p: api.Access[T])
-    extends UserEdit[T](f, p, p.reflectiveAllocateInstance) {
+    extends UserEdit[T](f, p, p.make) {
 
   /* no merge */
   override def addEdit(x: UndoableEdit) = false
@@ -60,17 +60,17 @@ final case class UserCreateObject[T <: api.SkillObject](
 
   file.registerCreatedObject(obj)
   /* initialise fields */
-  private def fieldInitialisation[F](f: api.FieldDeclaration[F]): Unit = {
-    obj.set(f, qq.editor.objects.NewValue.default(f.t, f.asInstanceOf[internal.FieldDeclaration[F, T]].restrictions))
+  private def fieldInitialisation[F](f: api.FieldAccess[F]): Unit = {
+    f.set(obj, qq.editor.objects.NewValue.default(f.t))//, f.asInstanceOf[internal.Field[F, T]].restrictions))
   }
-  for (f ← p.allFields if !f.isInstanceOf[internal.fieldTypes.ConstantInteger[_]]) {
+  for (f ← p.allFields) {
     fieldInitialisation(f)
   }
 
   file.modify(this)
 }
 
-final case class UserDeleteObject[T <: api.SkillObject](
+final case class UserDeleteObject[T <: internal.Obj](
   /** The file this belongs to */
   f: qq.editor.File,
   /** The type of the created object*/
@@ -94,18 +94,18 @@ final case class UserDeleteObject[T <: api.SkillObject](
     file.modify_(new CreateObject(file, pool, obj))
     // restore references
     for ((o, f) ← refdBy) {
-      file.modify_(new SimpleFieldEdit(file, file.s(o.getTypeName).asInstanceOf[api.Access[api.SkillObject]], o, f, null.asInstanceOf[T], obj))
-      val rs = f.asInstanceOf[internal.FieldDeclaration[_, _]].restrictions
-      import de.ust.skill.common.scala.internal.restrictions._
-      val crs = rs.filter(_.isInstanceOf[CheckableFieldRestriction[_]]).map(_.asInstanceOf[CheckableFieldRestriction[T]])
-      for (cr ← crs) {
-        try {
-          cr.check(o.get(f))
-          file.validationErrors -= ((o, f))
-        } catch {
-          case _: Exception ⇒ ()
-        }
-      }
+      file.modify_(new SimpleFieldEdit(file, file.s.pool(o).asInstanceOf[api.Access[internal.Obj]], o, f, null.asInstanceOf[T], obj))
+//      val rs = f.asInstanceOf[internal.Field[_, _]].restrictions
+//      import ogss.common.scala.internal.restrictions._
+//      val crs = rs.filter(_.isInstanceOf[CheckableFieldRestriction[_]]).map(_.asInstanceOf[CheckableFieldRestriction[T]])
+//      for (cr ← crs) {
+//        try {
+//          cr.check(o.get(f))
+//          file.validationErrors -= ((o, f))
+//        } catch {
+//          case _: Exception ⇒ ()
+//        }
+//      }
     }
   }
   override def getPresentationName = s"deleted object ${file.idOfObj(obj)}"
@@ -118,19 +118,19 @@ final case class UserDeleteObject[T <: api.SkillObject](
     // ugly side effect… set all refs to this to null so that they do not have to be considered always when
     // ref fields are shown
     for ((o, f) ← refdBy) {
-      file.modify_(new SimpleFieldEdit(file, file.s(o.getTypeName).asInstanceOf[api.Access[api.SkillObject]], o, f, o.get(f), null.asInstanceOf[T]))
-      val rs = f.asInstanceOf[internal.FieldDeclaration[_, _]].restrictions
-      // store validationErrors when the deletion caused the viaolation of a nonNull restriction (nothing is done with them, yet :( )
-      import de.ust.skill.common.scala.internal.restrictions._
-      val crs = rs.filter(_.isInstanceOf[CheckableFieldRestriction[_]]).map(_.asInstanceOf[CheckableFieldRestriction[T]])
-      for (cr ← crs) {
-        try {
-          cr.check(o.get(f))
-        } catch {
-          case _: Exception ⇒
-            file.validationErrors += ((o, f))
-        }
-      }
+      file.modify_(new SimpleFieldEdit(file, file.s.pool(o).asInstanceOf[api.Access[internal.Obj]], o, f, f.get(o), null.asInstanceOf[T]))
+//      val rs = f.asInstanceOf[internal.Field[_, _]].restrictions
+//      // store validationErrors when the deletion caused the viaolation of a nonNull restriction (nothing is done with them, yet :( )
+//      import ogss.common.scala.internal.restrictions._
+//      val crs = rs.filter(_.isInstanceOf[CheckableFieldRestriction[_]]).map(_.asInstanceOf[CheckableFieldRestriction[T]])
+//      for (cr ← crs) {
+//        try {
+//          cr.check(o.get(f))
+//        } catch {
+//          case _: Exception ⇒
+//            file.validationErrors += ((o, f))
+//        }
+//      }
     }
 
     new DeleteObject(file, pool, obj)
@@ -145,22 +145,22 @@ final case class UserDeleteObject[T <: api.SkillObject](
    *    deleting the object. However, to do so without a modal window, all this can't
    *    happen in the constructor (it probably shouldn't, anyway. I don't mind too much
    *    for the other UserEdits, but delete got far too complex…)*/
-  private def getRefdBy: ListBuffer[Tuple2[api.SkillObject, api.FieldDeclaration[T]]] = {
-    import de.ust.skill.common.scala.internal.fieldTypes._
-    val result = new ListBuffer[Tuple2[api.SkillObject, api.FieldDeclaration[T]]]()
-    def fieldCanRefToO(field: api.FieldDeclaration[_]): Boolean = {
-      field.t.isInstanceOf[AnnotationType] || (
+  private def getRefdBy: ListBuffer[Tuple2[internal.Obj, api.FieldAccess[T]]] = {
+    import ogss.common.scala.internal.fieldTypes._
+    val result = new ListBuffer[Tuple2[internal.Obj, api.FieldAccess[T]]]()
+    def fieldCanRefToO(field: api.FieldAccess[_]): Boolean = {
+      field.t.isInstanceOf[internal.AnyRefType] || (
         field.t.isInstanceOf[api.Access[_]] && (
-          field.t.asInstanceOf[api.Access[_]] == file.s(o.getTypeName) ||
-          file.superTypes(file.s(o.getTypeName)).contains(field.t.asInstanceOf[api.Access[_]])))
+          field.t.asInstanceOf[api.Access[_]] == file.s.pool(o) ||
+          file.superTypes(file.s.pool(o).asInstanceOf[internal.Pool[_ <: internal.Obj]]).contains(field.t.asInstanceOf[api.Access[_]])))
 
     }
     for (
       fields ← f.fieldsByName.values;
       (pool, field) ← fields if fieldCanRefToO(field);
-      ob ← pool.all if ob.asInstanceOf[api.SkillObject].get(field) == obj
+      ob ← pool.inTypeOrder if field.get(ob.asInstanceOf[internal.Obj]) == obj
     ) {
-      result += ((ob.asInstanceOf[api.SkillObject], field.asInstanceOf[api.FieldDeclaration[T]]))
+      result += ((ob.asInstanceOf[internal.Obj], field.asInstanceOf[api.FieldAccess[T]]))
     }
     result
   }
@@ -182,7 +182,7 @@ final case class UserDeleteObject[T <: api.SkillObject](
 }
 
 /** modification of a simple field */
-final case class UserSimpleFieldEdit[T <: api.SkillObject, F](
+final case class UserSimpleFieldEdit[T <: internal.Obj, F](
   /** The file this belongs to */
   f: qq.editor.File,
   /** The type of the modified object*/
@@ -190,12 +190,12 @@ final case class UserSimpleFieldEdit[T <: api.SkillObject, F](
   /** The object that is modified */
   o: T,
   /** The field that is modified */
-  val field: api.FieldDeclaration[F],
+  val field: api.FieldAccess[F],
   /** Value after modification */
   val newValue: F)
     extends UserEdit[T](f, p, o) {
 
-  val oldValue: F = obj.get(field)
+  val oldValue: F = field.get(obj)
 
   /* no merge */
   override def addEdit(x: UndoableEdit) = false
@@ -221,7 +221,7 @@ final case class UserSimpleFieldEdit[T <: api.SkillObject, F](
 }
 
 /** edits of things like arrays and lists that have indexed objects */
-sealed abstract class UserIndexedContainerEdit[T <: api.SkillObject, C <: Iterable[F], F](
+sealed abstract class UserIndexedContainerEdit[T <: internal.Obj, C <: Iterable[F], F](
   /** The file this belongs to */
   f: qq.editor.File,
   /** The type of the modified object*/
@@ -229,7 +229,7 @@ sealed abstract class UserIndexedContainerEdit[T <: api.SkillObject, C <: Iterab
   /** The object that is modified */
   o: T,
   /** The field (collection) that is modified */
-  val field: api.FieldDeclaration[C],
+  val field: api.FieldAccess[C],
   /** The index of the modified member of the collection */
   val index: Int)
     extends UserEdit[T](f, p, o) {
@@ -237,7 +237,7 @@ sealed abstract class UserIndexedContainerEdit[T <: api.SkillObject, C <: Iterab
 }
 
 /** insertion of a new value into an indexed container */
-final case class UserIndexedContainerInsert[T <: api.SkillObject, C <: Buffer[F], F](
+final case class UserIndexedContainerInsert[T <: internal.Obj, C <: Buffer[F], F](
   /** The file this belongs to */
   f: qq.editor.File,
   /** The type of the modified object*/
@@ -245,7 +245,7 @@ final case class UserIndexedContainerInsert[T <: api.SkillObject, C <: Buffer[F]
   /** The object that is modified */
   o: T,
   /** The field (collection) that is modified */
-  fd: api.FieldDeclaration[C],
+  fd: api.FieldAccess[C],
   /** The index of the modified member of the collection */
   i: Int,
   /** the value of the new member (the new f[i]; the old f[i] becomes f[i+1] &c.)*/
@@ -276,7 +276,7 @@ final case class UserIndexedContainerInsert[T <: api.SkillObject, C <: Buffer[F]
 }
 
 /** insertion of a new value into an indexed container */
-final case class UserIndexedContainerRemove[T <: api.SkillObject, C <: Buffer[F], F](
+final case class UserIndexedContainerRemove[T <: internal.Obj, C <: Buffer[F], F](
   /** The file this belongs to */
   f: qq.editor.File,
   /** The type of the modified object*/
@@ -284,12 +284,12 @@ final case class UserIndexedContainerRemove[T <: api.SkillObject, C <: Buffer[F]
   /** The object that is modified */
   o: T,
   /** The field (collection) that is modified */
-  fd: api.FieldDeclaration[C],
+  fd: api.FieldAccess[C],
   /** The index of the modified member of the collection */
   i: Int)
     extends UserIndexedContainerEdit[T, C, F](f, p, o, fd, i) {
 
-  val oldValue: F = obj.get(field)(index)
+  val oldValue: F = field.get(obj)(index)
 
   /* no merge */
   override def addEdit(x: UndoableEdit) = false
@@ -315,7 +315,7 @@ final case class UserIndexedContainerRemove[T <: api.SkillObject, C <: Buffer[F]
 }
 
 /** change of the value of a member of an indexed container */
-final case class UserIndexedContainerModify[T <: api.SkillObject, C <: Buffer[F], F](
+final case class UserIndexedContainerModify[T <: internal.Obj, C <: Buffer[F], F](
   /** The file this belongs to */
   f: qq.editor.File,
   /** The type of the modified object*/
@@ -323,14 +323,14 @@ final case class UserIndexedContainerModify[T <: api.SkillObject, C <: Buffer[F]
   /** The object that is modified */
   o: T,
   /** The field (collection) that is modified */
-  fd: api.FieldDeclaration[C],
+  fd: api.FieldAccess[C],
   /** The index of the modified member of the collection */
   i: Int,
   /** Value after modification */
   val newValue: F)
     extends UserIndexedContainerEdit[T, C, F](f, p, o, fd, i) {
 
-  val oldValue: F = obj.get(field)(i)
+  val oldValue: F = field.get(obj)(i)
 
   /* no merge */
   override def addEdit(x: UndoableEdit) = false
@@ -356,7 +356,7 @@ final case class UserIndexedContainerModify[T <: api.SkillObject, C <: Buffer[F]
 }
 
 /** Modifications of sets */
-sealed abstract class UserSetEdit[T <: api.SkillObject, C <: HashSet[F], F](
+sealed abstract class UserSetEdit[T <: internal.Obj, C <: HashSet[F], F](
   /** The file this belongs to */
   f: qq.editor.File,
   /** The type of the modified object*/
@@ -364,7 +364,7 @@ sealed abstract class UserSetEdit[T <: api.SkillObject, C <: HashSet[F], F](
   /** The object that is modified */
   o: T,
   /** The field (collection) that is modified */
-  val field: api.FieldDeclaration[C],
+  val field: api.FieldAccess[C],
   /** The member that is modified */
   val key: F)
     extends UserEdit[T](f, p, o) {
@@ -372,7 +372,7 @@ sealed abstract class UserSetEdit[T <: api.SkillObject, C <: HashSet[F], F](
 }
 
 /** insertion of a new value into a set container */
-final case class UserSetInsert[T <: api.SkillObject, C <: HashSet[F], F](
+final case class UserSetInsert[T <: internal.Obj, C <: HashSet[F], F](
   /** The file this belongs to */
   f: qq.editor.File,
   /** The type of the modified object*/
@@ -380,7 +380,7 @@ final case class UserSetInsert[T <: api.SkillObject, C <: HashSet[F], F](
   /** The object that is modified */
   o: T,
   /** The field (collection) that is modified */
-  fd: api.FieldDeclaration[C],
+  fd: api.FieldAccess[C],
   /** inserted member (constructor will throw if it already exists) */
   k: F)
     extends UserSetEdit[T, C, F](f, p, o, fd, k) {
@@ -405,14 +405,14 @@ final case class UserSetInsert[T <: api.SkillObject, C <: HashSet[F], F](
 
   override def toEdit = new SetInsert(file, pool, obj, field, key)
 
-  if (obj.get(field).contains(key)) {
+  if (field.get(obj).contains(key)) {
     throw new IllegalStateException("Insert into set: element already exists")
   } else {
     file.modify(this)
   }
 }
 /** Removal of a value from a set container */
-final case class UserSetRemove[T <: api.SkillObject, C <: HashSet[F], F](
+final case class UserSetRemove[T <: internal.Obj, C <: HashSet[F], F](
   /** The file this belongs to */
   f: qq.editor.File,
   /** The type of the modified object*/
@@ -420,7 +420,7 @@ final case class UserSetRemove[T <: api.SkillObject, C <: HashSet[F], F](
   /** The object that is modified */
   o: T,
   /** The field (collection) that is modified */
-  fd: api.FieldDeclaration[C],
+  fd: api.FieldAccess[C],
   /** deleted member (constructor will throw if it does not exist) */
   k: F)
     extends UserSetEdit[T, C, F](f, p, o, fd, k) {
@@ -445,7 +445,7 @@ final case class UserSetRemove[T <: api.SkillObject, C <: HashSet[F], F](
 
   override def toEdit = new SetRemove(file, pool, obj, field, key)
 
-  if (!obj.get(field).contains(key)) {
+  if (!field.get(obj).contains(key)) {
     throw new IllegalStateException("Remove from set: element does not exist")
   } else {
     file.modify(this)
@@ -453,7 +453,7 @@ final case class UserSetRemove[T <: api.SkillObject, C <: HashSet[F], F](
 }
 
 /** Replacement of a member of a set container */
-final case class UserSetReplace[T <: api.SkillObject, C <: HashSet[F], F](
+final case class UserSetReplace[T <: internal.Obj, C <: HashSet[F], F](
   /** The file this belongs to */
   f: qq.editor.File,
   /** The type of the modified object*/
@@ -461,7 +461,7 @@ final case class UserSetReplace[T <: api.SkillObject, C <: HashSet[F], F](
   /** The object that is modified */
   o: T,
   /** The field (collection) that is modified */
-  fd: api.FieldDeclaration[C],
+  fd: api.FieldAccess[C],
   /** member that is replaced (constructor will throw if it does not exist) */
   k: F,
   /** member that it is replaced with (throw is exist )*/
@@ -488,10 +488,10 @@ final case class UserSetReplace[T <: api.SkillObject, C <: HashSet[F], F](
 
   override def toEdit = new SetReplace(file, pool, obj, field, key, newKey)
 
-  if (!obj.get(field).contains(key)) {
+  if (!field.get(obj).contains(key)) {
     throw new IllegalStateException("Replace in set: element does not exist")
   } else {
-    if (obj.get(field).contains(newKey)) {
+    if (field.get(obj).contains(newKey)) {
       throw new IllegalStateException("Replace in set: new value already exists")
     } else {
       file.modify(this)
@@ -500,7 +500,7 @@ final case class UserSetReplace[T <: api.SkillObject, C <: HashSet[F], F](
 }
 
 /** edits maps as (lists indexed by  key sequence) */
-sealed abstract class UserMapEdit[T <: api.SkillObject, K, V, C[K, V] <: HashMap[K, V]](
+sealed abstract class UserMapEdit[T <: internal.Obj, K, V, C[K, V] <: HashMap[K, V]](
   /** The file this belongs to */
   f: qq.editor.File,
   /** The type of the modified object*/
@@ -508,7 +508,7 @@ sealed abstract class UserMapEdit[T <: api.SkillObject, K, V, C[K, V] <: HashMap
   /** The object that is modified */
   o: T,
   /** The field (collection) that is modified */
-  val field: api.FieldDeclaration[C[K, V]],
+  val field: api.FieldAccess[C[K, V]],
   /** The keys of the modified member of the collection */
   val index: Seq[Any])
     extends UserEdit[T](f, p, o) {
@@ -516,7 +516,7 @@ sealed abstract class UserMapEdit[T <: api.SkillObject, K, V, C[K, V] <: HashMap
 }
 
 /** insertion of a new entry into a map */
-final case class UserMapInsert[T <: api.SkillObject, K, V, C[K, V] <: HashMap[K, V]](
+final case class UserMapInsert[T <: internal.Obj, K, V, C[K, V] <: HashMap[K, V]](
   /** The file this belongs to */
   f: qq.editor.File,
   /** The type of the modified object*/
@@ -524,7 +524,7 @@ final case class UserMapInsert[T <: api.SkillObject, K, V, C[K, V] <: HashMap[K,
   /** The object that is modified */
   o: T,
   /** The field (collection) that is modified */
-  fd: api.FieldDeclaration[C[K, V]],
+  fd: api.FieldAccess[C[K, V]],
   /** The keys of the new member of the collection */
   i: Seq[Any],
   /** the value of the new member */
@@ -552,8 +552,8 @@ final case class UserMapInsert[T <: api.SkillObject, K, V, C[K, V] <: HashMap[K,
   override def toEdit = new MapInsert(file, pool, obj, field, index, value)
 
   import qq.util.FlattenedMap.contains
-  import de.ust.skill.common.scala.internal.fieldTypes.MapType
-  if (contains(obj.get(field), field.t.asInstanceOf[MapType[K, V]], index)) {
+  import ogss.common.scala.internal.fieldTypes.MapType
+  if (contains(field.get(obj), field.t.asInstanceOf[MapType[K, V]], index)) {
     throw new IllegalStateException("Insert into map: key already exists")
   } else {
     file.modify(this)
@@ -561,7 +561,7 @@ final case class UserMapInsert[T <: api.SkillObject, K, V, C[K, V] <: HashMap[K,
 }
 
 /** Removal of an entry from a map container */
-final case class UserMapRemove[T <: api.SkillObject, K, V, C[K, V] <: HashMap[K, V]](
+final case class UserMapRemove[T <: internal.Obj, K, V, C[K, V] <: HashMap[K, V]](
   /** The file this belongs to */
   f: qq.editor.File,
   /** The type of the modified object*/
@@ -569,16 +569,16 @@ final case class UserMapRemove[T <: api.SkillObject, K, V, C[K, V] <: HashMap[K,
   /** The object that is modified */
   o: T,
   /** The field (collection) that is modified */
-  fd: api.FieldDeclaration[C[K, V]],
+  fd: api.FieldAccess[C[K, V]],
   /** The keys of the deleted entry */
   i: Seq[Any])
     extends UserMapEdit[T, K, V, C](f, p, o, fd, i) {
 
   import qq.util.FlattenedMap.contains
   import qq.util.FlattenedMap.get
-  import de.ust.skill.common.scala.internal.fieldTypes.MapType
+  import ogss.common.scala.internal.fieldTypes.MapType
 
-  val oldValue: Any = get(obj.get(field), field.t.asInstanceOf[MapType[K, V]], index)
+  val oldValue: Any = get(field.get(obj), field.t.asInstanceOf[MapType[K, V]], index)
 
   /* no merge */
   override def addEdit(x: UndoableEdit) = false
@@ -600,7 +600,7 @@ final case class UserMapRemove[T <: api.SkillObject, K, V, C[K, V] <: HashMap[K,
 
   override def toEdit = new MapRemove(file, pool, obj, field, index, oldValue)
 
-  if (!contains(obj.get(field), field.t.asInstanceOf[MapType[K, V]], index)) {
+  if (!contains(field.get(obj), field.t.asInstanceOf[MapType[K, V]], index)) {
     throw new IllegalStateException("Remove from map: key does not exists")
   } else {
     file.modify(this)
@@ -608,7 +608,7 @@ final case class UserMapRemove[T <: api.SkillObject, K, V, C[K, V] <: HashMap[K,
 }
 
 /** change of the value of a member of a map container */
-final case class UserMapModify[T <: api.SkillObject, K, V, C[K, V] <: HashMap[K, V]](
+final case class UserMapModify[T <: internal.Obj, K, V, C[K, V] <: HashMap[K, V]](
   /** The file this belongs to */
   f: qq.editor.File,
   /** The type of the modified object*/
@@ -616,7 +616,7 @@ final case class UserMapModify[T <: api.SkillObject, K, V, C[K, V] <: HashMap[K,
   /** The object that is modified */
   o: T,
   /** The field (collection) that is modified */
-  fd: api.FieldDeclaration[C[K, V]],
+  fd: api.FieldAccess[C[K, V]],
   /** The keys of the modified member of the collection */
   i: Seq[Any],
   /** Value after modification */
@@ -625,9 +625,9 @@ final case class UserMapModify[T <: api.SkillObject, K, V, C[K, V] <: HashMap[K,
 
   import qq.util.FlattenedMap.contains
   import qq.util.FlattenedMap.get
-  import de.ust.skill.common.scala.internal.fieldTypes.MapType
+  import ogss.common.scala.internal.fieldTypes.MapType
 
-  val oldValue: Any = get(obj.get(field), field.t.asInstanceOf[MapType[K, V]], index)
+  val oldValue: Any = get(field.get(obj), field.t.asInstanceOf[MapType[K, V]], index)
 
   /* no merge */
   override def addEdit(x: UndoableEdit) = false
@@ -650,7 +650,7 @@ final case class UserMapModify[T <: api.SkillObject, K, V, C[K, V] <: HashMap[K,
   override def toEdit = new MapModify(file, pool, obj, field, index, oldValue, newValue)
 
   if (qq.util.Neq(oldValue, newValue)) {
-    if (!contains(obj.get(field), field.t.asInstanceOf[MapType[K, V]], index)) {
+    if (!contains(field.get(obj), field.t.asInstanceOf[MapType[K, V]], index)) {
       throw new IllegalStateException("Map modify: key does not exists")
     } else {
       file.modify(this)

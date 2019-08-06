@@ -5,11 +5,12 @@ import java.awt.RenderingHints
 import scala.collection.mutable.HashMap
 import scala.collection.mutable.HashSet
 
-import de.ust.skill.common.scala.api
+import ogss.common.scala.api
+import ogss.common.scala.internal
 import qq.util.Vector
 
 /** Show obj and neighbourhood as graph */
-class ObjectGraph[O <: api.SkillObject](
+class ObjectGraph[O <: internal.Obj](
   val page: ObjectPage,
   val obj: O)
     extends swing.Panel() {
@@ -25,11 +26,11 @@ class ObjectGraph[O <: api.SkillObject](
   val visibleNodes = new HashSet[qq.graph.AbstractNode]
   val expandedNodes = new HashSet[qq.graph.AbstractNode]
   /** paths through which a node is expanded. must be complete for collapsing */
-  private val epathsToNode = new HashMap[qq.graph.AbstractNode, Set[Seq[api.FieldDeclaration[_]]]]
+  private val epathsToNode = new HashMap[qq.graph.AbstractNode, Set[Seq[api.FieldAccess[_]]]]
   /** paths through which a node is visible. only five shortest paths */
-  private val vpathsToNode = new HashMap[qq.graph.AbstractNode, Set[Seq[api.FieldDeclaration[_]]]]
+  private val vpathsToNode = new HashMap[qq.graph.AbstractNode, Set[Seq[api.FieldAccess[_]]]]
   /** app π to vpaths for node n if it is shortest, remove longer paths if possible*/
-  private def addVpath(n: qq.graph.AbstractNode, π: Seq[api.FieldDeclaration[_]]): Unit = {
+  private def addVpath(n: qq.graph.AbstractNode, π: Seq[api.FieldAccess[_]]): Unit = {
     vpathsToNode.getOrElseUpdate(n, Set())
     if (vpathsToNode(n).size == 0) {
       vpathsToNode(n) += π
@@ -43,7 +44,7 @@ class ObjectGraph[O <: api.SkillObject](
       }
     }
   }
-  private def addEpath(n: qq.graph.AbstractNode, π: Seq[api.FieldDeclaration[_]]): Unit = {
+  private def addEpath(n: qq.graph.AbstractNode, π: Seq[api.FieldAccess[_]]): Unit = {
     epathsToNode.getOrElseUpdate(n, Set())
     epathsToNode(n) += π
     addVpath(n, π)
@@ -58,22 +59,22 @@ class ObjectGraph[O <: api.SkillObject](
    * paths to expanded nodes. Only those which start with fields of obj are releavant and got from
    *  the preferences of the type of obj and super types
    */
-  private def expandPrefs(): Set[Seq[api.FieldDeclaration[_]]] = {
-    val τ = page.file.s(obj.getTypeName)
+  private def expandPrefs(): Set[Seq[api.FieldAccess[_]]] = {
+    val τ = page.file.s.pool(obj).asInstanceOf[internal.Pool[_ <: internal.Obj]]
     (for (
       τ2 <- τ +: page.file.superTypes(τ);
       path <- page.file.typePreferences(τ2).expanded
     ) yield path).toSet
   }
   /** add paths to expanded nodes. Store at the type that contains the first field */
-  private def expandPrefs_add(πs: Set[Seq[api.FieldDeclaration[_]]]): Unit = {
+  private def expandPrefs_add(πs: Set[Seq[api.FieldAccess[_]]]): Unit = {
     for (π <- πs if π.size > 0) {
       val typePreferences = page.file.fieldPreferences(π.head).containingType
       typePreferences.expanded += π
     }
   }
   /** remove paths to expanded nodes. They are stored at the type that contains the first field */
-  private def expandPrefs_remove(πs: Set[Seq[api.FieldDeclaration[_]]]): Unit = {
+  private def expandPrefs_remove(πs: Set[Seq[api.FieldAccess[_]]]): Unit = {
     for (π <- πs if π.size > 0) {
       val typePreferences = page.file.fieldPreferences(π.head).containingType
       typePreferences.expanded.remove(π)
@@ -118,9 +119,9 @@ class ObjectGraph[O <: api.SkillObject](
     // follow paths to expanded nodes
     val edgesOnPaths = new HashSet[qq.graph.AbstractEdge]()
     for (path ← expandPrefs) {
-      def expandPath(o: api.SkillObject,
-        pathToO: Seq[api.FieldDeclaration[_]],
-        pathToDo: Seq[api.FieldDeclaration[_]]): Boolean = {
+      def expandPath(o: internal.Obj,
+        pathToO: Seq[api.FieldAccess[_]],
+        pathToDo: Seq[api.FieldAccess[_]]): Boolean = {
         if (o != null) {
           if (pathToDo.size == 0) {
             val node = new qq.graph.SkillObjectNode(o)
@@ -277,7 +278,7 @@ class ObjectGraph[O <: api.SkillObject](
 
   // simple solution to dealing with edits: rebuilt when any object we show changes 
   val onEdit = (ed: qq.editor.Edit[_]) ⇒ {
-    if (visibleNodes.contains(new qq.graph.SkillObjectNode(ed.obj.asInstanceOf[api.SkillObject]))) {
+    if (visibleNodes.contains(new qq.graph.SkillObjectNode(ed.obj.asInstanceOf[internal.Obj]))) {
       updateLayout
       repaint
     }

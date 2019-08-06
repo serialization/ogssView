@@ -1,6 +1,6 @@
-name := "skillView"
+name := "ogssView"
 
-version := "0.9"
+version := "1.0"
 
 scalaVersion := "2.12.8"
 
@@ -12,7 +12,7 @@ libraryDependencies += "org.scalatest" % "scalatest_2.12" % "3.0.8" % "test"
 
 libraryDependencies += "org.scala-lang" % "scala-reflect" % scalaVersion.value
 
-assemblyJarName in assembly := "skillView.jar"
+assemblyJarName in assembly := "ogssView.jar"
 assemblyMergeStrategy in assembly := {
   case PathList("META-INF", "MANIFEST.MF") => MergeStrategy.discard
   case _ => MergeStrategy.first

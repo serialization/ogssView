@@ -1,6 +1,6 @@
 package qq.editor.queries
 
-import de.ust.skill.common.scala.api;
+import ogss.common.scala.api;
 
 /**
  * A query that will return a iterable list of assignments of variables to objects or values that satisfy query.

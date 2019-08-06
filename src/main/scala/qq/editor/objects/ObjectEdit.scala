@@ -1,24 +1,24 @@
 package qq.editor.objects
 
-import de.ust.skill.common.scala.api;
-import de.ust.skill.common.scala.internal;
-import de.ust.skill.common.scala.internal.fieldTypes;
+import ogss.common.scala.api;
+import ogss.common.scala.internal;
+import ogss.common.scala.internal.fieldTypes;
 import swing.Label;
 import qq.util.Swing.VBoxD;
 
 /** Edit the fields of \c obj. Can be used as the expandable pane below a reference field */
-class ObjectEdit[P <: api.SkillObject](
+class ObjectEdit[P <: internal.Obj](
   val page: qq.editor.Page,
   val obj: P)
     extends swing.BoxPanel(swing.Orientation.Vertical) {
 
-  val pool: api.Access[P] = page.file.s(obj.getTypeName).asInstanceOf[api.Access[P]]
+  val pool: api.Access[P] = page.file.s.pool(obj).asInstanceOf[api.Access[P]]
 
   contents ++= pool.allFields.filter(f => !page.file.fieldPreferences(f).isDeleted) map {f=>    new FieldEdit(page, pool, obj, f) }
 
 }
 /** Top level version of ObjectEdit, comes with scroll bars, title, and detects whether the object was deleted. */
-class TopObjectEdit[P <: api.SkillObject](
+class TopObjectEdit[P <: internal.Obj](
   val page: ObjectPage,
   val obj: P)
     extends qq.util.VScrollPane {

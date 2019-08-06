@@ -1,7 +1,7 @@
 package qq.util.binding
 
 import scala.collection.mutable;
-import de.ust.skill.common.scala.api
+import ogss.common.scala.api
 import qq.util.Neq
 
 /**

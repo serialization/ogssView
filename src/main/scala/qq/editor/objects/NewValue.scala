@@ -1,8 +1,9 @@
 package qq.editor.objects
 
-import de.ust.skill.common.scala.api;
-import de.ust.skill.common.scala.internal.fieldTypes._;
-import de.ust.skill.common.scala.internal.restrictions._;
+import ogss.common.scala.api;
+import ogss.common.scala.internal;
+import ogss.common.scala.internal.fieldTypes._;
+import ogss.common.scala.internal.restrictions._;
 import scala.collection.mutable.ListBuffer
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.mutable.HashSet
@@ -22,51 +23,42 @@ import qq.util.Swing.HBoxD
  */
 object NewValue {
   /** default value of type `τ` considering defaults and minima from `restrictions`. */
-  def default[T](τ: api.FieldType[T], restrictions: HashSet[FieldRestriction]): T = {
+  def default[T](τ: api.FieldType[T]): T = { //, restrictions: HashSet[FieldRestriction]): T = {
     // default?
-    restrictions.foreach {
-      case r: DefaultRestriction[T] ⇒ return r.value;
-      case _                        ⇒ ()
-    }
+//    restrictions.foreach {
+//      case r: DefaultRestriction[T] ⇒ return r.value;
+//      case _                        ⇒ ()
+//    }
     // range?
-    restrictions.foreach {
-      case Range.RangeI8(min, max)  ⇒ if (0 < min) return min.asInstanceOf[T];
-      case Range.RangeI16(min, max) ⇒ if (0 < min) return min.asInstanceOf[T];
-      case Range.RangeI32(min, max) ⇒ if (0 < min) return min.asInstanceOf[T];
-      case Range.RangeI64(min, max) ⇒ if (0L < min) return min.asInstanceOf[T];
-      case Range.RangeF32(min, max) ⇒ if (0L < min) return min.asInstanceOf[T];
-      case Range.RangeF64(min, max) ⇒ if (0L < min) return min.asInstanceOf[T];
-      case _                        ⇒ ()
-    }
+//    restrictions.foreach {
+//      case Range.RangeI8(min, max)  ⇒ if (0 < min) return min.asInstanceOf[T];
+//      case Range.RangeI16(min, max) ⇒ if (0 < min) return min.asInstanceOf[T];
+//      case Range.RangeI32(min, max) ⇒ if (0 < min) return min.asInstanceOf[T];
+//      case Range.RangeI64(min, max) ⇒ if (0L < min) return min.asInstanceOf[T];
+//      case Range.RangeF32(min, max) ⇒ if (0L < min) return min.asInstanceOf[T];
+//      case Range.RangeF64(min, max) ⇒ if (0L < min) return min.asInstanceOf[T];
+//      case _                        ⇒ ()
+//    }
 
-    τ.asInstanceOf[FieldType[T]] match {
-      case BoolType  ⇒ false.asInstanceOf[T]
+    τ.asInstanceOf[internal.FieldType[T]] match {
+      case Bool  ⇒ false.asInstanceOf[T]
       case I8        ⇒ 0.toByte.asInstanceOf[T]
       case I16       ⇒ 0.toShort.asInstanceOf[T]
       case I32       ⇒ 0.asInstanceOf[T]
       case I64 | V64 ⇒ 0L.asInstanceOf[T]
       case F64       ⇒ 0.0.asInstanceOf[T]
       case F32       ⇒ 0.0f.asInstanceOf[T]
-      case _: AnnotationType | _: UserType[_] ⇒
+      case _: internal.AnyRefType | _: internal.Pool[_] ⇒
         null.asInstanceOf[T]
-      case _: StringType ⇒ "".asInstanceOf[T]
-      case τ: ConstantLengthArray[e] ⇒
-        val x = new ArrayBuffer[e](τ.length)
-        for (_ ← 0 until τ.length) {
-          x += default(τ.groundType, restrictions)
-        }
-        x.asInstanceOf[T]
+      case _: internal.StringPool ⇒ "".asInstanceOf[T]
       case _: ListType[e] ⇒
         (new ListBuffer[e]()).asInstanceOf[T]
-      case _: VariableLengthArray[e] ⇒
+      case _: ArrayType[e] ⇒
         (new ArrayBuffer[e]()).asInstanceOf[T]
       case _: SetType[e] ⇒
         (new HashSet[e]()).asInstanceOf[T]
       case _: MapType[k, v] ⇒
         (new HashMap[k, v]()).asInstanceOf[T]
-      case ConstantI8(_) | ConstantI16(_) | ConstantI32(_) | ConstantI64(_)
-        | ConstantV64(_) ⇒
-        throw new Exception(s"constant field type $τ does not have a default value")
     }
   }
 
@@ -77,7 +69,7 @@ object NewValue {
                       preferences0: qq.editor.EditorPreferences,
                       val prompt: String,
                       val τ: api.FieldType[T],
-                      val restrictions: HashSet[FieldRestriction],
+                      //val restrictions: HashSet[FieldRestriction[_]],
                       val onSelect: T ⇒ Unit,
                       val onCancel: Unit ⇒ Unit)
       extends qq.editor.Page(file0, preferences0) {
@@ -88,8 +80,8 @@ object NewValue {
 
     val objSelectErrorLabel = new swing.Label("-") { foreground = java.awt.Color.red; visible = false }
 
-    val p = new PromptSkillFieldProperty(null, prompt, default(τ, restrictions), τ)
-    val ed = new ElementFieldEdit(this, τ.asInstanceOf[FieldType[T]], p)
+    val p = new PromptSkillFieldProperty(null, prompt, default(τ), τ) //restrictions), τ)
+    val ed = new ElementFieldEdit(this, τ.asInstanceOf[internal.FieldType[T]], p)
 
     val accept = Action("Ok") {
       try {
@@ -131,19 +123,19 @@ object NewValue {
   def promptInPage[T](τ: api.FieldType[T],
                       prompt: String,
                       page: Page,
-                      restrictions: HashSet[FieldRestriction],
+                      //restrictions: HashSet[FieldRestriction],
                       onSelect: T ⇒ Unit,
                       onCancel: Unit ⇒ Unit): Unit = {
 
-    τ.asInstanceOf[FieldType[T]] match {
-      case _: AnnotationType | _: UserType[_] ⇒
+    τ.asInstanceOf[internal.FieldType[T]] match {
+      case _: internal.AnyRefType | _: internal.Pool[_] ⇒
         val sel = τ match {
           case u: api.Access[_] ⇒ qq.editor.Main.newObjectTab(u)
           case _                ⇒ qq.editor.Main.newObjectTab()
         }
         sel.select(prompt, onSelect, _ ⇒ onCancel(()))
       case _ ⇒
-        val sel = new PromptPage(page.file, page.preferences, prompt, τ, restrictions, onSelect, onCancel)
+        val sel = new PromptPage(page.file, page.preferences, prompt, τ, onSelect, onCancel)//restrictions, onSelect, onCancel)
         page.tabbedPane.addPage(sel)
         sel.show()
     }

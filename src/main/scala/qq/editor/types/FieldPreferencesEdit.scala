@@ -1,6 +1,6 @@
 package qq.editor.types
 
-import de.ust.skill.common.scala.api;
+import ogss.common.scala.api;
 import qq.util.binding._;
 
 /**
@@ -9,7 +9,7 @@ import qq.util.binding._;
 class FieldPreferencesEdit(
   val file: qq.editor.File,
   val skillType: api.Access[_],
-  val field: api.FieldDeclaration[_])
+  val field: api.FieldAccess[_])
     extends swing.BoxPanel(swing.Orientation.Vertical) {
 
   val fs = file.fieldPreferences(field)

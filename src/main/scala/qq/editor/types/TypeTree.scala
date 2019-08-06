@@ -2,8 +2,8 @@ package qq.editor.types
 
 import scala.collection.mutable
 
-import de.ust.skill.common.scala.api
-import de.ust.skill.common.scala.internal
+import ogss.common.scala.api
+import ogss.common.scala.internal
 import qq.editor.objects.DefaultColors
 import qq.util.Swing.HBoxT
 
@@ -16,12 +16,12 @@ class TypeTree(val page: qq.editor.types.TypePage)
   /** node control by type for unfold/highlight */
   val nodes: mutable.Map[api.Access[_], TypeTreeNode] = new mutable.HashMap()
 
-  class TypeTreeNode(τ: api.Access[_ <: api.SkillObject])
+  class TypeTreeNode(τ: api.Access[_ <: internal.Obj])
       extends qq.util.ExpandableNode(
         HBoxT(), true) {
 
     val nameLabel = new TypeNameControl(page, τ)
-    val countsLabel = new qq.util.PlainLabel(" " + τ.asInstanceOf[internal.StoragePool[_, _]].staticInstances.size + " (" + τ.size + ")") {
+    val countsLabel = new qq.util.PlainLabel(" " + τ.asInstanceOf[internal.Pool[_]].staticInstances.size + " (" + τ.size + ")") {
       tooltip = "objects in this pool (including subpools)"
     }
 
@@ -58,7 +58,7 @@ class TypeTree(val page: qq.editor.types.TypePage)
 
   var selected: TypeTreeNode = null
   /** select type `τ` in the hierarchy, expand levels and scroll if necessary */
-  def select(τ: api.Access[_ <: api.SkillObject]): Unit = {
+  def select(τ: api.Access[_ <: internal.Obj]): Unit = {
     if (selected != null) {
       selected.highlight_=(false)
     }

@@ -1,7 +1,7 @@
 package qq.editor
 
-import de.ust.skill.common.scala.api;
-import de.ust.skill.common.scala.internal;
+import ogss.common.scala.api;
+import ogss.common.scala.internal;
 import scala.collection.mutable;
 import scala.collection.mutable.HashMap;
 import scala.collection.mutable.HashSet;
@@ -20,10 +20,10 @@ class File(
   /** Window title: filename, path, programme name, and a plus sign when modified (like gvim) */
   def windowTitle: String = {
     val (d, n) = pathAndName
-    n + (if (isModified) " + " else "") + " (" + d + ") – SKilL edit"
+    n + (if (isModified) " + " else "") + " (" + d + ") – OGSS edit"
   }
   /** the SKilL state for file [[fileName]] */
-  val s: empty.api.SkillFile = empty.api.SkillFile.open(fileName, api.Read, api.Write)
+  val s: empty.OGFile = empty.OGFile.open(fileName, api.Read, api.Write)
 
   /** Undo/redo queue of the changes that were applied to the file after it was opened or saved */
   val undoManager = new qq.util.UndoManager()
@@ -73,7 +73,7 @@ class File(
    *
    * The objects are deleted from the skill state before it is saved to file
    */
-  val deletedObjects: mutable.HashSet[api.SkillObject] = new mutable.HashSet()
+  val deletedObjects: mutable.HashSet[internal.Obj] = new mutable.HashSet()
 
   /**
    * Set of objects which have fields which violate a restriction.
@@ -85,7 +85,7 @@ class File(
    * All other modifications check the restrictions during the creation of the
    * user edit and reject the modification.
    */
-  val validationErrors: mutable.HashSet[Tuple2[api.SkillObject, api.FieldDeclaration[_]]] = new mutable.HashSet()
+  val validationErrors: mutable.HashSet[Tuple2[internal.Obj, api.FieldAccess[_]]] = new mutable.HashSet()
 
   /**
    * List of newly created objects.
@@ -93,11 +93,11 @@ class File(
    * created objects do not have a SkillId; we give them temporary negative ones;
    * item 0 has ID -1 and so on
    */
-  val createdObjects: mutable.ListBuffer[api.SkillObject] = new mutable.ListBuffer()
+  val createdObjects: mutable.ListBuffer[internal.Obj] = new mutable.ListBuffer()
   /** Lookup table: surrogate SkillIDs for newly created objects */
-  val createdObjectId: mutable.HashMap[api.SkillObject, Int] = new mutable.HashMap()
+  val createdObjectId: mutable.HashMap[internal.Obj, Int] = new mutable.HashMap()
   /** add a newly created object to [[createdObjects]] and [[createdObjectId]]*/
-  def registerCreatedObject(o: api.SkillObject): Unit = {
+  def registerCreatedObject(o: internal.Obj): Unit = {
     createdObjects.synchronized {
       val id = -1 - createdObjects.size
       createdObjects += o
@@ -108,29 +108,32 @@ class File(
   /* some auxiliary functions about types */
 
   /** parentType(a) = b if a is directly derived from b, a ∉ Dom(parentType) if a is a root type */
-  val parentType: HashMap[api.Access[_ <: api.SkillObject], api.Access[_ <: api.SkillObject]] = new HashMap()
+  val parentType: HashMap[api.Access[_ <: internal.Obj], api.Access[_ <: internal.Obj]] = new HashMap()
   /** a ∈ childTypes(b) if a is directly derived from b */
-  val childTypes: HashMap[api.Access[_ <: api.SkillObject], Seq[api.Access[_ <: api.SkillObject]]] = new HashMap()
+  val childTypes: HashMap[api.Access[_ <: internal.Obj], Seq[api.Access[_ <: internal.Obj]]] = new HashMap()
   /** a ∈ rootTypes if ~(∃x)(x = parentType(a)) */
-  val rootTypes: HashSet[api.Access[_ <: api.SkillObject]] = new HashSet()
+  val rootTypes: HashSet[api.Access[_ <: internal.Obj]] = new HashSet()
 
   /** Update [[parentType]], [[childTypes]], and [[rootTypes]]. Necessary after save. */
   private def updateTables(): Unit = {
     parentType.clear()
-    for (t ← s; sn ← t.superName) {
-      parentType(t) = s(sn).asInstanceOf[api.Access[_ <: api.SkillObject]]
+
+    for (t ← s.allTypes) {
+      if (t.superType != null) {
+        parentType(t) = s.pool(t.superType.name).asInstanceOf[api.Access[_ <: internal.Obj]]
+      }
     }
     childTypes.clear()
-    childTypes ++= s.groupBy(parentType.getOrElse(_, null))
+    childTypes ++= s.allTypes.toSeq.groupBy(parentType.getOrElse(_, null))
     rootTypes.clear()
-    for (t ← s if !(parentType contains t)) rootTypes += t
+    for (t ← s.allTypes if !(parentType contains t)) rootTypes += t
   }
   updateTables
 
   /** baseType(a) = b if b ∈ parentType*(a) ∩ rootTypes */
-  def baseType(a: api.Access[_ <: api.SkillObject]) = a.asInstanceOf[internal.StoragePool[_, _]].basePool.asInstanceOf[api.Access[_]]
+  def baseType(a: api.Access[_ <: internal.Obj]) = a.asInstanceOf[internal.Pool[_]].basePool.asInstanceOf[api.Access[_]]
   /** parentType+ */
-  def superTypes(a: api.Access[_ <: api.SkillObject]): List[api.Access[_ <: api.SkillObject]] = {
+  def superTypes(a: api.Access[_ <: internal.Obj]): List[api.Access[_ <: internal.Obj]] = {
     if (parentType.contains(a)) {
       val p = parentType(a)
       p :: superTypes(p)
@@ -140,19 +143,19 @@ class File(
   }
 
   /** Get the skill object of a given type with the given SKilL ID. */
-  def objOfId[T <: B, B <: api.SkillObject](pool: api.Access[T], id: Int): api.SkillObject = {
+  def objOfId[T <: B, B <: internal.Obj](pool: api.Access[T], id: Int): internal.Obj = {
     var o = if (id > 0) {
-      val bp = pool.asInstanceOf[internal.StoragePool[T, B]].basePool
+      val bp = pool.asInstanceOf[internal.Pool[T]].basePool
       if (id > bp.size) {
         throw new qq.util.binding.RestrictionException(s"No such object: $pool#$id")
       }
-      bp(id - 1)
+      bp.get(id) //used to be id-1??
     } else if (id < 0) {
       createdObjects(-1 - id)
     } else {
       throw new qq.util.binding.RestrictionException(s"No such object: $pool#$id")
     }
-    if (s(o.getTypeName) == pool || superTypes(s(o.getTypeName)).contains(pool)) {
+    if (s.pool(o) == pool || superTypes(s.pool(o).asInstanceOf[internal.Pool[_ <: internal.Obj]]).contains(pool)) {
       o
     } else {
       throw new qq.util.binding.RestrictionException(s"No such object: $pool#$id")
@@ -160,7 +163,7 @@ class File(
   }
 
   /** Get the SKilL object identified by string with format `type#ID`. */
-  def objOfId(x: String): api.SkillObject = {
+  def objOfId(x: String): internal.Obj = {
     val xt = x.trim()
     if (x.trim().equals("(null)")) return null
     val xts = xt.split("#")
@@ -169,52 +172,58 @@ class File(
     val id = try Integer.parseInt(xts(1)) catch {
       case _: java.lang.NumberFormatException ⇒ throw new qq.util.binding.RestrictionException("format error, expected format type#number")
     }
-    val pool = try { s(pn) } catch {
+    val pool = try { s.pool(pn) } catch {
       case e: java.util.NoSuchElementException ⇒
         throw new qq.util.binding.RestrictionException(s"Unknown type in $pn#$id")
     }
-    objOfId(s(pn), id)
+    objOfId(s.pool(pn).asInstanceOf[internal.Pool[_ <: internal.Obj]], id)
   }
 
   /**
    * Get a string, `type#ID` or `(null)`, that identifies skill object `o`.
    *  @param stropped add apostrophes to the type name (make sure, that it is not mistaken for a keyword when used in the serch function)
    */
-  def idOfObj(o: api.SkillObject, stropped: Boolean = false): String = {
+  def idOfObj(o: internal.Obj, stropped: Boolean = false): String = {
     if (o == null) {
       "(null)"
-    } else if (de.ust.skill.common.scala.hacks.GetSkillId(o) == -1) {
+    } else if (o.ID == -1) {
       if (stropped) {
-        s"'${o.getTypeName}'#${createdObjectId(o)}"
+        s"'${s.pool(o).name}'#${createdObjectId(o)}"
       } else {
-        s"${o.getTypeName}#${createdObjectId(o)}"
+        s"${s.pool(o).name}#${createdObjectId(o)}"
       }
     } else {
       if (stropped) {
-        s"'${o.getTypeName}'#${de.ust.skill.common.scala.hacks.GetSkillId(o)}"
+        s"'${s.pool(o).name}'#${o.ID}"
       } else {
-        o.prettyString
+        //o.prettyString(s)
+        s"${s.pool(o).name}#${o.ID}"
       }
     }
   }
+  
   /** field definition and type that it belongs to for each field name */
-  val fieldsByName: Map[String, Seq[Tuple2[api.Access[_], api.FieldDeclaration[_]]]] =
-    (for (t ← s; f ← t.fields) yield (f.name, (t, f))).groupBy(_._1).mapValues(_.map(_._2))
+  val fieldsByName: Map[String, Seq[Tuple2[api.Access[_<:internal.Obj], api.FieldAccess[_]]]] = 
+    //(for (t ← s; f ← t.fields) yield (f.name, (t, f))).groupBy(_._1).mapValues(_.map(_._2))  
+    s.allTypes.toSeq.flatMap(t => t.fields.toSeq.map(f => (f.name, (t,f:api.FieldAccess[_]))))
+       .groupBy(_._1)
+       .mapValues(x => x.map(_._2))
 
   /* type and field preferences for this file */
   /** Preferences for all user types */
   val typePreferences: HashMap[api.Access[_], TypePreferences[_]] = new HashMap()
-  for (t ← s) typePreferences(t) = new TypePreferences(t, this)
+  for (t ← s.allTypes) typePreferences(t.asInstanceOf[api.Access[internal.Obj]]) = new TypePreferences(t.asInstanceOf[api.Access[internal.Obj]], this)
 
-  /** Preferences for all FieldDeclarations */
-  val fieldPreferences: Map[api.FieldDeclaration[_], FieldPreferences[_, _]] =
-    (for (t ← typePreferences.values; fd ← t.typ.fields) yield (fd, t.fields(fd).asInstanceOf[FieldPreferences[_, api.SkillObject]])).toMap
+  /** Preferences for all FieldAccesss */
+  val fieldPreferences: Map[api.FieldAccess[_], FieldPreferences[_, _]] =
+    //(for (t ← typePreferences.values; fd ← t.typ.fields) yield (fd, t.fields(fd).asInstanceOf[FieldPreferences[_, internal.Obj]])).toMap
+    (for (t ← typePreferences.values.asInstanceOf[Iterable[TypePreferences[internal.Obj]]]; fd ← t.typ.fields) yield (fd, t.fields(fd).asInstanceOf[FieldPreferences[_, internal.Obj]])).toMap
 
   /** Save changes to disk */
   def flush(): Unit = {
     // finally delete the deleted objects (no undo after this)
     deletedObjects.foreach(s.delete(_))
-    s.flush()
+    s.flush
     deletedObjects.clear()
     // created objects have a real ID, now. Remove surrogate IDs
     createdObjectId.clear()
@@ -227,7 +236,7 @@ class File(
     for (ts ← tss) { println(ts.typ); typePreferences(ts.typ) = ts }
     // find deleted objects and fields
     for ((t, s) ← typePreferences) {
-      if (t.asInstanceOf[internal.StoragePool[_, _]].cachedSize == 0) s.isDeleted = true
+      //if (t.asInstanceOf[internal.Pool[_]].cachedSize == 0) s.isDeleted = true
     }
     for (fs ← fieldPreferences.values) fs.checkDeleted()
   }

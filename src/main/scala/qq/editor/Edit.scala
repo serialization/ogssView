@@ -1,7 +1,7 @@
 package qq.editor
 
-import de.ust.skill.common.scala.api;
-import de.ust.skill.common.scala.internal;
+import ogss.common.scala.api;
+import ogss.common.scala.internal;
 import scala.collection.mutable.Buffer;
 import scala.collection.mutable.ArrayBuffer;
 import scala.collection.mutable.ListBuffer;
@@ -17,7 +17,7 @@ import javax.swing.undo._;
  * 
  * @see qq.editor.UserEdit an undoable modification that was requested by the user 
  */
-sealed abstract class Edit[T <: api.SkillObject](
+sealed abstract class Edit[T <: internal.Obj](
     /** The file that is modified */
     val file: qq.editor.File,
     /** The type of the modified object*/
@@ -35,7 +35,7 @@ sealed abstract class Edit[T <: api.SkillObject](
 }
 
 /** Creation of object `o` */
-final case class CreateObject[T <: api.SkillObject](
+final case class CreateObject[T <: internal.Obj](
   /** The file this belongs to */
   f: qq.editor.File,
   /** The type of the created object*/
@@ -52,7 +52,7 @@ final case class CreateObject[T <: api.SkillObject](
 }
 
 /** Deletion of object `o` */
-final case class DeleteObject[T <: api.SkillObject](
+final case class DeleteObject[T <: internal.Obj](
   /** The file this belongs to */
   f: qq.editor.File,
   /** The type of the deleted object*/
@@ -68,7 +68,7 @@ final case class DeleteObject[T <: api.SkillObject](
 }
 
 /** Modification of the value of a simple field */
-final case class SimpleFieldEdit[T <: api.SkillObject, F](
+final case class SimpleFieldEdit[T <: internal.Obj, F](
   /** The file this belongs to */
   f: qq.editor.File,
   /** The type of the modified object*/
@@ -76,7 +76,7 @@ final case class SimpleFieldEdit[T <: api.SkillObject, F](
   /** The object that is modified */
   o: T,
   /** The field that is modified */
-  val field: api.FieldDeclaration[F],
+  val field: api.FieldAccess[F],
   /** Original value of the field */
   val oldValue: F,
   /** Value after modification */
@@ -84,11 +84,11 @@ final case class SimpleFieldEdit[T <: api.SkillObject, F](
     extends Edit[T](f, p, o) {
 
   override def doIt() = {
-    obj.set(field, newValue)
+    field.set(obj, newValue)
   }
 }
 /** Modifications of things like arrays and lists that have indexed objects */
-sealed abstract class IndexedContainerEdit[T <: api.SkillObject, C <: Iterable[F], F](
+sealed abstract class IndexedContainerEdit[T <: internal.Obj, C <: Iterable[F], F](
   /** The file this belongs to */
   f: qq.editor.File,
   /** The type of the modified object*/
@@ -96,7 +96,7 @@ sealed abstract class IndexedContainerEdit[T <: api.SkillObject, C <: Iterable[F
   /** The object that is modified */
   o: T,
   /** The field (collection) that is modified */
-  val field: api.FieldDeclaration[C],
+  val field: api.FieldAccess[C],
   /** The index of the modified member of the collection */
   val index: Int)
     extends Edit[T](f, p, o) {
@@ -104,7 +104,7 @@ sealed abstract class IndexedContainerEdit[T <: api.SkillObject, C <: Iterable[F
 }
 
 /** insertion of a new value into an indexed container */
-final case class IndexedContainerInsert[T <: api.SkillObject, C <: Buffer[F], F](
+final case class IndexedContainerInsert[T <: internal.Obj, C <: Buffer[F], F](
   /** The file this belongs to */
   f: qq.editor.File,
   /** The type of the modified object*/
@@ -112,7 +112,7 @@ final case class IndexedContainerInsert[T <: api.SkillObject, C <: Buffer[F], F]
   /** The object that is modified */
   o: T,
   /** The field (collection) that is modified */
-  fd: api.FieldDeclaration[C],
+  fd: api.FieldAccess[C],
   /** The index of the modified member of the collection */
   i: Int,
   /** the value of the new member (the new f[i]; the old f[i] becomes f[i+1] &c.)*/
@@ -120,12 +120,12 @@ final case class IndexedContainerInsert[T <: api.SkillObject, C <: Buffer[F], F]
     extends IndexedContainerEdit[T, C, F](f, p, o, fd, i) {
 
   override def doIt(): Unit = {
-    obj.get(field).insert(index, value)
+    field.get(obj).insert(index, value)
   }
 }
 
 /** removal of an value from an indexed container */
-final case class IndexedContainerRemove[T <: api.SkillObject, C <: Buffer[F], F](
+final case class IndexedContainerRemove[T <: internal.Obj, C <: Buffer[F], F](
   /** The file this belongs to */
   f: qq.editor.File,
   /** The type of the modified object*/
@@ -133,7 +133,7 @@ final case class IndexedContainerRemove[T <: api.SkillObject, C <: Buffer[F], F]
   /** The object that is modified */
   o: T,
   /** The field (collection) that is modified */
-  fd: api.FieldDeclaration[C],
+  fd: api.FieldAccess[C],
   /** The index of the modified member of the collection */
   i: Int,
   /** the value of the deleted member (the old f[i]; the new f[i] was former f[i+1] &c.)*/
@@ -141,12 +141,12 @@ final case class IndexedContainerRemove[T <: api.SkillObject, C <: Buffer[F], F]
     extends IndexedContainerEdit[T, C, F](f, p, o, fd, i) {
 
   override def doIt(): Unit = {
-    obj.get(field).remove(index)
+    field.get(obj).remove(index)
   }
 }
 
 /** change of the value of a member of an indexed container */
-final case class IndexedContainerModify[T <: api.SkillObject, C <: Buffer[F], F](
+final case class IndexedContainerModify[T <: internal.Obj, C <: Buffer[F], F](
   /** The file this belongs to */
   f: qq.editor.File,
   /** The type of the modified object*/
@@ -154,7 +154,7 @@ final case class IndexedContainerModify[T <: api.SkillObject, C <: Buffer[F], F]
   /** The object that is modified */
   o: T,
   /** The field (collection) that is modified */
-  fd: api.FieldDeclaration[C],
+  fd: api.FieldAccess[C],
   /** The index of the modified member of the collection */
   i: Int,
   /** Value before modification */
@@ -164,12 +164,12 @@ final case class IndexedContainerModify[T <: api.SkillObject, C <: Buffer[F], F]
     extends IndexedContainerEdit[T, C, F](f, p, o, fd, i) {
 
   override def doIt(): Unit = {
-    obj.get(field)(index) = newValue
+    field.get(obj)(index) = newValue
   }
 }
 
 /** edits of sets */
-sealed abstract class SetEdit[T <: api.SkillObject, C <: HashSet[F], F](
+sealed abstract class SetEdit[T <: internal.Obj, C <: HashSet[F], F](
   /** The file this belongs to */
   f: qq.editor.File,
   /** The type of the modified object*/
@@ -177,7 +177,7 @@ sealed abstract class SetEdit[T <: api.SkillObject, C <: HashSet[F], F](
   /** The object that is modified */
   o: T,
   /** The field (set) that is modified */
-  val field: api.FieldDeclaration[C],
+  val field: api.FieldAccess[C],
   /** The modified element */
   val key: F)
     extends Edit[T](f, p, o) {
@@ -185,7 +185,7 @@ sealed abstract class SetEdit[T <: api.SkillObject, C <: HashSet[F], F](
 }
 
 /** insertion of a new element into a set*/
-final case class SetInsert[T <: api.SkillObject, C <: HashSet[F], F](
+final case class SetInsert[T <: internal.Obj, C <: HashSet[F], F](
   /** The file this belongs to */
   f: qq.editor.File,
   /** The type of the modified object*/
@@ -193,19 +193,19 @@ final case class SetInsert[T <: api.SkillObject, C <: HashSet[F], F](
   /** The object that is modified */
   o: T,
   /** The field (set) that is modified */
-  fd: api.FieldDeclaration[C],
+  fd: api.FieldAccess[C],
   /** The new member */
   k: F)
     extends SetEdit[T, C, F](f, p, o, fd, k) {
 
   override def doIt(): Unit = {
-    obj.get(field) += key
+    field.get(obj) += key
   }
 
 }
 
 /** removal of an element from a set */
-final case class SetRemove[T <: api.SkillObject, C <: HashSet[F], F](
+final case class SetRemove[T <: internal.Obj, C <: HashSet[F], F](
   /** The file this belongs to */
   f: qq.editor.File,
   /** The type of the modified object*/
@@ -213,19 +213,19 @@ final case class SetRemove[T <: api.SkillObject, C <: HashSet[F], F](
   /** The object that is modified */
   o: T,
   /** The field (set) that is modified */
-  fd: api.FieldDeclaration[C],
+  fd: api.FieldAccess[C],
   /** The removed member */
   k: F)
     extends SetEdit[T, C, F](f, p, o, fd, k) {
 
   override def doIt(): Unit = {
-    obj.get(field) -= key
+    field.get(obj) -= key
   }
 
 }
 
 /** replace an element (remove+insert) in a set */
-final case class SetReplace[T <: api.SkillObject, C <: HashSet[F], F](
+final case class SetReplace[T <: internal.Obj, C <: HashSet[F], F](
   /** The file this belongs to */
   f: qq.editor.File,
   /** The type of the modified object*/
@@ -233,7 +233,7 @@ final case class SetReplace[T <: api.SkillObject, C <: HashSet[F], F](
   /** The object that is modified */
   o: T,
   /** The field (collection) that is modified */
-  fd: api.FieldDeclaration[C],
+  fd: api.FieldAccess[C],
   /** The element that is replaced */
   k: F,
   /** the new value it is replaced with */
@@ -241,15 +241,15 @@ final case class SetReplace[T <: api.SkillObject, C <: HashSet[F], F](
     extends SetEdit[T, C, F](f, p, o, fd, k) {
 
   override def doIt(): Unit = {
-    obj.get(field) -= key
-    obj.get(field) += replacement
+    field.get(obj) -= key
+    field.get(obj) += replacement
   }
 
 }
 
 
 /** maps are treated as a function from a key-tuple to value. We give up using scala types, here */
-sealed abstract class MapEdit[T <: api.SkillObject, F](
+sealed abstract class MapEdit[T <: internal.Obj, F](
   /** The file this belongs to */
   f: qq.editor.File,
   /** The type of the modified object*/
@@ -257,16 +257,16 @@ sealed abstract class MapEdit[T <: api.SkillObject, F](
   /** The object that is modified */
   o: T,
   /** The field map that is modified */
-  val field: api.FieldDeclaration[F],
+  val field: api.FieldAccess[F],
   /** The index as sequence of keys of the modified member of the collection */
   val index: Seq[Any])
     extends Edit[T](f, p, o) {
 
 }
-import de.ust.skill.common.scala.internal.fieldTypes.MapType
+import ogss.common.scala.internal.fieldTypes.MapType
 
 /** insertion of a new value into an indexed container */
-final case class MapInsert[T <: api.SkillObject, F](
+final case class MapInsert[T <: internal.Obj, F](
   /** The file this belongs to */
   f: qq.editor.File,
   /** The type of the modified object*/
@@ -274,7 +274,7 @@ final case class MapInsert[T <: api.SkillObject, F](
   /** The object that is modified */
   o: T,
   /** The field (collection) that is modified */
-  fd: api.FieldDeclaration[F],
+  fd: api.FieldAccess[F],
   /** The index of the modified member of the collection */
   i: Seq[Any],
   /** the value of the new member (the new f[i]; the old f[i] becomes f[i+1] &c.)*/
@@ -282,14 +282,14 @@ final case class MapInsert[T <: api.SkillObject, F](
     extends MapEdit[T, F](f, p, o, fd, i) {
 
   override def doIt(): Unit = {
-    val temp = obj.get(field)
-    qq.util.FlattenedMap.insert(obj.get(field).asInstanceOf[HashMap[Any,Any]], fd.t.asInstanceOf[MapType[_,_]], index, value)
+    val temp = field.get(obj)
+    qq.util.FlattenedMap.insert(field.get(obj).asInstanceOf[HashMap[Any,Any]], fd.t.asInstanceOf[MapType[_,_]], index, value)
   }
 }
 
 
 /** removal of an value from an indexed container */
-final case class MapRemove[T <: api.SkillObject, F](
+final case class MapRemove[T <: internal.Obj, F](
   /** The file this belongs to */
   f: qq.editor.File,
   /** The type of the modified object*/
@@ -297,7 +297,7 @@ final case class MapRemove[T <: api.SkillObject, F](
   /** The object that is modified */
   o: T,
   /** The field (collection) that is modified */
-  fd: api.FieldDeclaration[F],
+  fd: api.FieldAccess[F],
   /** The index of the modified member of the collection */
   i: Seq[Any],
   /** the value of the new member (the new f[i]; the old f[i] becomes f[i+1] &c.)*/
@@ -305,13 +305,13 @@ final case class MapRemove[T <: api.SkillObject, F](
     extends MapEdit[T, F](f, p, o, fd, i) {
 
   override def doIt(): Unit = {
-    val temp = obj.get(field)
-    qq.util.FlattenedMap.remove(obj.get(field).asInstanceOf[HashMap[Any,Any]], fd.t.asInstanceOf[MapType[_,_]], index)
+    val temp = field.get(obj)
+    qq.util.FlattenedMap.remove(field.get(obj).asInstanceOf[HashMap[Any,Any]], fd.t.asInstanceOf[MapType[_,_]], index)
   }
 }
 
 /** change of the value of a member of an indexed container */
-final case class MapModify[T <: api.SkillObject, F](
+final case class MapModify[T <: internal.Obj, F](
   /** The file this belongs to */
   f: qq.editor.File,
   /** The type of the modified object*/
@@ -319,7 +319,7 @@ final case class MapModify[T <: api.SkillObject, F](
   /** The object that is modified */
   o: T,
   /** The field (collection) that is modified */
-  fd: api.FieldDeclaration[F],
+  fd: api.FieldAccess[F],
   /** The index of the modified member of the collection */
   i: Seq[Any],
   /** Value before modification */
@@ -329,7 +329,7 @@ final case class MapModify[T <: api.SkillObject, F](
     extends MapEdit[T, F](f, p, o, fd, i) {
 
   override def doIt(): Unit = {
-    val temp = obj.get(field)
+    val temp = field.get(obj)
     qq.util.FlattenedMap.set(temp.asInstanceOf[HashMap[Any,Any]], fd.t.asInstanceOf[MapType[_,_]], index, newValue)
   }
 }

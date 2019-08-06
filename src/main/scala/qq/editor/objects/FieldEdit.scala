@@ -1,8 +1,8 @@
 package qq.editor.objects
 
-import de.ust.skill.common.scala.api;
-import de.ust.skill.common.scala.internal;
-import de.ust.skill.common.scala.internal.fieldTypes._;
+import ogss.common.scala.api;
+import ogss.common.scala.internal;
+import ogss.common.scala.internal.fieldTypes._;
 import scala.collection.mutable.Buffer
 import scala.collection.mutable.HashSet
 import scala.collection.mutable.HashMap
@@ -19,44 +19,36 @@ import qq.editor.binding.SkillFieldProperty
  * TODO Should be possible to reuse [[ElementFieldEdit]] for ground types
  * */
 
-class FieldEdit[F, O <: api.SkillObject](
+class FieldEdit[F, O <: internal.Obj](
   val page: qq.editor.Page,
   val pool: api.Access[O],
   val obj: O,
-  val field: api.FieldDeclaration[F])
+  val field: api.FieldAccess[F])
     extends swing.BoxPanel(swing.Orientation.Vertical) {
 
-  val restrictions = field.asInstanceOf[internal.FieldDeclaration[F,O]].restrictions
-  field.t.asInstanceOf[FieldType[_]] match {
-    case _: AnnotationType
-      | _: UserType[_] ⇒
+  val restrictions = field.asInstanceOf[internal.Field[F,O]].restrictions
+  field.t.asInstanceOf[internal.FieldType[_]] match {
+    case _: internal.AnyRefType
+      | _: internal.Pool[_] ⇒
       val p = new qq.editor.binding.SimpleField(null, page.file, pool, obj, field)
-      contents += new ReferenceEdit(p.asInstanceOf[SkillFieldProperty[api.SkillObject]], page)
+      contents += new ReferenceEdit(p.asInstanceOf[SkillFieldProperty[internal.Obj]], page)
     case c: ListType[f] ⇒
       contents += new IndexedContainerEdit(page, pool, obj,
-        field.asInstanceOf[api.FieldDeclaration[Buffer[f]]],
-        () ⇒ NewValue.default(c.groundType, restrictions))
-    case c: VariableLengthArray[f] ⇒
+        field.asInstanceOf[api.FieldAccess[Buffer[f]]],
+        () ⇒ NewValue.default(c.base))//, restrictions))
+    case c: ArrayType[f] ⇒
       contents += new IndexedContainerEdit(page, pool, obj,
-        field.asInstanceOf[api.FieldDeclaration[Buffer[f]]],
-        () ⇒ NewValue.default(c.groundType, restrictions))
+        field.asInstanceOf[api.FieldAccess[Buffer[f]]],
+        () ⇒ NewValue.default(c.base))//, restrictions))
     case c: SetType[e] ⇒ 
       contents += new SetContainerEdit(page, pool, obj,
-        field.asInstanceOf[api.FieldDeclaration[HashSet[e]]])       
-    case c: ConstantLengthArray[f] ⇒
-      contents += new IndexedContainerEdit(page, pool, obj,
-        field.asInstanceOf[api.FieldDeclaration[Buffer[f]]],
-        canResize = false)
+        field.asInstanceOf[api.FieldAccess[HashSet[e]]])       
     case m: MapType[k, v] ⇒
             contents += new MapContainerEdit(page, pool, obj,
-        field.asInstanceOf[api.FieldDeclaration[HashMap[k,v]]])
-    /* constants are only shown in the type; they're stored there, anyway */
-    case ConstantI8(_) | ConstantI16(_) | ConstantI32(_) | ConstantI64(_)
-      | ConstantV64(_) ⇒
-      ()
-    case BoolType | _: StringType | I8 | I16 | I32 | I64 | V64 | F32 | F64 ⇒
+        field.asInstanceOf[api.FieldAccess[HashMap[k,v]]])
+    case Bool | _: internal.StringPool | I8 | I16 | I32 | I64 | V64 | F32 | F64 ⇒
       val p = new qq.editor.binding.SimpleField(null, page.file, pool, obj, field)
-      val editField = if ( field.t.asInstanceOf[FieldType[_]].isInstanceOf[StringType]) 
+      val editField = if ( field.t.asInstanceOf[internal.FieldType[_]].isInstanceOf[internal.StringPool]) 
         new qq.util.binding.TextEdit(p.asInstanceOf[SkillFieldProperty[String]],
         {x ⇒ val s = x.trim()
             if (s == "(null)") null 

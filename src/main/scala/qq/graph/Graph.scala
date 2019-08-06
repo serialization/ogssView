@@ -3,7 +3,7 @@ package qq.graph
 import scala.collection.mutable.HashMap
 import scala.collection.mutable.HashSet
 import scala.collection.mutable.ArrayBuffer
-import de.ust.skill.common.scala.api;
+import ogss.common.scala.api;
 import qq.util.Vector
 
 /** a graph showing objects from file in page */
@@ -158,7 +158,7 @@ class Graph(
 
   // info about the parameters of the layout, for comment in psexport
   class GraphInfo() {
-    val edgeDirections = new HashMap[api.FieldDeclaration[_], Vector]
+    val edgeDirections = new HashMap[api.FieldAccess[_], Vector]
     var energy: Float = 0
     var energyHu: Float = 0
     val energyOfStep = new ArrayBuffer[Float]()

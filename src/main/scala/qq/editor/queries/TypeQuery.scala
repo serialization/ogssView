@@ -1,24 +1,25 @@
 package qq.editor.queries
 
-import de.ust.skill.common.scala.api;
+import ogss.common.scala.api;
+import ogss.common.scala.internal;
 
 /** Search query returning all members of type `pool` including subtypes. */
 class TypeQuery(val file0: qq.editor.File,
                 val variable: String,
-                val pool: api.Access[_ <: api.SkillObject]) extends Query(file0) {
+                val pool: api.Access[_ <: internal.Obj]) extends Query(file0) {
 
   override def variables = Seq(variable)
   override def find() = {
     for (
-      o ← pool.all if !file.deletedObjects.contains(o)
+      o ← pool.inTypeOrder if !file.deletedObjects.contains(o)
     ) yield Map(variable -> o)
   }
   override def prepare(assigned: Seq[String]) = ()
   override def find(assigment: Map[String, Any]) = {
     /* we must ensure (outside) that b contains variable: we want to disallow the generation of full cartesian products */
-    if (assigment(variable).isInstanceOf[api.SkillObject]
-      && (file.superTypes(file.s(assigment(variable).asInstanceOf[api.SkillObject].getTypeName)).contains(pool))
-        || file.s(assigment(variable).asInstanceOf[api.SkillObject].getTypeName) == pool) {
+    if (assigment(variable).isInstanceOf[internal.Obj]
+      && (file.superTypes(file.s.pool(assigment(variable).asInstanceOf[internal.Obj]).asInstanceOf[internal.Pool[_ <: internal.Obj]])).contains(pool)
+       || file.s.pool(assigment(variable).asInstanceOf[internal.Obj]) == pool) {
       Iterator(assigment)
     } else {
       Iterator()
@@ -43,7 +44,7 @@ class TypeQuery(val file0: qq.editor.File,
 object TypeQuery {
   def apply(file: qq.editor.File,
             s: Term,
-            pool: api.Access[_ <: api.SkillObject]) = { 
+            pool: api.Access[_ <: internal.Obj]) = { 
     s match {
       case v: VarTerm => new TypeQuery(file, v.variable, pool)
       case _ => throw new Exception("Variable expected")

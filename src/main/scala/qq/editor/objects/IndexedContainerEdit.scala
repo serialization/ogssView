@@ -1,18 +1,19 @@
 package qq.editor.objects
 
-import de.ust.skill.common.scala.api;
-import de.ust.skill.common.scala.internal.fieldTypes.SingleBaseTypeContainer;
+import ogss.common.scala.api;
+import ogss.common.scala.internal;
+import ogss.common.scala.internal.fieldTypes.SingleArgumentType;
 import scala.collection.mutable.Buffer;
 import qq.util.Swing.HBoxD;
 /** Swing Ui element for modifying the contents of a list or array field.
  * 
  * @param getNewElement closure that returns a value that is used for newly inserted elements
  * @param canResize whether entries can be added to or removed from the container */
-class IndexedContainerEdit[E, C[E] <: Buffer[E], O <: api.SkillObject](
+class IndexedContainerEdit[E, C[E] <: Buffer[E], O <: internal.Obj](
   val page: qq.editor.Page,
   val pool: api.Access[O],
   val obj: O,
-  val field: api.FieldDeclaration[C[E]],
+  val field: api.FieldAccess[C[E]],
   val getNewElement: (() ⇒ E) = null,
   val canResize: Boolean = true)
     extends swing.BoxPanel(swing.Orientation.Vertical) {
@@ -31,7 +32,7 @@ class IndexedContainerEdit[E, C[E] <: Buffer[E], O <: api.SkillObject](
   private val pgDnAct = new swing.Action("Next Page") {
     icon = new qq.icons.ForwardIcon(true, true)
     override def apply() {
-      val n = obj.get(field).size
+      val n = field.get(obj).size
       if (firstIndex + pageSize < n) {
         firstIndex += pageSize
         updateHeadValues
@@ -42,7 +43,7 @@ class IndexedContainerEdit[E, C[E] <: Buffer[E], O <: api.SkillObject](
   private val pgUpAct = new swing.Action("Previous Page") {
     icon = new qq.icons.BackIcon(true, true)
     override def apply() {
-      val n = obj.get(field).size
+      val n = field.get(obj).size
       if (firstIndex > 0) {
         firstIndex -= pageSize min firstIndex
         updateHeadValues
@@ -62,7 +63,7 @@ class IndexedContainerEdit[E, C[E] <: Buffer[E], O <: api.SkillObject](
 
   /** update number of elements and current position in header */
   private def updateHeadValues(): Unit = {
-    val n = obj.get(field).size
+    val n = field.get(obj).size
     countLbl.text = "" + n + " elements"
     shownLbl.text = "" + firstIndex + " to " + ((firstIndex + pageSize - 1) min (n - 1)) + " of " + n
     pgUpAct.enabled = firstIndex > 0
@@ -115,10 +116,10 @@ class IndexedContainerEdit[E, C[E] <: Buffer[E], O <: api.SkillObject](
   private val lowerPart = new swing.BoxPanel(swing.Orientation.Vertical)
   private def refillLower(): Unit = {
     lowerPart.contents.clear()
-    lowerPart.contents ++= firstIndex.until((firstIndex + pageSize) min obj.get(field).size).map { i ⇒
+    lowerPart.contents ++= firstIndex.until((firstIndex + pageSize) min field.get(obj).size).map { i ⇒
       val fed = new ElementFieldEdit(
         page,
-        field.t.asInstanceOf[SingleBaseTypeContainer[_, _]].groundType,
+        field.t.asInstanceOf[SingleArgumentType[_, _]].base,
         new qq.editor.binding.IndexedContainerField(null, page.file, pool, obj, field, i))
       if (canResize) {
         val aa = new swing.Action("add") {
@@ -141,14 +142,14 @@ class IndexedContainerEdit[E, C[E] <: Buffer[E], O <: api.SkillObject](
         fed
       }
     }
-    if (canResize && firstIndex + pageSize >= obj.get(field).size) {
+    if (canResize && firstIndex + pageSize >= field.get(obj).size) {
       /* add a row for inserting at the end; if the fields end at a page break,
        * the last page will be too long (due to this append line), but that's,
        * I think, less bad then having the append-line on its own page */
       val aa = new swing.Action("add") {
         icon = new qq.icons.AddListItemIcon(true)
         override def apply() {
-          new qq.editor.UserIndexedContainerInsert(page.file, pool, obj, field, obj.get(field).size, getNewElement())
+          new qq.editor.UserIndexedContainerInsert(page.file, pool, obj, field, field.get(obj).size, getNewElement())
         }
       }
       lowerPart.contents += qq.util.Swing.HBoxD(0.0f,
@@ -163,7 +164,7 @@ class IndexedContainerEdit[E, C[E] <: Buffer[E], O <: api.SkillObject](
 
   updateHeadValues
   refillLower
-  if (obj.get(field).size > 0 && obj.get(field).size <= qq.editor.Main.preferences.editCollectionSmall()) {
+  if (field.get(obj).size > 0 && field.get(obj).size <= qq.editor.Main.preferences.editCollectionSmall()) {
     en.expand()
   } else {
     en.collapse()

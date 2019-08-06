@@ -1,7 +1,7 @@
 package qq.editor.types
 
-import de.ust.skill.common.scala.api;
-import de.ust.skill.common.scala.internal;
+import ogss.common.scala.api;
+import ogss.common.scala.internal;
 import qq.editor.objects.DefaultColors
 
 /**
@@ -9,7 +9,7 @@ import qq.editor.objects.DefaultColors
  * a context menu for actions with this type.
  */
 class TypeNameControl(val page: qq.editor.types.TypePage,
-                      val τ: api.Access[_ <: api.SkillObject]) extends swing.BoxPanel(swing.Orientation.Horizontal) {
+                      val τ: api.Access[_ <: internal.Obj]) extends swing.BoxPanel(swing.Orientation.Horizontal) {
 
   background = DefaultColors.text
 

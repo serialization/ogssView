@@ -1,32 +1,33 @@
 package qq.editor.binding
 
-import de.ust.skill.common.scala.api;
-import de.ust.skill.common.scala.internal.fieldTypes.SingleBaseTypeContainer;
-import de.ust.skill.common.scala.internal.fieldTypes.FieldType;
+import ogss.common.scala.api;
+import ogss.common.scala.internal;
+import ogss.common.scala.internal.fieldTypes.SingleArgumentType;
+import ogss.common.scala.internal.FieldType;
 import scala.collection.mutable.HashSet;
 
 /** Property for an element of a set field for use by edit components.
  *  Generates undoable UserEdit to update the file and monitors Edits to update its own state */
-class SetContainerField[O <: api.SkillObject, C[F] <: HashSet[F], F](
+class SetContainerField[O <: internal.Obj, C[F] <: HashSet[F], F](
   owner0: qq.util.binding.PropertyOwner,
   val file: qq.editor.File,
   val pool: api.Access[O],
   val obj: O,
-  val field: api.FieldDeclaration[C[F]],
+  val field: api.FieldAccess[C[F]],
   val key: F)
     extends SkillFieldProperty[F](owner0, "", key) {
 
-  def groundType = field.t.asInstanceOf[SingleBaseTypeContainer[C[F],F]].groundType
+  def groundType = field.t.asInstanceOf[SingleArgumentType[C[F],F]].base
   
   description = s"""$groundType ${field.name}(${key match {
-                        case o: api.SkillObject => file.idOfObj(o)
+                        case o: internal.Obj => file.idOfObj(o)
                         case x => x
                       }}) in ${file.idOfObj(obj)}"""
   
   var key_ = key
   restrictions ++= Restrictions(field)
-  restrictions ++= Restrictions(file, field.t.asInstanceOf[SingleBaseTypeContainer[_,_]].groundType.asInstanceOf[FieldType[F]]) 
-  restrictions += qq.util.binding.Restriction(x => x == this() || !obj.get(field).contains(x), "New value is already contained in set")
+  restrictions ++= Restrictions(file, field.t.asInstanceOf[SingleArgumentType[_,_]].base.asInstanceOf[FieldType[F]]) 
+  restrictions += qq.util.binding.Restriction(x => x == this() || !field.get(obj).contains(x), "New value is already contained in set")
   
   /**
    * when obj.get(field)(index) is the last element and is removed, this object

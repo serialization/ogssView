@@ -1,7 +1,8 @@
 package qq.editor.types
 
-import de.ust.skill.common.scala.api;
-import de.ust.skill.common.scala.internal.fieldTypes;
+import ogss.common.scala.api;
+import ogss.common.scala.internal;
+import ogss.common.scala.internal.fieldTypes;
 import qq.editor.objects.DefaultColors
 
 /**
@@ -17,22 +18,19 @@ class FieldTypeControl(
   background = DefaultColors.text
 
   contents ++=
-    (fieldType.asInstanceOf[fieldTypes.FieldType[_]] match {
-      case u: fieldTypes.UserType[_] ⇒ Seq(new TypeNameControl(page, u))
+    (fieldType.asInstanceOf[internal.FieldType[_]] match {
+      case u: internal.Pool[_] ⇒ Seq(new TypeNameControl(page, u))
       case c: fieldTypes.ListType[_] ⇒ Seq(
         new qq.util.PlainLabel("list<"),
-        new FieldTypeControl(page, file, c.groundType),
+        new FieldTypeControl(page, file, c.base),
         new qq.util.PlainLabel(">"))
       case c: fieldTypes.SetType[_] ⇒ Seq(
         new qq.util.PlainLabel("set<"),
-        new FieldTypeControl(page, file,c.groundType),
+        new FieldTypeControl(page, file,c.base),
         new qq.util.PlainLabel(">"))
-      case c: fieldTypes.VariableLengthArray[_] ⇒ Seq(
-        new FieldTypeControl(page, file,c.groundType),
+      case c: fieldTypes.ArrayType[_] ⇒ Seq(
+        new FieldTypeControl(page, file,c.base),
         new qq.util.PlainLabel("[]"))
-      case c: fieldTypes.ConstantLengthArray[_] ⇒ Seq(
-        new FieldTypeControl(page, file,c.groundType),
-        new qq.util.PlainLabel("[" + c.length + "]"))
       case m: fieldTypes.MapType[_, _] ⇒ Seq(
         new qq.util.PlainLabel("map<"),
         new FieldTypeControl(page, file,m.keyType),

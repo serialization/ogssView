@@ -1,6 +1,7 @@
 package qq.editor.types
 
-import de.ust.skill.common.scala.api;
+import ogss.common.scala.api;
+import ogss.common.scala.internal;
 import scala.collection.mutable;
 import scala.swing;
 
@@ -21,16 +22,16 @@ class TypePage(file0: qq.editor.File, preferences0: qq.editor.EditorPreferences)
   val graphVisibleModel = new javax.swing.JToggleButton.ToggleButtonModel()
 
   /** the type that is currently shown */
-  var currentType: api.Access[_ <: api.SkillObject] = null
+  var currentType: api.Access[_ <: internal.Obj] = null
 
   /** previously shown types (for back navigation) */
-  val previousType: mutable.Stack[api.Access[_ <: api.SkillObject]] = new mutable.Stack()
+  val previousType: mutable.Stack[api.Access[_ <: internal.Obj]] = new mutable.Stack()
 
   /** previously previously shown types :) (for forward navigation) */
-  val nextType: mutable.Stack[api.Access[_ <: api.SkillObject]] = new mutable.Stack()
+  val nextType: mutable.Stack[api.Access[_ <: internal.Obj]] = new mutable.Stack()
 
   /** show a type (internal, for goTo, goBack, goForward) */
-  private def _goTo(t: api.Access[_ <: api.SkillObject]): Unit = {
+  private def _goTo(t: api.Access[_ <: internal.Obj]): Unit = {
     currentType = t
     title = t.name
     typeEdit.contents.clear()
@@ -43,7 +44,7 @@ class TypePage(file0: qq.editor.File, preferences0: qq.editor.EditorPreferences)
   }
 
   /** show a type and update navigation */
-  def goTo(t: api.Access[_ <: api.SkillObject]): Unit = {
+  def goTo(t: api.Access[_ <: internal.Obj]): Unit = {
     nextType.clear()
     if (currentType != null && t != currentType) previousType.push(currentType)
     _goTo(t)

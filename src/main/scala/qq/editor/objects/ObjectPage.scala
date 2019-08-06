@@ -1,6 +1,7 @@
 package qq.editor.objects
 
-import de.ust.skill.common.scala.api;
+import ogss.common.scala.api;
+import ogss.common.scala.internal;
 import scala.collection.mutable;
 import scala.swing;
 import qq.util.Swing.HBoxD;
@@ -28,11 +29,11 @@ extends qq.editor.Page(file0, preferences0) {
   graphVisibleModel.setSelected(true)
 
   class View(
-      val obj: api.SkillObject,
+      val obj: internal.Obj,
       /** objects that are explicitly requested to be shown */
-      val showAlso: mutable.HashSet[api.SkillObject] = new mutable.HashSet()) {
-    def this(obj0: api.SkillObject, showAlso0: Iterable[api.SkillObject]) =
-      this(obj0, new mutable.HashSet[api.SkillObject]() { this ++= showAlso0 })
+      val showAlso: mutable.HashSet[internal.Obj] = new mutable.HashSet()) {
+    def this(obj0: internal.Obj, showAlso0: Iterable[internal.Obj]) =
+      this(obj0, new mutable.HashSet[internal.Obj]() { this ++= showAlso0 })
   }
 
   /** the object that is currently shown */
@@ -49,7 +50,7 @@ extends qq.editor.Page(file0, preferences0) {
    * in an object selection mode and contain a `select' button that will cause
    * this continuation to be called with the current object
    */
-  val objectSelectionContinuation: api.SkillObject ⇒ Unit = null
+  val objectSelectionContinuation: internal.Obj ⇒ Unit = null
   val objectSelectionCancelContinuation: Unit ⇒ Unit = null
   /** Title for object selection */
   val objectSelectionTitle: String = ""
@@ -85,7 +86,7 @@ extends qq.editor.Page(file0, preferences0) {
     _goTo(v)
    }
   /** show an object */
-  def goTo(o: api.SkillObject): Unit = {
+  def goTo(o: internal.Obj): Unit = {
     find(file.idOfObj(o, true))
   }
   /** show previously shown type */
@@ -138,7 +139,7 @@ extends qq.editor.Page(file0, preferences0) {
     accelerator = Some(javax.swing.KeyStroke.getKeyStroke("ctrl T"))
     mnemonic = swing.event.Key.T.id
     override def apply() = {
-      qq.editor.Main.newTypeTab(file.s(currentView.obj.getTypeName))
+      qq.editor.Main.newTypeTab(file.s.pool(currentView.obj).asInstanceOf[internal.Pool[_ <: internal.Obj]])
     }
   }
 
@@ -147,7 +148,7 @@ extends qq.editor.Page(file0, preferences0) {
     mnemonic = swing.event.Key.D.id
     override def apply() = {
       new qq.editor.UserDeleteObject(
-        file, file.s(currentView.obj.getTypeName).asInstanceOf[api.Access[api.SkillObject]], currentView.obj)
+        file, file.s.pool(currentView.obj).asInstanceOf[api.Access[internal.Obj]], currentView.obj)
     }
   }
 
@@ -204,17 +205,17 @@ extends qq.editor.Page(file0, preferences0) {
     }),
     new swing.Button(swing.Action("random obj") {
       /* pick random object, expand all neighbours */
-      import de.ust.skill.common.scala.internal.StoragePool
-      val nobj = file.s.map { x ⇒ x.asInstanceOf[StoragePool[_, _]].staticInstances.size }.sum
+      import ogss.common.scala.internal.Pool
+      val nobj = file.s.allTypes.map { x ⇒ x.asInstanceOf[Pool[_]].staticInstances.size }.sum
       var pick = math.floor(math.random * nobj).toInt
-      for (pool ← file.s) {
-        val p = pool.asInstanceOf[StoragePool[_, _]]
+      for (pool ← file.s.allTypes) {
+        val p = pool.asInstanceOf[Pool[_]]
         if (0 <= pick && pick < p.staticInstances.size) {
           file.typePreferences(pool).expanded ++= pool.fields.map(Seq(_))
           for (s ← file.superTypes(pool)) {
             file.typePreferences(s).expanded ++= s.fields.map(Seq(_))
           }
-          goTo(p.staticInstances.drop(pick).next.asInstanceOf[api.SkillObject])
+          goTo(p.staticInstances.drop(pick).next.asInstanceOf[internal.Obj])
           pick -= 1 //
         }
         pick -= p.staticInstances.size
@@ -263,7 +264,7 @@ extends qq.editor.Page(file0, preferences0) {
    *  the user presses the button, the on… handler is called and the page is closed
    */
   def select(title: String,
-             onAccept: api.SkillObject ⇒ Unit,
+             onAccept: internal.Obj ⇒ Unit,
              onCancel: Unit ⇒ Unit): Unit = {
     val accept = Action("Ok") {
       try {

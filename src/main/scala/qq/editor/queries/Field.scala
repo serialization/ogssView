@@ -1,6 +1,7 @@
 package qq.editor.queries
 
-import de.ust.skill.common.scala.api;
+import ogss.common.scala.api;
+import ogss.common.scala.internal;
 
 /**
  * A field as used in the queries. The user can leave the type unspecified, in which
@@ -8,12 +9,12 @@ import de.ust.skill.common.scala.api;
  */
 abstract class Field {
   /** all field declarations this field can refer to, and the pool they belong to */
-  def apply(): Iterator[Tuple2[api.Access[_], api.FieldDeclaration[_]]]
+  def apply(): Iterator[Tuple2[api.Access[_], api.FieldAccess[_]]]
   /**
    * all field declarations this field can refer to, and the pool they belong to
    * when this field should be a field of object o (may be empty)
    */
-  def apply(o: api.SkillObject): Iterator[Tuple2[api.Access[_], api.FieldDeclaration[_]]]
+  def apply(o: internal.Obj): Iterator[Tuple2[api.Access[_], api.FieldAccess[_]]]
 }
 
 /* All fields with the given name in any type. */
@@ -26,8 +27,8 @@ class UnspecificField(
     file.fieldsByName(name).toIterator
   }
 
-  def apply(o: api.SkillObject) = {
-    val relevantTypes = file.s(o.getTypeName) +: file.superTypes(file.s(o.getTypeName))
+  def apply(o: internal.Obj) = {
+    val relevantTypes = file.s.pool(o) +: file.superTypes(file.s.pool(o).asInstanceOf[internal.Pool[_ <: internal.Obj]])
     this().filter(x ⇒ relevantTypes.contains(x._1))
   }
 }
@@ -40,13 +41,13 @@ class SpecificTypeField(
     extends Field {
 
   override def apply() = {
-    val pool = file.s(typeName).asInstanceOf[api.Access[_<:api.SkillObject]]
+    val pool = file.s.pool(typeName).asInstanceOf[api.Access[_<:internal.Obj]]
     val field = pool.fields.find(_.name == name).get
     Iterator((pool, field))
   }
 
-  def apply(o: api.SkillObject) = {
-    val relevantTypes = file.s(o.getTypeName) +: file.superTypes(file.s(o.getTypeName))
+  def apply(o: internal.Obj) = {
+    val relevantTypes = file.s.pool(o) +: file.superTypes(file.s.pool(o).asInstanceOf[internal.Pool[_ <: internal.Obj]])
     this().filter(x ⇒ relevantTypes.contains(x._1))
   }
 }  

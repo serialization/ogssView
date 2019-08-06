@@ -18,7 +18,7 @@ class VarTerm(val variable: String)
 
 class ConstTerm(val value: Any)
     extends Term {
-  override def canBeSubject = value.isInstanceOf[de.ust.skill.common.scala.api.SkillObject]
+  override def canBeSubject = value.isInstanceOf[ogss.common.scala.internal.Obj]
   override def canBeObject = true
   override def apply(assignment: Map[String, Any]) = value
   override def definedIn(assignment: Map[String, Any]) = true

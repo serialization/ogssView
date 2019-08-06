@@ -1,36 +1,31 @@
 package qq.editor
 
-import de.ust.skill.common.scala.api;
+import ogss.common.scala.api;
 import java.util.prefs.Preferences;
-import de.ust.skill.common.scala.internal;
-import de.ust.skill.common.scala.internal.fieldTypes;
+import ogss.common.scala.internal;
+import ogss.common.scala.internal.fieldTypes;
 import scala.collection.mutable;
 import qq.util.Vector;
 import qq.util.binding._;
 
 /** Persistently stored preferences for a field in a skill user type. 
  * */
-class FieldPreferences[T, U <: api.SkillObject](
+class FieldPreferences[T, U <: internal.Obj](
     /** The field this is about */
-    val field: api.FieldDeclaration[T],
+    val field: api.FieldAccess[T],
     /** The type this belongs to */
     val containingType: TypePreferences[U]) extends PropertyOwner {
 
   private val prefs = Preferences.userRoot().node(s"/qq/skilledit/fieldsettings/${containingType.typ.name}/${field.name}");  
   
   /* defaults */
-  private val (_hide, _inParent) = field.t.asInstanceOf[internal.fieldTypes.FieldType[_]] match {
-    case u: fieldTypes.UserType[T]                   ⇒ (false, false)
-    case c: fieldTypes.SingleBaseTypeContainer[_, T] ⇒ (false, false)
+  private val (_hide, _inParent) = field.t.asInstanceOf[internal.FieldType[_]] match {
+    case u: internal.Pool[T]                   ⇒ (false, false)
+    case c: fieldTypes.SingleArgumentType[_, T] ⇒ (false, false)
     case m: fieldTypes.MapType[_, _]                 ⇒ (false, false)
-    case s: fieldTypes.StringType                    ⇒ (false, false)
-    case fieldTypes.ConstantI8(_)                    ⇒ (true, true)
-    case fieldTypes.ConstantI16(_)                   ⇒ (true, true)
-    case fieldTypes.ConstantI32(_)                   ⇒ (true, true)
-    case fieldTypes.ConstantI64(_)                   ⇒ (true, true)
-    case fieldTypes.ConstantV64(_)                   ⇒ (true, true)
-    case fieldTypes.BoolType                         ⇒ (false, true)
-    case _: fieldTypes.AnnotationType                ⇒ (false, false)
+    case s: internal.StringPool                    ⇒ (false, false)
+    case fieldTypes.Bool                        ⇒ (false, true)
+    case _: internal.AnyRefType                ⇒ (false, false)
     case fieldTypes.F32                              ⇒ (false, true)
     case fieldTypes.F64                              ⇒ (false, true)
     case fieldTypes.I8                               ⇒ (false, true)
@@ -64,31 +59,26 @@ class FieldPreferences[T, U <: api.SkillObject](
   
   /** true if the value of this field in object o is null, empty collection, zero, or empty string
    *  @todo If the field has a default restriction: hide if value==default, instead?*/
-  private def hasNullValueIn(o: api.SkillObject): Boolean = {
-    field.t.asInstanceOf[internal.fieldTypes.FieldType[_]] match {
-      case u: fieldTypes.UserType[T]                   ⇒ o.get(field) == null
-      case c: fieldTypes.SingleBaseTypeContainer[_, T] ⇒ o.get(field).asInstanceOf[Iterable[T]].size == 0
-      case m: fieldTypes.MapType[_, _]                 ⇒ o.get(field).asInstanceOf[mutable.HashMap[_, _]].size == 0
-      case s: fieldTypes.StringType                    ⇒ o.get(field).asInstanceOf[String] == ""
-      case fieldTypes.ConstantI8(_)                    ⇒ true
-      case fieldTypes.ConstantI16(_)                   ⇒ true
-      case fieldTypes.ConstantI32(_)                   ⇒ true
-      case fieldTypes.ConstantI64(_)                   ⇒ true
-      case fieldTypes.ConstantV64(_)                   ⇒ true
-      case fieldTypes.BoolType                         ⇒ !o.get(field).asInstanceOf[Boolean]
-      case _: fieldTypes.AnnotationType                ⇒ o.get(field) == null
-      case fieldTypes.F32                              ⇒ o.get(field).asInstanceOf[Float] == 0.0f
-      case fieldTypes.F64                              ⇒ o.get(field).asInstanceOf[Double] == 0.0
-      case fieldTypes.I8                               ⇒ o.get(field).asInstanceOf[Byte] == 0
-      case fieldTypes.I16                              ⇒ o.get(field).asInstanceOf[Short] == 0
-      case fieldTypes.I32                              ⇒ o.get(field).asInstanceOf[Int] == 0
-      case fieldTypes.I64                              ⇒ o.get(field).asInstanceOf[Long] == 0l
-      case fieldTypes.V64                              ⇒ o.get(field).asInstanceOf[Long] == 0l
+  private def hasNullValueIn(o: internal.Obj): Boolean = {
+    field.t.asInstanceOf[internal.FieldType[_]] match {
+      case u: internal.Pool[T]                   ⇒ field.get(o) == null
+      case c: fieldTypes.SingleArgumentType[_, T] ⇒ field.get(o).asInstanceOf[Iterable[T]].size == 0
+      case m: fieldTypes.MapType[_, _]                 ⇒ field.get(o).asInstanceOf[mutable.HashMap[_, _]].size == 0
+      case s: internal.StringPool                    ⇒ field.get(o).asInstanceOf[String] == ""
+      case fieldTypes.Bool                         ⇒ !field.get(o).asInstanceOf[Boolean]
+      case _: internal.AnyRefType                ⇒ field.get(o) == null
+      case fieldTypes.F32                              ⇒ field.get(o).asInstanceOf[Float] == 0.0f
+      case fieldTypes.F64                              ⇒ field.get(o).asInstanceOf[Double] == 0.0
+      case fieldTypes.I8                               ⇒ field.get(o).asInstanceOf[Byte] == 0
+      case fieldTypes.I16                              ⇒ field.get(o).asInstanceOf[Short] == 0
+      case fieldTypes.I32                              ⇒ field.get(o).asInstanceOf[Int] == 0
+      case fieldTypes.I64                              ⇒ field.get(o).asInstanceOf[Long] == 0l
+      case fieldTypes.V64                              ⇒ field.get(o).asInstanceOf[Long] == 0l
     }
   }
 
   /** returns whether and how this field should be shown in object o*/
-  def visibilityIn(o: api.SkillObject): FieldVisibility = {
+  def visibilityIn(o: internal.Obj): FieldVisibility = {
     if (prefHide() /* user says hide */
       || (hasNullValueIn(o) && prefHideNull())) { /* or it;s null/empty…*/
       HideVisibility
@@ -103,15 +93,15 @@ class FieldPreferences[T, U <: api.SkillObject](
   // check whether it still exists after save
   var isDeleted = false
   def checkDeleted() : Unit = {
-    def typeIsDeleted[T](τ: fieldTypes.FieldType[T]): Boolean = {
+    def typeIsDeleted[T](τ: internal.FieldType[T]): Boolean = {
       τ match {
-        case u: fieldTypes.UserType[_] => containingType.containingFile.typePreferences(u).isDeleted
-        case c: fieldTypes.SingleBaseTypeContainer[_,_] => typeIsDeleted(c.groundType)
+        case u: internal.Pool[_] => containingType.containingFile.typePreferences(u).isDeleted
+        case c: fieldTypes.SingleArgumentType[_,_] => typeIsDeleted(c.base)
         case m: fieldTypes.MapType[k,v] => typeIsDeleted(m.keyType) || typeIsDeleted(m.valueType)
         case _ => false
       }
     }
-    isDeleted = typeIsDeleted(field.t.asInstanceOf[fieldTypes.FieldType[_]])
+    isDeleted = typeIsDeleted(field.t.asInstanceOf[internal.FieldType[_]])
   }
 
 }
